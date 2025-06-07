@@ -114,16 +114,19 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
         }
       });
 
-      // アイコンレイヤー
+      // アイコンレイヤー（アイコンの代わりにテキストを使用）
       map.addLayer({
         id: 'accommodation-icons',
         type: 'symbol',
         source: 'accommodation-source',
         layout: {
-          'icon-image': 'lodging-15', // Mapboxの標準アイコン
-          'icon-size': 1.5,
-          'icon-allow-overlap': true,
-          'icon-offset': [0, -2]
+          'text-field': '🏨',
+          'text-size': 20,
+          'text-allow-overlap': true,
+          'text-offset': [0, -1]
+        },
+        paint: {
+          'text-color': '#ffffff'
         }
       });
 
