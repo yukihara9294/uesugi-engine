@@ -12,6 +12,7 @@ import ConsumptionLayer from './ConsumptionLayer';
 import LayerStatus from './LayerStatus';
 import HeatmapLegend from './HeatmapLegend';
 import MapErrorBoundary from './MapErrorBoundary';
+import MapSimple from './MapSimple';
 
 const Map = ({ 
   viewport, 
@@ -34,20 +35,25 @@ const Map = ({
 
   // Mapboxの初期化
   useEffect(() => {
-    // 既にマップが初期化されている場合はスキップ
-    if (map.current) return;
+    // 初期化フラグチェック
+    let isInitialized = false;
     
-    const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
-    console.log('Mapbox Token available:', !!MAPBOX_TOKEN);
-    console.log('Token length:', MAPBOX_TOKEN?.length);
-    
-    if (!MAPBOX_TOKEN) {
-      setMapboxError('Mapboxアクセストークンが設定されていません');
-      return;
-    }
+    const initMap = async () => {
+      // 既にマップが初期化されている場合はスキップ
+      if (map.current || isInitialized) return;
+      isInitialized = true;
+      
+      const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
+      console.log('Mapbox Token available:', !!MAPBOX_TOKEN);
+      console.log('Token length:', MAPBOX_TOKEN?.length);
+      
+      if (!MAPBOX_TOKEN) {
+        setMapboxError('Mapboxアクセストークンが設定されていません');
+        return;
+      }
 
-    // アクセストークンをグローバルに保存
-    window.MAPBOX_ACCESS_TOKEN = MAPBOX_TOKEN;
+      // アクセストークンをグローバルに保存
+      window.MAPBOX_ACCESS_TOKEN = MAPBOX_TOKEN;
     
     const MAX_ERROR_LOG = 3; // 同じエラーは3回までログ出力
     
@@ -492,16 +498,17 @@ const Map = ({
     };
 
     document.head.appendChild(script);
-
+    
+    // 初期化実行
+    initMap();
+    
     return () => {
       cleanup(); // グローバルエラーハンドラーを削除
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
-      if (script && script.parentNode) {
-        document.head.removeChild(script);
-      }
+      // scriptのクリーンアップは不要（グローバルに1つだけ）
     };
   }, []); // 空の依存配列で初回のみ実行
 
@@ -794,7 +801,7 @@ const Map = ({
 // エラーバウンダリーでラップしてエクスポート
 const MapWithErrorBoundary = (props) => (
   <MapErrorBoundary>
-    <Map {...props} />
+    <MapSimple {...props} />
   </MapErrorBoundary>
 );
 
