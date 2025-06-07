@@ -31,6 +31,8 @@ import {
   Place,
   Hotel,
   ShoppingCart,
+  DirectionsCar,
+  Share as ShareIcon,
 } from '@mui/icons-material';
 
 const Sidebar = ({
@@ -44,14 +46,23 @@ const Sidebar = ({
   weatherData,
   onRefresh
 }) => {
-  const layers = [
-    { id: 'heatmap', label: 'ヒートマップ', icon: <ThermostatAuto />, color: '#667eea' },
-    { id: 'weather', label: '気象データ', icon: <WbSunny />, color: '#4CAF50' },
-    { id: 'mobility', label: '人流データ', icon: <MapIcon />, color: '#3498db' },
-    { id: 'landmarks', label: 'ランドマーク', icon: <Place />, color: '#FF6B6B' },
-    { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#FF5722' },
-    { id: 'consumption', label: '消費データ', icon: <ShoppingCart />, color: '#FFE66D' },
+  // 基本レイヤー
+  const baseLayers = [
+    { id: 'landmarks', label: 'ランドマーク', icon: <Place />, color: '#FFD700' },
+    { id: 'mobility', label: '人流データ', icon: <DirectionsCar />, color: '#00FFFF' },
+    { id: 'consumption', label: '消費データ', icon: <ShoppingCart />, color: '#FF69B4' },
+    { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#4CAF50' },
+    { id: 'weather', label: '気象データ', icon: <WbSunny />, color: '#FFA500' },
   ];
+  
+  // ソーシャル・ネットワーキング・データ
+  const socialLayer = { 
+    id: 'heatmap', 
+    label: 'SNS感情分析', 
+    icon: <ThermostatAuto />, 
+    color: '#FF5722',
+    description: 'ソーシャルメディアの感情分析ヒートマップ'
+  };
 
   const categories = [
     { id: '観光', label: '観光', color: '#4CAF50', icon: '🏯' },
@@ -127,7 +138,7 @@ const Sidebar = ({
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {layers.map(layer => (
+            {baseLayers.map(layer => (
               <Box
                 key={layer.id}
                 sx={{
@@ -174,6 +185,65 @@ const Sidebar = ({
                 />
               </Box>
             ))}
+          </Box>
+        </Box>
+
+        {/* ソーシャル・ネットワーキング・データ */}
+        <Box sx={{ mb: 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+            <ShareIcon sx={{ fontSize: 20, color: socialLayer.color }} />
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              ソーシャル・ネットワーキング・データ
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              p: 2,
+              borderRadius: 2,
+              background: selectedLayers.includes(socialLayer.id) 
+                ? alpha(socialLayer.color, 0.1)
+                : 'rgba(255, 255, 255, 0.02)',
+              border: '1px solid',
+              borderColor: selectedLayers.includes(socialLayer.id)
+                ? alpha(socialLayer.color, 0.3)
+                : 'rgba(255, 255, 255, 0.05)',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer',
+              '&:hover': {
+                background: alpha(socialLayer.color, 0.15),
+                borderColor: alpha(socialLayer.color, 0.5),
+                transform: 'translateX(4px)'
+              }
+            }}
+            onClick={() => handleLayerToggle(socialLayer.id)}
+          >
+            <Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ color: socialLayer.color }}>{socialLayer.icon}</Box>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {socialLayer.label}
+                </Typography>
+              </Box>
+              <Typography variant="caption" sx={{ display: 'block', mt: 0.5, opacity: 0.7 }}>
+                {socialLayer.description}
+              </Typography>
+            </Box>
+            <Switch
+              checked={selectedLayers.includes(socialLayer.id)}
+              onChange={() => handleLayerToggle(socialLayer.id)}
+              size="small"
+              sx={{
+                '& .MuiSwitch-switchBase.Mui-checked': {
+                  color: socialLayer.color,
+                },
+                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                  backgroundColor: socialLayer.color,
+                },
+              }}
+            />
           </Box>
         </Box>
 
@@ -287,29 +357,6 @@ const Sidebar = ({
           </Box>
         )}
 
-        {/* 気象情報 */}
-        {weatherData && weatherData.current_weather && (
-          <Box sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-              現在の気象状況
-            </Typography>
-            <List dense>
-              {weatherData.current_weather.slice(0, 3).map((weather, index) => (
-                <ListItem key={index}>
-                  <ListItemText
-                    primary={weather.landmark_name}
-                    secondary={`${weather.temperature}°C - ${weather.weather_condition}`}
-                  />
-                </ListItem>
-              ))}
-            </List>
-            {weatherData.average_temperature && (
-              <Typography variant="body2" sx={{ mt: 1, color: 'text.secondary' }}>
-                平均気温: {weatherData.average_temperature.toFixed(1)}°C
-              </Typography>
-            )}
-          </Box>
-        )}
       </Box>
 
       {/* 時間範囲表示 */}

@@ -10,7 +10,7 @@ import { Box, Container, Alert, Snackbar } from '@mui/material';
 
 // コンポーネント
 import Header from './components/Header/Header';
-import MapMinimal from './components/Map/MapMinimal';
+import MapEnhanced from './components/Map/MapEnhanced';
 import MapErrorBoundary from './components/Map/MapErrorBoundary';
 import Sidebar from './components/Sidebar/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -418,7 +418,7 @@ function App() {
             overflow: 'hidden'
           }}>
             <MapErrorBoundary>
-              <MapMinimal
+              <MapEnhanced
                 viewport={viewport}
                 onViewportChange={setViewport}
                 heatmapData={heatmapData}
@@ -426,6 +426,7 @@ function App() {
                 mobilityData={mobilityData}
                 accommodationData={accommodationData}
                 consumptionData={consumptionData}
+                landmarkData={null}
                 selectedLayers={selectedLayers}
                 selectedCategories={selectedCategories}
                 loading={loading}

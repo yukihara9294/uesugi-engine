@@ -336,26 +336,120 @@ const Dashboard = ({
           {/* 気象情報サマリー */}
           {weatherData && (
             <Grid item xs={12}>
-              <Card sx={{ background: 'rgba(255, 255, 255, 0.02)' }}>
+              <Card sx={{ 
+                background: 'linear-gradient(135deg, rgba(255, 165, 0, 0.1) 0%, rgba(255, 140, 0, 0.1) 100%)',
+                border: '1px solid rgba(255, 165, 0, 0.3)',
+                borderRadius: 3,
+              }}>
                 <CardContent>
-                  <Typography variant="h6" sx={{ mb: 2 }}>
-                    気象サマリー
-                  </Typography>
-                  {weatherData.average_temperature && (
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      平均気温: {weatherData.average_temperature.toFixed(1)}°C
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                    <WbSunny sx={{ mr: 1.5, color: '#FFA500', fontSize: 24 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      広島県の天気
                     </Typography>
+                  </Box>
+                  
+                  {/* 現在の気象状況 */}
+                  {weatherData.current_weather && weatherData.current_weather.length > 0 && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 2, color: '#FFA500', fontWeight: 600 }}>
+                        現在の気象状況
+                      </Typography>
+                      <List dense sx={{ maxHeight: 200, overflow: 'auto' }}>
+                        {weatherData.current_weather.slice(0, 5).map((weather, index) => (
+                          <ListItem 
+                            key={index}
+                            sx={{ 
+                              px: 2,
+                              py: 1,
+                              mb: 1,
+                              borderRadius: 2,
+                              background: 'rgba(255, 165, 0, 0.05)',
+                              border: '1px solid rgba(255, 165, 0, 0.1)',
+                              '&:hover': {
+                                background: 'rgba(255, 165, 0, 0.1)',
+                              }
+                            }}
+                          >
+                            <ListItemText
+                              primary={
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {weather.landmark_name}
+                                </Typography>
+                              }
+                              secondary={
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
+                                  <Chip 
+                                    label={`${weather.temperature}°C`}
+                                    size="small"
+                                    sx={{ 
+                                      height: 20,
+                                      fontSize: '0.75rem',
+                                      bgcolor: 'rgba(255, 165, 0, 0.2)',
+                                      color: '#FFA500'
+                                    }}
+                                  />
+                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    {weather.weather_condition}
+                                  </Typography>
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Box>
                   )}
-                  {weatherData.dominant_condition && (
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      主な天候: {weatherData.dominant_condition}
+                  
+                  {/* 気象サマリー */}
+                  <Box sx={{ 
+                    p: 2, 
+                    borderRadius: 2,
+                    background: 'rgba(255, 165, 0, 0.05)',
+                    border: '1px solid rgba(255, 165, 0, 0.2)'
+                  }}>
+                    <Typography variant="subtitle2" sx={{ mb: 2, color: '#FFA500', fontWeight: 600 }}>
+                      気象サマリー
                     </Typography>
-                  )}
-                  {weatherData.total_precipitation && (
-                    <Typography variant="body2">
-                      降水量: {weatherData.total_precipitation}mm
-                    </Typography>
-                  )}
+                    <Grid container spacing={2}>
+                      {weatherData.average_temperature && (
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="h5" sx={{ color: '#FFA500', fontWeight: 700 }}>
+                              {weatherData.average_temperature.toFixed(1)}°C
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              平均気温
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                      {weatherData.total_precipitation !== undefined && (
+                        <Grid item xs={6}>
+                          <Box sx={{ textAlign: 'center' }}>
+                            <Typography variant="h5" sx={{ color: '#2196F3', fontWeight: 700 }}>
+                              {weatherData.total_precipitation}mm
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              降水量
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      )}
+                    </Grid>
+                    {weatherData.dominant_condition && (
+                      <Box sx={{ mt: 2, textAlign: 'center' }}>
+                        <Chip 
+                          label={weatherData.dominant_condition}
+                          sx={{ 
+                            bgcolor: 'rgba(255, 165, 0, 0.2)',
+                            color: '#FFA500',
+                            fontWeight: 500
+                          }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
                 </CardContent>
               </Card>
             </Grid>
