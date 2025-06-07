@@ -30,6 +30,7 @@ const Map = ({
   const map = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapboxError, setMapboxError] = useState(null);
+  const errorCountRef = useRef({});
 
   // Mapboxの初期化
   useEffect(() => {
@@ -45,8 +46,6 @@ const Map = ({
     // アクセストークンをグローバルに保存
     window.MAPBOX_ACCESS_TOKEN = MAPBOX_TOKEN;
     
-    // エラーカウント用のrefを追加
-    const errorCountRef = useRef({});
     const MAX_ERROR_LOG = 3; // 同じエラーは3回までログ出力
     
     // グローバルエラーハンドラーを設定（Mapbox内部エラーをキャッチ）
