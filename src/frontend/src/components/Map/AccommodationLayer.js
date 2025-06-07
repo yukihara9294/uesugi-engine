@@ -16,7 +16,7 @@ const AccommodationLayer = ({ map, data, visible }) => {
     // データが正しい形式かチェック
     const facilitiesData = data.facilities || data;
     if (!Array.isArray(facilitiesData)) {
-      console.error('Accommodation data is not in expected format:', data);
+      console.error('AccommodationLayer: Data is not in expected format:', data);
       return;
     }
 
@@ -167,48 +167,46 @@ const AccommodationLayer = ({ map, data, visible }) => {
         map.getCanvas().style.cursor = '';
         popup.remove();
       });
-    } catch (error) {
-      console.error('AccommodationLayer - Error adding layers:', error);
-    }
 
-    // データを更新
-    console.log('AccommodationLayer - Processing facilities data:', facilitiesData.length, 'items');
-    const features = facilitiesData.map(item => ({
-      type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: [
-          item.location?.lon || item.longitude || 0,
-          item.location?.lat || item.latitude || 0
-        ]
-      },
-      properties: {
-        name: item.facility_name || item.name || '宿泊施設',
-        type: item.facility_type || item.type || '宿泊施設',
-        occupancy_rate: item.occupancy_rate || 0,
-        avg_price: item.average_price || item.avg_price || 0,
-        room_count: item.total_rooms || item.room_count || 0,
-        rating: item.rating,
-        total_guests: item.total_guests || 0,
-        area: item.area || ''
-      }
-    }));
+      console.log('AccommodationLayer - Layers added successfully');
 
-    console.log('AccommodationLayer - Features created:', features.length);
-    console.log('AccommodationLayer - Sample feature:', features[0]);
-    
-    map.getSource('accommodation-source').setData({
-      type: 'FeatureCollection',
-      features
-    });
-    console.log('AccommodationLayer - Data set to source');
+      // データを更新
+      const features = facilitiesData.map(item => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [
+            item.location?.lon || item.longitude || 0,
+            item.location?.lat || item.latitude || 0
+          ]
+        },
+        properties: {
+          name: item.facility_name || item.name || '宿泊施設',
+          type: item.facility_type || item.type || '宿泊施設',
+          occupancy_rate: item.occupancy_rate || 0,
+          avg_price: item.average_price || item.avg_price || 0,
+          room_count: item.total_rooms || item.room_count || 0,
+          rating: item.rating,
+          total_guests: item.total_guests || 0,
+          area: item.area || ''
+        }
+      }));
 
-    // レイヤーの表示/非表示
-    map.setLayoutProperty('accommodation-glow', 'visibility', visible ? 'visible' : 'none');
-    map.setLayoutProperty('accommodation-points', 'visibility', visible ? 'visible' : 'none');
-    map.setLayoutProperty('accommodation-labels', 'visibility', visible ? 'visible' : 'none');
-    
-    console.log('AccommodationLayer: Successfully updated with visibility:', visible);
+      console.log('AccommodationLayer - Features created:', features.length);
+      console.log('AccommodationLayer - Sample feature:', features[0]);
+      
+      map.getSource('accommodation-source').setData({
+        type: 'FeatureCollection',
+        features
+      });
+      console.log('AccommodationLayer - Data set to source');
+
+      // レイヤーの表示/非表示
+      map.setLayoutProperty('accommodation-glow', 'visibility', visible ? 'visible' : 'none');
+      map.setLayoutProperty('accommodation-points', 'visibility', visible ? 'visible' : 'none');
+      map.setLayoutProperty('accommodation-labels', 'visibility', visible ? 'visible' : 'none');
+      
+      console.log('AccommodationLayer: Successfully updated with visibility:', visible);
 
     } catch (error) {
       console.error('AccommodationLayer: Error updating layers:', error);
