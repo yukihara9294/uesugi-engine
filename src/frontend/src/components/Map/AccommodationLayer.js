@@ -16,6 +16,20 @@ const AccommodationLayer = ({ map, data, visible }) => {
       return;
     }
 
+    // 既存のレイヤーをクリーンアップ
+    if (map.getLayer('accommodation-glow')) {
+      map.removeLayer('accommodation-glow');
+    }
+    if (map.getLayer('accommodation-points')) {
+      map.removeLayer('accommodation-points');
+    }
+    if (map.getLayer('accommodation-labels')) {
+      map.removeLayer('accommodation-labels');
+    }
+    if (map.getSource('accommodation-source')) {
+      map.removeSource('accommodation-source');
+    }
+
     // 宿泊施設をポイントとして表示するソースを追加
     if (!map.getSource('accommodation-source')) {
       map.addSource('accommodation-source', {
@@ -26,9 +40,9 @@ const AccommodationLayer = ({ map, data, visible }) => {
         }
       });
 
-      // 宿泊施設のポイントレイヤー
+      // 宿泊施設のポイントレイヤー（外側のグロー効果）
       map.addLayer({
-        id: 'accommodation-points',
+        id: 'accommodation-glow',
         type: 'circle',
         source: 'accommodation-source',
         paint: {
@@ -36,9 +50,9 @@ const AccommodationLayer = ({ map, data, visible }) => {
             'interpolate',
             ['linear'],
             ['get', 'occupancy_rate'],
-            0, 8,
-            50, 12,
-            100, 16
+            0, 20,
+            50, 28,
+            100, 35
           ],
           'circle-color': [
             'interpolate',
@@ -49,10 +63,38 @@ const AccommodationLayer = ({ map, data, visible }) => {
             80, '#FF5722',     // 高稼働率：オレンジ
             100, '#F44336'     // 満室：赤
           ],
-          'circle-opacity': 0.8,
-          'circle-stroke-width': 2,
+          'circle-opacity': 0.2,
+          'circle-blur': 1
+        }
+      });
+
+      // 宿泊施設のポイントレイヤー（メイン）
+      map.addLayer({
+        id: 'accommodation-points',
+        type: 'circle',
+        source: 'accommodation-source',
+        paint: {
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['get', 'occupancy_rate'],
+            0, 12,
+            50, 16,
+            100, 20
+          ],
+          'circle-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'occupancy_rate'],
+            0, '#4CAF50',      // 低稼働率：緑
+            50, '#FFC107',     // 中稼働率：黄色
+            80, '#FF5722',     // 高稼働率：オレンジ
+            100, '#F44336'     // 満室：赤
+          ],
+          'circle-opacity': 0.9,
+          'circle-stroke-width': 3,
           'circle-stroke-color': '#ffffff',
-          'circle-stroke-opacity': 0.6
+          'circle-stroke-opacity': 0.9
         }
       });
 
@@ -148,6 +190,7 @@ const AccommodationLayer = ({ map, data, visible }) => {
     });
 
     // レイヤーの表示/非表示
+    map.setLayoutProperty('accommodation-glow', 'visibility', visible ? 'visible' : 'none');
     map.setLayoutProperty('accommodation-points', 'visibility', visible ? 'visible' : 'none');
     map.setLayoutProperty('accommodation-labels', 'visibility', visible ? 'visible' : 'none');
 

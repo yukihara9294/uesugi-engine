@@ -6,6 +6,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import CyberFlowLayer from './CyberFlowLayer';
 import AccommodationLayer from './AccommodationLayer';
+import LayerStatus from './LayerStatus';
 
 const Map = ({ 
   viewport, 
@@ -208,6 +209,8 @@ const Map = ({
   // ヒートマップデータの更新
   useEffect(() => {
     if (!mapLoaded || !map.current || !heatmapData) return;
+    
+    const showHeatmap = selectedLayers.includes('heatmap');
 
     try {
       // 既存のレイヤーとソースを削除
@@ -294,13 +297,21 @@ const Map = ({
         }
       });
 
-      console.log(`Heatmap updated with ${heatmapData.features?.length || 0} points`);
+      // レイヤーの表示/非表示を設定
+      if (map.current.getLayer('heatmap-layer')) {
+        map.current.setLayoutProperty('heatmap-layer', 'visibility', showHeatmap ? 'visible' : 'none');
+      }
+      if (map.current.getLayer('heatmap-points')) {
+        map.current.setLayoutProperty('heatmap-points', 'visibility', showHeatmap ? 'visible' : 'none');
+      }
+
+      console.log(`Heatmap updated with ${heatmapData.features?.length || 0} points, visible: ${showHeatmap}`);
       
     } catch (error) {
       console.error('Failed to update heatmap:', error);
       if (onError) onError(error);
     }
-  }, [mapLoaded, heatmapData, selectedCategories]);
+  }, [mapLoaded, heatmapData, selectedCategories, selectedLayers]);
 
   // 気象データの表示
   useEffect(() => {
@@ -424,6 +435,15 @@ const Map = ({
           visible={selectedLayers.includes('accommodation')}
         />
       )}
+      
+      {/* レイヤー状態表示（デバッグ用） */}
+      <LayerStatus
+        selectedLayers={selectedLayers}
+        heatmapData={heatmapData}
+        weatherData={weatherData}
+        mobilityData={mobilityData}
+        accommodationData={accommodationData}
+      />
     </Box>
   );
 };
