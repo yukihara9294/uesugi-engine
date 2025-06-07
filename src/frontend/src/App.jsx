@@ -10,7 +10,8 @@ import { Box, Container, Alert, Snackbar } from '@mui/material';
 
 // コンポーネント
 import Header from './components/Header/Header';
-import Map from './components/Map/Map';
+import MapSimple from './components/Map/MapSimple';
+import MapErrorBoundary from './components/Map/MapErrorBoundary';
 import Sidebar from './components/Sidebar/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 
@@ -416,19 +417,21 @@ function App() {
             position: 'relative',
             overflow: 'hidden'
           }}>
-            <Map
-              viewport={viewport}
-              onViewportChange={setViewport}
-              heatmapData={heatmapData}
-              weatherData={weatherData}
-              mobilityData={mobilityData}
-              accommodationData={accommodationData}
-              consumptionData={consumptionData}
-              selectedLayers={selectedLayers}
-              selectedCategories={selectedCategories}
-              loading={loading}
-              onError={(error) => handleError(error, 'Map')}
-            />
+            <MapErrorBoundary>
+              <MapSimple
+                viewport={viewport}
+                onViewportChange={setViewport}
+                heatmapData={heatmapData}
+                weatherData={weatherData}
+                mobilityData={mobilityData}
+                accommodationData={accommodationData}
+                consumptionData={consumptionData}
+                selectedLayers={selectedLayers}
+                selectedCategories={selectedCategories}
+                loading={loading}
+                onError={(error) => handleError(error, 'Map')}
+              />
+            </MapErrorBoundary>
           </Box>
           
           {/* ダッシュボード */}
