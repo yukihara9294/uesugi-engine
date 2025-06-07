@@ -5,7 +5,7 @@
 import React from 'react';
 import { Box, Paper, Typography, Chip } from '@mui/material';
 
-const LayerStatus = ({ selectedLayers, heatmapData, weatherData, mobilityData, accommodationData }) => {
+const LayerStatus = ({ selectedLayers, heatmapData, weatherData, mobilityData, accommodationData, consumptionData }) => {
   const layers = [
     {
       id: 'heatmap',
@@ -16,7 +16,7 @@ const LayerStatus = ({ selectedLayers, heatmapData, weatherData, mobilityData, a
     {
       id: 'weather',
       label: '気象データ',
-      dataCount: weatherData?.length || 0,
+      dataCount: weatherData?.current_weather?.length || 0,
       dataLabel: '地点'
     },
     {
@@ -30,6 +30,12 @@ const LayerStatus = ({ selectedLayers, heatmapData, weatherData, mobilityData, a
       label: '宿泊施設',
       dataCount: accommodationData?.facilities?.length || 0,
       dataLabel: '施設'
+    },
+    {
+      id: 'consumption',
+      label: '消費データ',
+      dataCount: consumptionData?.top_stores?.length || 0,
+      dataLabel: '店舗'
     }
   ];
 

@@ -119,7 +119,7 @@ function App() {
   const [viewport, setViewport] = useState(HIROSHIMA_CENTER);
   
   // フィルタ・表示設定
-  const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather', 'accommodation']);
+  const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather', 'accommodation', 'consumption']);
   const [selectedCategories, setSelectedCategories] = useState(['観光', 'グルメ']);
   const [timeRange, setTimeRange] = useState({
     start: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24時間前

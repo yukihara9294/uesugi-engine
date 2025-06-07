@@ -30,6 +30,7 @@ import {
   ThermostatAuto,
   Place,
   Hotel,
+  ShoppingCart,
 } from '@mui/icons-material';
 
 const Sidebar = ({
@@ -49,6 +50,7 @@ const Sidebar = ({
     { id: 'mobility', label: '人流データ', icon: <MapIcon />, color: '#3498db' },
     { id: 'landmarks', label: 'ランドマーク', icon: <Place />, color: '#FF6B6B' },
     { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#FF5722' },
+    { id: 'consumption', label: '消費データ', icon: <ShoppingCart />, color: '#FFE66D' },
   ];
 
   const categories = [

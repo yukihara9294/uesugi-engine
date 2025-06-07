@@ -8,6 +8,7 @@ import CyberFlowLayer from './CyberFlowLayer';
 import RichAccommodationLayer from './RichAccommodationLayer';
 import WeatherLayer from './WeatherLayer';
 import LandmarkLayer from './LandmarkLayer';
+import ConsumptionLayer from './ConsumptionLayer';
 import LayerStatus from './LayerStatus';
 import HeatmapLegend from './HeatmapLegend';
 import MapErrorBoundary from './MapErrorBoundary';
@@ -642,6 +643,15 @@ const Map = ({
         />
       )}
       
+      {/* 消費データレイヤー */}
+      {mapLoaded && map.current && consumptionData && (
+        <ConsumptionLayer
+          map={map.current}
+          data={consumptionData}
+          visible={selectedLayers.includes('consumption')}
+        />
+      )}
+      
       {/* ヒートマップ凡例 */}
       <HeatmapLegend
         visible={selectedLayers.includes('heatmap')}
@@ -655,6 +665,7 @@ const Map = ({
         weatherData={weatherData}
         mobilityData={mobilityData}
         accommodationData={accommodationData}
+        consumptionData={consumptionData}
       />
     </Box>
   );
