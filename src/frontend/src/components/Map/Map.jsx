@@ -222,7 +222,19 @@ const Map = ({
       try {
         map.current = new window.mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/dark-v11',
+          style: {
+            version: 8,
+            sources: {},
+            layers: [
+              {
+                id: 'background',
+                type: 'background',
+                paint: {
+                  'background-color': '#0a0a0a'
+                }
+              }
+            ]
+          },
           center: [viewport.longitude, viewport.latitude],
           zoom: viewport.zoom,
           pitch: 45,
@@ -231,10 +243,41 @@ const Map = ({
           antialias: true,
           preserveDrawingBuffer: false,
           refreshExpiredTiles: false,
-          maxTileCacheSize: 50
+          maxTileCacheSize: 50,
+          trackResize: false,
+          renderWorldCopies: false
         });
 
         map.current.on('load', () => {
+          // 広島県の境界線を追加
+          map.current.addSource('hiroshima-boundary', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [[
+                  [131.5, 33.8],
+                  [133.5, 33.8],
+                  [133.5, 35.0],
+                  [131.5, 35.0],
+                  [131.5, 33.8]
+                ]]
+              }
+            }
+          });
+
+          map.current.addLayer({
+            id: 'hiroshima-boundary-line',
+            type: 'line',
+            source: 'hiroshima-boundary',
+            paint: {
+              'line-color': '#667eea',
+              'line-width': 2,
+              'line-opacity': 0.3
+            }
+          });
+
           // 少し遅延を入れてからロード完了とする
           setTimeout(() => {
             setMapLoaded(true);
@@ -318,7 +361,19 @@ const Map = ({
       try {
         map.current = new window.mapboxgl.Map({
           container: mapContainer.current,
-          style: 'mapbox://styles/mapbox/dark-v11',
+          style: {
+            version: 8,
+            sources: {},
+            layers: [
+              {
+                id: 'background',
+                type: 'background',
+                paint: {
+                  'background-color': '#0a0a0a'
+                }
+              }
+            ]
+          },
           center: [viewport.longitude, viewport.latitude],
           zoom: viewport.zoom,
           pitch: 45,
@@ -327,10 +382,41 @@ const Map = ({
           antialias: true,
           preserveDrawingBuffer: false,
           refreshExpiredTiles: false,
-          maxTileCacheSize: 50
+          maxTileCacheSize: 50,
+          trackResize: false,
+          renderWorldCopies: false
         });
 
         map.current.on('load', () => {
+          // 広島県の境界線を追加
+          map.current.addSource('hiroshima-boundary', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              geometry: {
+                type: 'Polygon',
+                coordinates: [[
+                  [131.5, 33.8],
+                  [133.5, 33.8],
+                  [133.5, 35.0],
+                  [131.5, 35.0],
+                  [131.5, 33.8]
+                ]]
+              }
+            }
+          });
+
+          map.current.addLayer({
+            id: 'hiroshima-boundary-line',
+            type: 'line',
+            source: 'hiroshima-boundary',
+            paint: {
+              'line-color': '#667eea',
+              'line-width': 2,
+              'line-opacity': 0.3
+            }
+          });
+
           // 少し遅延を入れてからロード完了とする
           setTimeout(() => {
             setMapLoaded(true);
