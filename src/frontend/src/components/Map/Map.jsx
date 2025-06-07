@@ -5,6 +5,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import CyberFlowLayer from './CyberFlowLayer';
+import AccommodationLayer from './AccommodationLayer';
 
 const Map = ({ 
   viewport, 
@@ -12,6 +13,8 @@ const Map = ({
   heatmapData, 
   weatherData,
   mobilityData,
+  accommodationData,
+  consumptionData,
   selectedLayers, 
   selectedCategories,
   loading,
@@ -410,6 +413,15 @@ const Map = ({
           map={map.current} 
           mobilityData={mobilityData}
           visible={selectedLayers.includes('mobility')}
+        />
+      )}
+      
+      {/* 宿泊施設レイヤー */}
+      {mapLoaded && map.current && accommodationData && (
+        <AccommodationLayer
+          map={map.current}
+          data={accommodationData}
+          visible={selectedLayers.includes('accommodation')}
         />
       )}
     </Box>

@@ -414,6 +414,8 @@ function App() {
               heatmapData={heatmapData}
               weatherData={weatherData}
               mobilityData={mobilityData}
+              accommodationData={accommodationData}
+              consumptionData={consumptionData}
               selectedLayers={selectedLayers}
               selectedCategories={selectedCategories}
               loading={loading}

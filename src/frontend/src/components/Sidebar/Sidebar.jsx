@@ -29,6 +29,7 @@ import {
   Map as MapIcon,
   ThermostatAuto,
   Place,
+  Hotel,
 } from '@mui/icons-material';
 
 const Sidebar = ({
@@ -47,6 +48,7 @@ const Sidebar = ({
     { id: 'weather', label: '気象データ', icon: <WbSunny />, color: '#4CAF50' },
     { id: 'mobility', label: '人流データ', icon: <MapIcon />, color: '#3498db' },
     { id: 'landmarks', label: 'ランドマーク', icon: <Place />, color: '#FF6B6B' },
+    { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#FF5722' },
   ];
 
   const categories = [
