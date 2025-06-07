@@ -45,6 +45,10 @@ const Map = ({
     // アクセストークンをグローバルに保存
     window.MAPBOX_ACCESS_TOKEN = MAPBOX_TOKEN;
     
+    // エラーカウント用のrefを追加
+    const errorCountRef = useRef({});
+    const MAX_ERROR_LOG = 3; // 同じエラーは3回までログ出力
+    
     // グローバルエラーハンドラーを設定（Mapbox内部エラーをキャッチ）
     const handleGlobalError = (event) => {
       try {
@@ -55,7 +59,21 @@ const Map = ({
         if (errorMessage.includes("Cannot read properties of undefined (reading 'sub')") ||
             errorMessage.includes("handleError") ||
             (event?.filename && event.filename.includes('mapbox-gl'))) {
-          console.warn('Caught Mapbox internal error:', errorMessage);
+          
+          // エラーの種類でカウント
+          const errorKey = errorMessage.substring(0, 50);
+          if (!errorCountRef.current[errorKey]) {
+            errorCountRef.current[errorKey] = 0;
+          }
+          errorCountRef.current[errorKey]++;
+          
+          // 最初の数回だけログ出力
+          if (errorCountRef.current[errorKey] <= MAX_ERROR_LOG) {
+            console.warn(`Caught Mapbox internal error (${errorCountRef.current[errorKey]}/${MAX_ERROR_LOG}):`, errorMessage.substring(0, 100) + '...');
+          } else if (errorCountRef.current[errorKey] === MAX_ERROR_LOG + 1) {
+            console.warn('Suppressing further Mapbox internal errors of this type...');
+          }
+          
           event.preventDefault(); // エラーの伝播を防ぐ
           return;
         }
@@ -63,12 +81,10 @@ const Map = ({
         // スタックトレースもチェック
         const stack = event?.error?.stack || '';
         if (stack.includes('mapbox-gl') && stack.includes('handleError')) {
-          console.warn('Caught Mapbox internal error from stack trace');
           event.preventDefault();
         }
       } catch (e) {
         // エラーハンドラー自体でのエラーは無視
-        console.warn('Error in global error handler:', e);
       }
     };
     
@@ -208,12 +224,20 @@ const Map = ({
           center: [viewport.longitude, viewport.latitude],
           zoom: viewport.zoom,
           pitch: 45,
-          bearing: 0
+          bearing: 0,
+          // パフォーマンス最適化
+          antialias: true,
+          preserveDrawingBuffer: false,
+          refreshExpiredTiles: false,
+          maxTileCacheSize: 50
         });
 
         map.current.on('load', () => {
-          setMapLoaded(true);
-          console.log('Mapbox map loaded successfully');
+          // 少し遅延を入れてからロード完了とする
+          setTimeout(() => {
+            setMapLoaded(true);
+            console.log('Mapbox map loaded successfully');
+          }, 100);
         });
 
         map.current.on('move', () => {
@@ -296,12 +320,20 @@ const Map = ({
           center: [viewport.longitude, viewport.latitude],
           zoom: viewport.zoom,
           pitch: 45,
-          bearing: 0
+          bearing: 0,
+          // パフォーマンス最適化
+          antialias: true,
+          preserveDrawingBuffer: false,
+          refreshExpiredTiles: false,
+          maxTileCacheSize: 50
         });
 
         map.current.on('load', () => {
-          setMapLoaded(true);
-          console.log('Mapbox map loaded successfully');
+          // 少し遅延を入れてからロード完了とする
+          setTimeout(() => {
+            setMapLoaded(true);
+            console.log('Mapbox map loaded successfully');
+          }, 100);
         });
 
         map.current.on('move', () => {

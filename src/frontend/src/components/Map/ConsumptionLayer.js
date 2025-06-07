@@ -209,6 +209,11 @@ const ConsumptionLayer = ({ map, data, visible }) => {
       }
 
       // ホバー時のポップアップ
+      if (!window.mapboxgl || !window.mapboxgl.Popup) {
+        console.warn('ConsumptionLayer: Mapbox GL Popup not available');
+        return;
+      }
+      
       const popup = new window.mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,
