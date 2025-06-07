@@ -119,7 +119,7 @@ function App() {
   const [viewport, setViewport] = useState(HIROSHIMA_CENTER);
   
   // フィルタ・表示設定
-  const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather']);
+  const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather', 'accommodation']);
   const [selectedCategories, setSelectedCategories] = useState(['観光', 'グルメ']);
   const [timeRange, setTimeRange] = useState({
     start: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24時間前
@@ -224,6 +224,7 @@ function App() {
   const loadWeatherData = async () => {
     try {
       const data = await weatherService.getLandmarksWeather();
+      console.log('App - Weather data loaded:', data);
       setWeatherData(data);
       return data;
     } catch (error) {
@@ -282,6 +283,7 @@ function App() {
       const data = await mobilityService.getAccommodation({
         date: new Date().toISOString(),
       });
+      console.log('App - Accommodation data loaded:', data);
       setAccommodationData(data);
       return data;
     } catch (error) {

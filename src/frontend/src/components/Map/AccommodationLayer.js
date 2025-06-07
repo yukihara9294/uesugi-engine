@@ -7,7 +7,11 @@ import React, { useEffect } from 'react';
 
 const AccommodationLayer = ({ map, data, visible }) => {
   useEffect(() => {
-    if (!map || !data || !visible) return;
+    console.log('AccommodationLayer - map exists:', !!map);
+    console.log('AccommodationLayer - data:', data);
+    console.log('AccommodationLayer - visible:', visible);
+    
+    if (!map || !data) return;
 
     // データが正しい形式かチェック
     const facilitiesData = data.facilities || data;
@@ -16,22 +20,24 @@ const AccommodationLayer = ({ map, data, visible }) => {
       return;
     }
 
-    // 既存のレイヤーをクリーンアップ
-    if (map.getLayer('accommodation-glow')) {
-      map.removeLayer('accommodation-glow');
-    }
-    if (map.getLayer('accommodation-points')) {
-      map.removeLayer('accommodation-points');
-    }
-    if (map.getLayer('accommodation-labels')) {
-      map.removeLayer('accommodation-labels');
-    }
-    if (map.getSource('accommodation-source')) {
-      map.removeSource('accommodation-source');
-    }
+    try {
+      // 既存のレイヤーをクリーンアップ
+      if (map.getLayer('accommodation-glow')) {
+        map.removeLayer('accommodation-glow');
+      }
+      if (map.getLayer('accommodation-points')) {
+        map.removeLayer('accommodation-points');
+      }
+      if (map.getLayer('accommodation-labels')) {
+        map.removeLayer('accommodation-labels');
+      }
+      if (map.getSource('accommodation-source')) {
+        map.removeSource('accommodation-source');
+      }
 
-    // 宿泊施設をポイントとして表示するソースを追加
-    if (!map.getSource('accommodation-source')) {
+      // 宿泊施設をポイントとして表示するソースを追加
+      console.log('AccommodationLayer - Adding source and layers...');
+      
       map.addSource('accommodation-source', {
         type: 'geojson',
         data: {
@@ -39,6 +45,7 @@ const AccommodationLayer = ({ map, data, visible }) => {
           features: []
         }
       });
+      console.log('AccommodationLayer - Source added');
 
       // 宿泊施設のポイントレイヤー（外側のグロー効果）
       map.addLayer({
@@ -160,9 +167,12 @@ const AccommodationLayer = ({ map, data, visible }) => {
         map.getCanvas().style.cursor = '';
         popup.remove();
       });
+    } catch (error) {
+      console.error('AccommodationLayer - Error adding layers:', error);
     }
 
     // データを更新
+    console.log('AccommodationLayer - Processing facilities data:', facilitiesData.length, 'items');
     const features = facilitiesData.map(item => ({
       type: 'Feature',
       geometry: {
@@ -184,15 +194,25 @@ const AccommodationLayer = ({ map, data, visible }) => {
       }
     }));
 
+    console.log('AccommodationLayer - Features created:', features.length);
+    console.log('AccommodationLayer - Sample feature:', features[0]);
+    
     map.getSource('accommodation-source').setData({
       type: 'FeatureCollection',
       features
     });
+    console.log('AccommodationLayer - Data set to source');
 
     // レイヤーの表示/非表示
     map.setLayoutProperty('accommodation-glow', 'visibility', visible ? 'visible' : 'none');
     map.setLayoutProperty('accommodation-points', 'visibility', visible ? 'visible' : 'none');
     map.setLayoutProperty('accommodation-labels', 'visibility', visible ? 'visible' : 'none');
+    
+    console.log('AccommodationLayer: Successfully updated with visibility:', visible);
+
+    } catch (error) {
+      console.error('AccommodationLayer: Error updating layers:', error);
+    }
 
   }, [map, data, visible]);
 

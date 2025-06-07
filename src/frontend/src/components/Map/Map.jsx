@@ -6,6 +6,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import CyberFlowLayer from './CyberFlowLayer';
 import AccommodationLayer from './AccommodationLayer';
+import LandmarkLayer from './LandmarkLayer';
 import LayerStatus from './LayerStatus';
 
 const Map = ({ 
@@ -315,6 +316,11 @@ const Map = ({
 
   // 気象データの表示
   useEffect(() => {
+    console.log('Weather Layer - mapLoaded:', mapLoaded);
+    console.log('Weather Layer - map exists:', !!map.current);
+    console.log('Weather Layer - weatherData:', weatherData);
+    console.log('Weather Layer - should display:', selectedLayers.includes('weather'));
+    
     if (!mapLoaded || !map.current || !weatherData || !selectedLayers.includes('weather')) return;
 
     try {
@@ -327,9 +333,13 @@ const Map = ({
       }
 
       // 気象データをGeoJSONに変換
+      const weatherArray = weatherData.current_weather || weatherData;
+      console.log('Weather Layer - weather data structure:', weatherData);
+      console.log('Weather Layer - weather array:', weatherArray);
+      
       const weatherGeoJSON = {
         type: 'FeatureCollection',
-        features: weatherData.current_weather?.map(weather => ({
+        features: (Array.isArray(weatherArray) ? weatherArray : []).map(weather => ({
           type: 'Feature',
           geometry: {
             type: 'Point',
@@ -342,6 +352,8 @@ const Map = ({
           }
         })) || []
       };
+      console.log('Weather Layer - GeoJSON features:', weatherGeoJSON.features.length);
+      console.log('Weather Layer - Sample feature:', weatherGeoJSON.features[0]);
 
       map.current.addSource('weather-data', {
         type: 'geojson',
@@ -364,6 +376,8 @@ const Map = ({
           'text-halo-width': 1
         }
       });
+      
+      console.log('Weather Layer - Layer added successfully');
 
     } catch (error) {
       console.error('Failed to update weather layer:', error);
@@ -433,6 +447,14 @@ const Map = ({
           map={map.current}
           data={accommodationData}
           visible={selectedLayers.includes('accommodation')}
+        />
+      )}
+      
+      {/* ランドマークレイヤー */}
+      {mapLoaded && map.current && (
+        <LandmarkLayer
+          map={map.current}
+          visible={selectedLayers.includes('landmarks')}
         />
       )}
       
