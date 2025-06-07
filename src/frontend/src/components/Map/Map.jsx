@@ -34,6 +34,9 @@ const Map = ({
 
   // Mapboxの初期化
   useEffect(() => {
+    // 既にマップが初期化されている場合はスキップ
+    if (map.current) return;
+    
     const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
     console.log('Mapbox Token available:', !!MAPBOX_TOKEN);
     console.log('Token length:', MAPBOX_TOKEN?.length);
@@ -414,7 +417,7 @@ const Map = ({
         document.head.removeChild(script);
       }
     };
-  }, []);
+  }, []); // 空の依存配列で初回のみ実行
 
   // ヒートマップデータの更新
   useEffect(() => {
