@@ -9,6 +9,13 @@ const AccommodationLayer = ({ map, data, visible }) => {
   useEffect(() => {
     if (!map || !data || !visible) return;
 
+    // データが正しい形式かチェック
+    const facilitiesData = data.facilities || data;
+    if (!Array.isArray(facilitiesData)) {
+      console.error('Accommodation data is not in expected format:', data);
+      return;
+    }
+
     // 宿泊施設をポイントとして表示するソースを追加
     if (!map.getSource('accommodation-source')) {
       map.addSource('accommodation-source', {
@@ -95,7 +102,8 @@ const AccommodationLayer = ({ map, data, visible }) => {
               タイプ: ${properties.type}<br/>
               稼働率: ${Math.round(properties.occupancy_rate)}%<br/>
               平均価格: ¥${properties.avg_price?.toLocaleString()}/泊<br/>
-              客室数: ${properties.room_count}室<br/>
+              客室数: ${properties.room_count || '不明'}室<br/>
+              ゲスト数: ${properties.total_guests || 0}人<br/>
               ${properties.rating ? `評価: ${properties.rating}/5` : ''}
             </p>
           </div>
@@ -113,19 +121,24 @@ const AccommodationLayer = ({ map, data, visible }) => {
     }
 
     // データを更新
-    const features = data.map(item => ({
+    const features = facilitiesData.map(item => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
-        coordinates: [item.longitude, item.latitude]
+        coordinates: [
+          item.location?.lon || item.longitude || 0,
+          item.location?.lat || item.latitude || 0
+        ]
       },
       properties: {
-        name: item.name,
-        type: item.type || '宿泊施設',
+        name: item.facility_name || item.name || '宿泊施設',
+        type: item.facility_type || item.type || '宿泊施設',
         occupancy_rate: item.occupancy_rate || 0,
-        avg_price: item.avg_price || 0,
-        room_count: item.room_count || 0,
-        rating: item.rating
+        avg_price: item.average_price || item.avg_price || 0,
+        room_count: item.total_rooms || item.room_count || 0,
+        rating: item.rating,
+        total_guests: item.total_guests || 0,
+        area: item.area || ''
       }
     }));
 

@@ -256,7 +256,9 @@ async def get_accommodation_data(
                 "occupancy_rate": acc.occupancy_rate,
                 "total_guests": acc.total_guests,
                 "average_price": acc.average_price,
-                "domestic_ratio": (acc.domestic_guests / acc.total_guests) if acc.total_guests else 0
+                "domestic_ratio": (acc.domestic_guests / acc.total_guests) if acc.total_guests else 0,
+                "total_rooms": acc.total_rooms,
+                "occupied_rooms": acc.occupied_rooms
             })
         
         return {

@@ -34,6 +34,8 @@ class FacilityData(BaseModel):
     total_guests: int
     average_price: float
     domestic_ratio: float
+    total_rooms: Optional[int] = None
+    occupied_rooms: Optional[int] = None
 
 
 class AccommodationSummary(BaseModel):
