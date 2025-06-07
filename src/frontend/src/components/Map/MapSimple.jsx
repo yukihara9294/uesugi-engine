@@ -51,11 +51,15 @@ const MapSimple = ({
 
       const script = document.createElement('script');
       script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
-      script.onload = () => initializeMap(MAPBOX_TOKEN);
+      script.onload = () => {
+        // DOMが準備できるまで少し待つ
+        setTimeout(() => initializeMap(MAPBOX_TOKEN), 200);
+      };
       script.onerror = () => setMapboxError('Mapbox GLの読み込みに失敗しました');
       document.head.appendChild(script);
     } else {
-      initializeMap(MAPBOX_TOKEN);
+      // 既にMapboxがロードされている場合も少し待つ
+      setTimeout(() => initializeMap(MAPBOX_TOKEN), 200);
     }
 
     return () => {
@@ -68,6 +72,13 @@ const MapSimple = ({
 
   const initializeMap = (token) => {
     try {
+      // コンテナが存在することを確認
+      if (!mapContainer.current) {
+        console.error('Map container not ready');
+        setTimeout(() => initializeMap(token), 100);
+        return;
+      }
+      
       window.mapboxgl.accessToken = token;
       
       map.current = new window.mapboxgl.Map({
