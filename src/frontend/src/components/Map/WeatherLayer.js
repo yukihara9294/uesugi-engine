@@ -9,9 +9,13 @@ const WeatherLayer = ({ map, data, visible }) => {
   useEffect(() => {
     if (!map || !data) return;
 
-    const weatherArray = data.current_weather || data;
+    console.log('WeatherLayer: Received data:', data);
+    
+    // APIレスポンスの構造に対応
+    const weatherArray = data.current_weather || (Array.isArray(data) ? data : []);
     if (!Array.isArray(weatherArray)) {
-      console.error('WeatherLayer: Invalid data format');
+      console.error('WeatherLayer: Invalid data format, expected array but got:', typeof weatherArray);
+      console.error('WeatherLayer: Data structure:', data);
       return;
     }
 

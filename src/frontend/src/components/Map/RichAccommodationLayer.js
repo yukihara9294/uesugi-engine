@@ -11,9 +11,13 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
   useEffect(() => {
     if (!map || !data) return;
 
-    const facilitiesData = data.facilities || data;
+    console.log('RichAccommodationLayer: Received data:', data);
+    
+    // APIレスポンスの構造に対応
+    const facilitiesData = data.facilities || (Array.isArray(data) ? data : []);
     if (!Array.isArray(facilitiesData)) {
-      console.error('RichAccommodationLayer: Invalid data format');
+      console.error('RichAccommodationLayer: Invalid data format, expected array but got:', typeof facilitiesData);
+      console.error('RichAccommodationLayer: Data structure:', data);
       return;
     }
 

@@ -440,6 +440,7 @@ const Map = ({
       )}
       
       {/* 気象データレイヤー */}
+      {console.log('Map - WeatherLayer render check:', { mapLoaded, hasMap: !!map.current, hasWeatherData: !!weatherData, weatherDataStructure: weatherData })}
       {mapLoaded && map.current && weatherData && (
         <WeatherLayer
           map={map.current}
@@ -449,6 +450,7 @@ const Map = ({
       )}
       
       {/* 宿泊施設レイヤー（リッチ版） */}
+      {console.log('Map - RichAccommodationLayer render check:', { mapLoaded, hasMap: !!map.current, hasAccommodationData: !!accommodationData, accommodationDataStructure: accommodationData })}
       {mapLoaded && map.current && accommodationData && (
         <RichAccommodationLayer
           map={map.current}
