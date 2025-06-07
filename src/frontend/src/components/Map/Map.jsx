@@ -10,6 +10,7 @@ import WeatherLayer from './WeatherLayer';
 import LandmarkLayer from './LandmarkLayer';
 import LayerStatus from './LayerStatus';
 import HeatmapLegend from './HeatmapLegend';
+import MapErrorBoundary from './MapErrorBoundary';
 
 const Map = ({ 
   viewport, 
@@ -42,6 +43,40 @@ const Map = ({
 
     // アクセストークンをグローバルに保存
     window.MAPBOX_ACCESS_TOKEN = MAPBOX_TOKEN;
+    
+    // グローバルエラーハンドラーを設定（Mapbox内部エラーをキャッチ）
+    const handleGlobalError = (event) => {
+      try {
+        // エラーメッセージの安全な取得
+        const errorMessage = event?.error?.message || event?.message || '';
+        
+        // Mapbox内部エラーのパターンをチェック
+        if (errorMessage.includes("Cannot read properties of undefined (reading 'sub')") ||
+            errorMessage.includes("handleError") ||
+            (event?.filename && event.filename.includes('mapbox-gl'))) {
+          console.warn('Caught Mapbox internal error:', errorMessage);
+          event.preventDefault(); // エラーの伝播を防ぐ
+          return;
+        }
+        
+        // スタックトレースもチェック
+        const stack = event?.error?.stack || '';
+        if (stack.includes('mapbox-gl') && stack.includes('handleError')) {
+          console.warn('Caught Mapbox internal error from stack trace');
+          event.preventDefault();
+        }
+      } catch (e) {
+        // エラーハンドラー自体でのエラーは無視
+        console.warn('Error in global error handler:', e);
+      }
+    };
+    
+    window.addEventListener('error', handleGlobalError);
+    
+    // クリーンアップ時にイベントリスナーを削除
+    const cleanup = () => {
+      window.removeEventListener('error', handleGlobalError);
+    };
     
     // 既にMapboxが読み込まれているかチェック
     if (window.mapboxgl) {
@@ -103,23 +138,46 @@ const Map = ({
 
         map.current.on('error', (error) => {
           console.error('Mapbox error:', error);
+          
+          // エラーオブジェクトの存在チェック
+          if (!error) return;
+          
           // 特定のエラーは無視
-          if (error.error && error.error.message) {
-            const msg = error.error.message;
-            if (msg.includes('already a source') || 
-                msg.includes('does not exist') ||
-                msg.includes('Cannot read properties')) {
+          try {
+            // error.error.messageの安全なアクセス
+            const errorMessage = error?.error?.message || '';
+            if (errorMessage && (
+                errorMessage.includes('already a source') || 
+                errorMessage.includes('does not exist') ||
+                errorMessage.includes('Cannot read properties'))) {
               return;
             }
-          }
-          // Wtエラーも無視（Mapbox内部エラー）
-          if (error.toString && error.toString().includes('Wt')) {
+            
+            // error.messageの直接チェック
+            const directMessage = error?.message || '';
+            if (directMessage && (
+                directMessage.includes('already a source') || 
+                directMessage.includes('does not exist') ||
+                directMessage.includes('Cannot read properties'))) {
+              return;
+            }
+            
+            // toString()の安全な呼び出し
+            const errorString = typeof error.toString === 'function' ? error.toString() : String(error);
+            if (errorString.includes('Wt') || errorString.includes('Cannot read properties')) {
+              return;
+            }
+          } catch (e) {
+            // エラーオブジェクトへのアクセス中のエラーは無視
+            console.warn('Error while processing Mapbox error:', e);
             return;
           }
+          
           // マップが正常に動作している場合はエラーを表示しない
-          if (map.current && map.current.loaded()) {
+          if (map.current && typeof map.current.loaded === 'function' && map.current.loaded()) {
             return;
           }
+          
           setMapboxError('地図の読み込みでエラーが発生しました');
         });
 
@@ -166,23 +224,46 @@ const Map = ({
 
         map.current.on('error', (error) => {
           console.error('Mapbox error:', error);
+          
+          // エラーオブジェクトの存在チェック
+          if (!error) return;
+          
           // 特定のエラーは無視
-          if (error.error && error.error.message) {
-            const msg = error.error.message;
-            if (msg.includes('already a source') || 
-                msg.includes('does not exist') ||
-                msg.includes('Cannot read properties')) {
+          try {
+            // error.error.messageの安全なアクセス
+            const errorMessage = error?.error?.message || '';
+            if (errorMessage && (
+                errorMessage.includes('already a source') || 
+                errorMessage.includes('does not exist') ||
+                errorMessage.includes('Cannot read properties'))) {
               return;
             }
-          }
-          // Wtエラーも無視（Mapbox内部エラー）
-          if (error.toString && error.toString().includes('Wt')) {
+            
+            // error.messageの直接チェック
+            const directMessage = error?.message || '';
+            if (directMessage && (
+                directMessage.includes('already a source') || 
+                directMessage.includes('does not exist') ||
+                directMessage.includes('Cannot read properties'))) {
+              return;
+            }
+            
+            // toString()の安全な呼び出し
+            const errorString = typeof error.toString === 'function' ? error.toString() : String(error);
+            if (errorString.includes('Wt') || errorString.includes('Cannot read properties')) {
+              return;
+            }
+          } catch (e) {
+            // エラーオブジェクトへのアクセス中のエラーは無視
+            console.warn('Error while processing Mapbox error:', e);
             return;
           }
+          
           // マップが正常に動作している場合はエラーを表示しない
-          if (map.current && map.current.loaded()) {
+          if (map.current && typeof map.current.loaded === 'function' && map.current.loaded()) {
             return;
           }
+          
           setMapboxError('地図の読み込みでエラーが発生しました');
         });
 
@@ -199,11 +280,12 @@ const Map = ({
     document.head.appendChild(script);
 
     return () => {
+      cleanup(); // グローバルエラーハンドラーを削除
       if (map.current) {
         map.current.remove();
         map.current = null;
       }
-      if (script.parentNode) {
+      if (script && script.parentNode) {
         document.head.removeChild(script);
       }
     };
@@ -250,8 +332,8 @@ const Map = ({
             'interpolate',
             ['linear'],
             ['zoom'],
-            0, 1,
-            15, 3
+            0, 2,  // より強い強度
+            15, 5
           ],
           'heatmap-color': [
             'interpolate',
@@ -268,8 +350,8 @@ const Map = ({
             'interpolate',
             ['linear'],
             ['zoom'],
-            0, 2,
-            15, 20
+            0, 5,  // より大きな半径
+            15, 30
           ]
         }
       });
@@ -485,4 +567,11 @@ const Map = ({
   );
 };
 
-export default Map;
+// エラーバウンダリーでラップしてエクスポート
+const MapWithErrorBoundary = (props) => (
+  <MapErrorBoundary>
+    <Map {...props} />
+  </MapErrorBoundary>
+);
+
+export default MapWithErrorBoundary;

@@ -57,17 +57,17 @@ const LandmarkLayer = ({ map, visible }) => {
         data: geojsonData
       });
 
-      // ランドマークのポイントレイヤー
+      // ランドマークのポイントレイヤー（より大きく目立つように）
       map.addLayer({
         id: 'landmark-points',
         type: 'circle',
         source: 'landmark-source',
         paint: {
-          'circle-radius': 8,
+          'circle-radius': 15, // より大きく
           'circle-color': '#FF6B6B',
-          'circle-stroke-width': 3,
+          'circle-stroke-width': 5,
           'circle-stroke-color': '#ffffff',
-          'circle-stroke-opacity': 0.9
+          'circle-stroke-opacity': 1
         }
       });
 
@@ -79,7 +79,7 @@ const LandmarkLayer = ({ map, visible }) => {
         layout: {
           'text-field': ['get', 'name'],
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-          'text-size': 14,
+          'text-size': 18, // より大きなフォント
           'text-offset': [0, 1.5],
           'text-anchor': 'top',
           'text-allow-overlap': false
@@ -92,6 +92,11 @@ const LandmarkLayer = ({ map, visible }) => {
       });
 
       // ポップアップの設定
+      if (!window.mapboxgl || !window.mapboxgl.Popup) {
+        console.warn('LandmarkLayer: Mapbox GL Popup not available');
+        return;
+      }
+      
       const popup = new window.mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false

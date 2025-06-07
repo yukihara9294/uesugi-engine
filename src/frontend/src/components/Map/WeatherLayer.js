@@ -74,30 +74,30 @@ const WeatherLayer = ({ map, data, visible }) => {
         }
       });
 
-      // グロー効果レイヤー
+      // グロー効果レイヤー（より大きく）
       map.addLayer({
         id: 'weather-glow',
         type: 'circle',
         source: 'weather-source',
         paint: {
-          'circle-radius': 40,
+          'circle-radius': 80, // 2倍のサイズ
           'circle-color': ['get', 'temp_color'],
-          'circle-blur': 1,
-          'circle-opacity': 0.3
+          'circle-blur': 2,
+          'circle-opacity': 0.5
         }
       });
 
-      // メインの円形レイヤー
+      // メインの円形レイヤー（より大きく）
       map.addLayer({
         id: 'weather-circles',
         type: 'circle',
         source: 'weather-source',
         paint: {
-          'circle-radius': 25,
+          'circle-radius': 50, // 2倍のサイズ
           'circle-color': ['get', 'temp_color'],
-          'circle-stroke-width': 3,
+          'circle-stroke-width': 5,
           'circle-stroke-color': '#ffffff',
-          'circle-stroke-opacity': 0.9
+          'circle-stroke-opacity': 1
         }
       });
 
@@ -112,7 +112,7 @@ const WeatherLayer = ({ map, data, visible }) => {
             ['concat', ['to-string', ['round', ['get', 'temperature']]], '°C'],
             { 'font-scale': 1.5, 'text-font': ['literal', ['Open Sans Bold', 'Arial Unicode MS Bold']] }
           ],
-          'text-size': 16,
+          'text-size': 24, // より大きなフォント
           'text-anchor': 'center',
           'text-allow-overlap': true
         },
@@ -132,7 +132,7 @@ const WeatherLayer = ({ map, data, visible }) => {
           'text-field': [
             'format',
             ['get', 'icon'],
-            { 'font-scale': 2 },
+            { 'font-scale': 3 }, // より大きなアイコン
             '\n',
             ['get', 'landmark'],
             { 'font-scale': 0.9, 'text-font': ['literal', ['Open Sans Regular', 'Arial Unicode MS Regular']] }
@@ -150,6 +150,11 @@ const WeatherLayer = ({ map, data, visible }) => {
       });
 
       // ホバー時のポップアップ
+      if (!window.mapboxgl || !window.mapboxgl.Popup) {
+        console.warn('WeatherLayer: Mapbox GL Popup not available');
+        return;
+      }
+      
       const popup = new window.mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,

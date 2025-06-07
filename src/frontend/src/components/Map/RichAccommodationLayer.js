@@ -65,7 +65,7 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
         }
       });
 
-      // パルスアニメーションレイヤー（背景）
+      // パルスアニメーションレイヤー（背景）- より大きく
       map.addLayer({
         id: 'accommodation-pulse',
         type: 'circle',
@@ -75,25 +75,25 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
             'interpolate',
             ['linear'],
             ['get', 'occupancy_rate'],
-            0, 25,
-            0.5, 35,
-            1, 45
+            0, 40,
+            0.5, 55,
+            1, 70
           ],
           'circle-color': [
             'interpolate',
             ['linear'],
             ['get', 'occupancy_rate'],
-            0, 'rgba(76, 175, 80, 0.3)',
-            0.5, 'rgba(255, 193, 7, 0.3)',
-            0.8, 'rgba(255, 87, 34, 0.3)',
-            1, 'rgba(244, 67, 54, 0.3)'
+            0, 'rgba(76, 175, 80, 0.5)',
+            0.5, 'rgba(255, 193, 7, 0.5)',
+            0.8, 'rgba(255, 87, 34, 0.5)',
+            1, 'rgba(244, 67, 54, 0.5)'
           ],
-          'circle-blur': 1,
+          'circle-blur': 1.5,
           'circle-opacity': 0
         }
       });
 
-      // 3D風の円柱表現
+      // 3D風の円柱表現（より高く、目立つように）
       map.addLayer({
         id: 'accommodation-3d-bars',
         type: 'fill-extrusion',
@@ -108,9 +108,9 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
             0.8, '#FF5722',
             1, '#F44336'
           ],
-          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-height': ['*', ['get', 'height'], 3], // 3倍の高さに
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.8
+          'fill-extrusion-opacity': 0.9 // より不透明に
         }
       });
 
@@ -121,7 +121,7 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
         source: 'accommodation-source',
         layout: {
           'text-field': '🏨',
-          'text-size': 20,
+          'text-size': 30, // より大きく
           'text-allow-overlap': true,
           'text-offset': [0, -1]
         },
@@ -190,6 +190,11 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
       }
 
       // ホバー時のポップアップ
+      if (!window.mapboxgl || !window.mapboxgl.Popup) {
+        console.warn('RichAccommodationLayer: Mapbox GL Popup not available');
+        return;
+      }
+      
       const popup = new window.mapboxgl.Popup({
         closeButton: false,
         closeOnClick: false,

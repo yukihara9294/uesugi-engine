@@ -162,6 +162,12 @@ const MobilityLayer = ({ map, mobilityData, visible }) => {
         const feature = features[0];
         const props = feature.properties;
         
+        // Popupが利用可能かチェック
+        if (!window.mapboxgl || !window.mapboxgl.Popup) {
+          console.warn('MobilityLayer: Mapbox GL Popup not available');
+          return;
+        }
+        
         new window.mapboxgl.Popup()
           .setLngLat(e.lngLat)
           .setHTML(`
