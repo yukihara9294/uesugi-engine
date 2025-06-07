@@ -165,11 +165,18 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
           if (opacity >= 0.6) increasing = false;
         } else {
           opacity -= 0.02;
-          if (opacity <= 0) increasing = true;
+          if (opacity <= 0) {
+            opacity = 0; // 負の値を防ぐ
+            increasing = true;
+          }
         }
         
         if (map.getLayer('accommodation-pulse')) {
-          map.setPaintProperty('accommodation-pulse', 'circle-opacity', opacity);
+          try {
+            map.setPaintProperty('accommodation-pulse', 'circle-opacity', Math.max(0, opacity));
+          } catch (e) {
+            // エラーを無視
+          }
         }
         
         animationRef.current = requestAnimationFrame(animatePulse);

@@ -215,11 +215,14 @@ async def get_accommodation_data(
     """宿泊データを取得"""
     try:
         if not date:
-            date = datetime.utcnow().date()
+            date = datetime.utcnow()
+        
+        # datetimeオブジェクトから日付部分のみを取得
+        target_date = date.date() if isinstance(date, datetime) else date
         
         # クエリ構築
         query = select(AccommodationData).where(
-            func.date(AccommodationData.date) == date
+            func.date(AccommodationData.date) == target_date
         )
         
         if area:
@@ -262,7 +265,7 @@ async def get_accommodation_data(
             })
         
         return {
-            "date": date.isoformat(),
+            "date": target_date.isoformat() if hasattr(target_date, 'isoformat') else str(target_date),
             "summary": {
                 "total_facilities": len(facilities),
                 "total_rooms": total_rooms,

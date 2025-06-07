@@ -225,7 +225,9 @@ function App() {
     try {
       const data = await weatherService.getLandmarksWeather();
       console.log('App - Weather data loaded:', data);
+      console.log('App - Setting weatherData state...');
       setWeatherData(data);
+      console.log('App - weatherData state set successfully');
       return data;
     } catch (error) {
       console.error('Failed to load weather data:', error);
@@ -280,8 +282,12 @@ function App() {
   // 宿泊データの読み込み
   const loadAccommodationData = async () => {
     try {
+      // 日付のみを送信（時刻部分を除去）
+      const today = new Date();
+      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+      
       const data = await mobilityService.getAccommodation({
-        date: new Date().toISOString(),
+        date: dateStr,
       });
       console.log('App - Accommodation data loaded:', data);
       setAccommodationData(data);
