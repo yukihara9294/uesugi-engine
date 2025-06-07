@@ -190,9 +190,102 @@ const Map = ({
     }
 
     // Mapbox GL JSを動的にロード
+    // 既存のマップがある場合はクリーンアップ
+    if (map.current) {
+      map.current.remove();
+      map.current = null;
+    }
+    
+    // Mapbox GL JSが既にロードされている場合
+    if (window.mapboxgl) {
+      window.mapboxgl.accessToken = MAPBOX_TOKEN;
+      
+      try {
+        map.current = new window.mapboxgl.Map({
+          container: mapContainer.current,
+          style: 'mapbox://styles/mapbox/dark-v11',
+          center: [viewport.longitude, viewport.latitude],
+          zoom: viewport.zoom,
+          pitch: 45,
+          bearing: 0
+        });
+
+        map.current.on('load', () => {
+          setMapLoaded(true);
+          console.log('Mapbox map loaded successfully');
+        });
+
+        map.current.on('move', () => {
+          if (onViewportChange) {
+            const center = map.current.getCenter();
+            const zoom = map.current.getZoom();
+            onViewportChange({
+              latitude: center.lat,
+              longitude: center.lng,
+              zoom: zoom
+            });
+          }
+        });
+
+        map.current.on('error', (error) => {
+          console.error('Mapbox error:', error);
+          
+          // エラーオブジェクトの存在チェック
+          if (!error) return;
+          
+          // 特定のエラーは無視
+          try {
+            // error.error.messageの安全なアクセス
+            const errorMessage = error?.error?.message || '';
+            if (errorMessage && (
+                errorMessage.includes('already a source') || 
+                errorMessage.includes('does not exist') ||
+                errorMessage.includes('Cannot read properties'))) {
+              return;
+            }
+            
+            // error.messageの直接チェック
+            const directMessage = error?.message || '';
+            if (directMessage && (
+                directMessage.includes('already a source') || 
+                directMessage.includes('does not exist') ||
+                directMessage.includes('Cannot read properties'))) {
+              return;
+            }
+            
+            // toString()の安全な呼び出し
+            const errorString = typeof error.toString === 'function' ? error.toString() : String(error);
+            if (errorString.includes('Wt') || errorString.includes('Cannot read properties')) {
+              return;
+            }
+          } catch (e) {
+            // エラーオブジェクトへのアクセス中のエラーは無視
+            console.warn('Error while processing Mapbox error:', e);
+            return;
+          }
+          
+          // マップが正常に動作している場合はエラーを表示しない
+          if (map.current && typeof map.current.loaded === 'function' && map.current.loaded()) {
+            return;
+          }
+          
+          setMapboxError('地図の読み込みでエラーが発生しました');
+        });
+
+      } catch (error) {
+        console.error('Failed to initialize Mapbox:', error);
+        setMapboxError('地図の初期化に失敗しました');
+      }
+      
+      return;
+    }
+    
     const script = document.createElement('script');
     script.src = 'https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js';
     script.onload = () => {
+      // 既に破棄されている場合はスキップ
+      if (!mapContainer.current) return;
+      
       window.mapboxgl.accessToken = MAPBOX_TOKEN;
       
       try {
