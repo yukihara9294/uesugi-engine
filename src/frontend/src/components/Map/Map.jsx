@@ -5,9 +5,11 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import CyberFlowLayer from './CyberFlowLayer';
-import AccommodationLayer from './AccommodationLayer';
+import RichAccommodationLayer from './RichAccommodationLayer';
+import WeatherLayer from './WeatherLayer';
 import LandmarkLayer from './LandmarkLayer';
 import LayerStatus from './LayerStatus';
+import HeatmapLegend from './HeatmapLegend';
 
 const Map = ({ 
   viewport, 
@@ -314,14 +316,10 @@ const Map = ({
     }
   }, [mapLoaded, heatmapData, selectedCategories, selectedLayers]);
 
-  // 気象データの表示
+  // 気象データの表示（WeatherLayerコンポーネントに移行）
   useEffect(() => {
-    console.log('Weather Layer - mapLoaded:', mapLoaded);
-    console.log('Weather Layer - map exists:', !!map.current);
-    console.log('Weather Layer - weatherData:', weatherData);
-    console.log('Weather Layer - should display:', selectedLayers.includes('weather'));
-    
-    if (!mapLoaded || !map.current || !weatherData || !selectedLayers.includes('weather')) return;
+    // WeatherLayerコンポーネントで処理するため、ここでは何もしない
+    return;
 
     try {
       // 既存の気象レイヤーを削除
@@ -441,9 +439,18 @@ const Map = ({
         />
       )}
       
-      {/* 宿泊施設レイヤー */}
+      {/* 気象データレイヤー */}
+      {mapLoaded && map.current && weatherData && (
+        <WeatherLayer
+          map={map.current}
+          data={weatherData}
+          visible={selectedLayers.includes('weather')}
+        />
+      )}
+      
+      {/* 宿泊施設レイヤー（リッチ版） */}
       {mapLoaded && map.current && accommodationData && (
-        <AccommodationLayer
+        <RichAccommodationLayer
           map={map.current}
           data={accommodationData}
           visible={selectedLayers.includes('accommodation')}
@@ -457,6 +464,12 @@ const Map = ({
           visible={selectedLayers.includes('landmarks')}
         />
       )}
+      
+      {/* ヒートマップ凡例 */}
+      <HeatmapLegend
+        visible={selectedLayers.includes('heatmap')}
+        selectedCategories={selectedCategories}
+      />
       
       {/* レイヤー状態表示（デバッグ用） */}
       <LayerStatus
