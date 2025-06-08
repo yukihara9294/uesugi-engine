@@ -458,6 +458,8 @@ function App() {
                 selectedCategories={selectedCategories}
                 loading={loading}
                 onError={(error) => handleError(error, 'Map')}
+                leftSidebarOpen={leftSidebarOpen}
+                rightSidebarOpen={rightSidebarOpen}
               />
             </MapErrorBoundary>
             

@@ -26,7 +26,9 @@ const MapEnhancedFixed = ({
   selectedLayers,
   selectedCategories,
   loading,
-  onError 
+  onError,
+  leftSidebarOpen,
+  rightSidebarOpen 
 }) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -36,6 +38,16 @@ const MapEnhancedFixed = ({
   const [layersInitialized, setLayersInitialized] = useState(false);
   const layersInitializedRef = useRef(false);
   const layerRegistry = useRef({});
+  
+  // Store generated data to prevent regeneration on toggle
+  const dataCache = useRef({
+    heatmapData: null,
+    landmarksData: null,
+    accommodationData: null,
+    consumptionData: null,
+    mobilityData: null,
+    eventsData: null
+  });
 
   // カラーパレット
   const colors = {
@@ -68,28 +80,34 @@ const MapEnhancedFixed = ({
 
   // SNS感情分析レイヤーの初期化
   const initializeHeatmapLayers = () => {
-    const heatmapPoints = [];
-    const baseLocations = [
-      [132.4536, 34.3955], [132.4520, 34.3920], [132.3196, 34.2960],
-      [132.4615, 34.3905], [132.4570, 34.3935], [132.4757, 34.3972],
-      [132.4846, 34.3915], [132.4635, 34.3940], [132.4565, 34.3950]
-    ];
+    // Use cached data if available, otherwise generate once
+    if (!dataCache.current.heatmapData) {
+      const heatmapPoints = [];
+      const baseLocations = [
+        [132.4536, 34.3955], [132.4520, 34.3920], [132.3196, 34.2960],
+        [132.4615, 34.3905], [132.4570, 34.3935], [132.4757, 34.3972],
+        [132.4846, 34.3915], [132.4635, 34.3940], [132.4565, 34.3950]
+      ];
+      
+      // サンプルデータ生成（一度だけ）
+      baseLocations.forEach(loc => {
+        for (let i = 0; i < 15; i++) {
+          const category = ['観光', 'グルメ', 'ショッピング', 'イベント', '交通'][Math.floor(Math.random() * 5)];
+          heatmapPoints.push({
+            coordinates: [
+              loc[0] + (Math.random() - 0.5) * 0.008,
+              loc[1] + (Math.random() - 0.5) * 0.008
+            ],
+            intensity: Math.random() * 0.8 + 0.2,
+            sentiment: Math.random() * 0.8 + 0.2,
+            category: category
+          });
+        }
+      });
+      dataCache.current.heatmapData = heatmapPoints;
+    }
     
-    // サンプルデータ生成
-    baseLocations.forEach(loc => {
-      for (let i = 0; i < 15; i++) {
-        const category = ['観光', 'グルメ', 'ショッピング', 'イベント', '交通'][Math.floor(Math.random() * 5)];
-        heatmapPoints.push({
-          coordinates: [
-            loc[0] + (Math.random() - 0.5) * 0.008,
-            loc[1] + (Math.random() - 0.5) * 0.008
-          ],
-          intensity: Math.random() * 0.8 + 0.2,
-          sentiment: Math.random() * 0.8 + 0.2,
-          category: category
-        });
-      }
-    });
+    const heatmapPoints = dataCache.current.heatmapData;
     
     const features = heatmapPoints.map(p => ({
       type: 'Feature',
@@ -544,14 +562,14 @@ const MapEnhancedFixed = ({
         name: '平和記念式典',
         category: '祭り',
         icon: '🎊',
-        impact_radius: 500
+        impact_radius: 50
       },
       { 
         coordinates: [132.4757, 34.3972], 
         name: 'カープ観戦',
         category: 'スポーツ',
         icon: '⚽',
-        impact_radius: 300
+        impact_radius: 30
       }
     ];
 
@@ -897,31 +915,18 @@ const MapEnhancedFixed = ({
   const updateHeatmapData = () => {
     if (!map.current || !map.current.getSource('heatmap-source')) return;
 
-    const heatmapPoints = [];
-    const baseLocations = [
-      [132.4536, 34.3955], [132.4520, 34.3920], [132.3196, 34.2960],
-      [132.4615, 34.3905], [132.4570, 34.3935], [132.4757, 34.3972],
-      [132.4846, 34.3915], [132.4635, 34.3940], [132.4565, 34.3950]
-    ];
+    // Make sure we have cached data
+    if (!dataCache.current.heatmapData) {
+      console.warn('No cached heatmap data available');
+      return;
+    }
+
+    // Use cached data and filter by selected categories
+    const filteredPoints = dataCache.current.heatmapData.filter(point => 
+      selectedCategories.includes(point.category)
+    );
     
-    baseLocations.forEach(loc => {
-      for (let i = 0; i < 15; i++) {
-        const category = ['観光', 'グルメ', 'ショッピング', 'イベント', '交通'][Math.floor(Math.random() * 5)];
-        if (selectedCategories.includes(category)) {
-          heatmapPoints.push({
-            coordinates: [
-              loc[0] + (Math.random() - 0.5) * 0.008,
-              loc[1] + (Math.random() - 0.5) * 0.008
-            ],
-            intensity: Math.random() * 0.8 + 0.2,
-            sentiment: Math.random() * 0.8 + 0.2,
-            category: category
-          });
-        }
-      }
-    });
-    
-    const features = heatmapPoints.map(p => ({
+    const features = filteredPoints.map(p => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
@@ -977,6 +982,21 @@ const MapEnhancedFixed = ({
       clearTimeout(resizeTimer);
     };
   }, [mapLoaded, selectedLayers]); // Also resize when layers change (which happens with sidebar toggle)
+
+  // Trigger map resize when sidebars toggle
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    
+    // Trigger resize after sidebar animation completes
+    const resizeTimer = setTimeout(() => {
+      if (map.current) {
+        console.log('Triggering map resize after sidebar toggle');
+        map.current.resize();
+      }
+    }, 350); // Match sidebar transition duration
+    
+    return () => clearTimeout(resizeTimer);
+  }, [leftSidebarOpen, rightSidebarOpen, mapLoaded]); // Resize when sidebars open/close
 
   return (
     <Box 
