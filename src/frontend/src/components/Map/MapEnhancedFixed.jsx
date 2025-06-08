@@ -577,9 +577,12 @@ const MapEnhancedFixed = ({
       { from: 'event', to: 'landmark', probability: 0.5, type: 'tourism' }
     ];
 
-    // Create connections based on types
-    for (let i = 0; i < allDataPoints.length; i++) {
-      for (let j = i + 1; j < allDataPoints.length; j++) {
+    // Create connections based on types - reduce to 80% for performance
+    const connectionLimit = Math.floor(allDataPoints.length * allDataPoints.length * 0.8 / 2);
+    let connectionCount = 0;
+    
+    for (let i = 0; i < allDataPoints.length && connectionCount < connectionLimit; i++) {
+      for (let j = i + 1; j < allDataPoints.length && connectionCount < connectionLimit; j++) {
         const start = allDataPoints[i];
         const end = allDataPoints[j];
         
@@ -589,7 +592,7 @@ const MapEnhancedFixed = ({
           (ct.from === end.type && ct.to === start.type)
         );
         
-        if (connType && Math.random() < connType.probability) {
+        if (connType && Math.random() < connType.probability * 0.8) { // Reduce probability by 20%
           const importance = (start.importance + end.importance) / 2;
           const distance = Math.sqrt(
             Math.pow(end.coordinates[0] - start.coordinates[0], 2) + 
@@ -623,9 +626,11 @@ const MapEnhancedFixed = ({
               importance: importance,
               congestion: congestion,
               movementType: connType.type,
-              flowDirection: Math.random() > 0.5 ? 'forward' : 'reverse'
+              flowDirection: Math.random() > 0.5 ? 'forward' : 'reverse',
+              showGlowingArc: Math.random() < 0.15 // 15% chance for glowing arc
             }
           });
+          connectionCount++;
         }
       }
     }
@@ -641,6 +646,7 @@ const MapEnhancedFixed = ({
       type: 'line',
       source: 'mobility-arcs-source',
       layout: { visibility: 'none' },
+      filter: ['==', ['get', 'showGlowingArc'], false],
       paint: {
         'line-color': [
           'interpolate',
@@ -656,6 +662,37 @@ const MapEnhancedFixed = ({
       }
     });
     registerLayer('mobility-arcs-faint', 'mobility');
+    
+    // Glowing arc lines (occasional, more visible)
+    map.current.addLayer({
+      id: 'mobility-arcs-glowing',
+      type: 'line',
+      source: 'mobility-arcs-source',
+      layout: { visibility: 'none' },
+      filter: ['==', ['get', 'showGlowingArc'], true],
+      paint: {
+        'line-color': [
+          'match',
+          ['get', 'movementType'],
+          'tourism', 'rgba(255, 200, 0, 0.8)',
+          'business', 'rgba(0, 150, 255, 0.8)',
+          'shopping', 'rgba(255, 0, 200, 0.8)',
+          'event', 'rgba(0, 255, 100, 0.8)',
+          'rgba(100, 100, 255, 0.8)'
+        ],
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          10, 3,
+          14, 2,
+          16, 1.5
+        ],
+        'line-opacity': 0.6,
+        'line-blur': 1
+      }
+    });
+    registerLayer('mobility-arcs-glowing', 'mobility');
 
     // Particle flow sources
     map.current.addSource('mobility-particles-source', {
@@ -663,7 +700,7 @@ const MapEnhancedFixed = ({
       data: { type: 'FeatureCollection', features: [] }
     });
 
-    // Particle outer glow layer - smaller for zoom 14
+    // Particle outer glow layer - zoom-based sizing
     map.current.addLayer({
       id: 'mobility-particles-glow-outer',
       type: 'circle',
@@ -673,9 +710,11 @@ const MapEnhancedFixed = ({
         'circle-radius': [
           'interpolate',
           ['linear'],
-          ['get', 'size'],
-          0, 8,   // Reduced from 20
-          1, 12   // Reduced from 30
+          ['zoom'],
+          10, ['*', ['get', 'size'], 15],  // Large when far
+          12, ['*', ['get', 'size'], 10],
+          14, ['*', ['get', 'size'], 8],   // Small when close
+          16, ['*', ['get', 'size'], 6]
         ],
         'circle-color': ['get', 'glowColor'],
         'circle-opacity': ['get', 'glowOpacityOuter'],
@@ -684,7 +723,7 @@ const MapEnhancedFixed = ({
     });
     registerLayer('mobility-particles-glow-outer', 'mobility');
 
-    // Particle middle glow layer - smaller for zoom 14
+    // Particle middle glow layer - zoom-based sizing
     map.current.addLayer({
       id: 'mobility-particles-glow-middle',
       type: 'circle',
@@ -694,9 +733,11 @@ const MapEnhancedFixed = ({
         'circle-radius': [
           'interpolate',
           ['linear'],
-          ['get', 'size'],
-          0, 5,   // Reduced from 12
-          1, 8    // Reduced from 18
+          ['zoom'],
+          10, ['*', ['get', 'size'], 10],  // Large when far
+          12, ['*', ['get', 'size'], 7],
+          14, ['*', ['get', 'size'], 5],   // Small when close
+          16, ['*', ['get', 'size'], 4]
         ],
         'circle-color': ['get', 'glowColor'],
         'circle-opacity': ['get', 'glowOpacityMiddle'],
@@ -705,7 +746,7 @@ const MapEnhancedFixed = ({
     });
     registerLayer('mobility-particles-glow-middle', 'mobility');
 
-    // Particle core (bright center) - smaller for zoom 14
+    // Particle core (bright center) - zoom-based sizing
     map.current.addLayer({
       id: 'mobility-particles-core',
       type: 'circle',
@@ -715,9 +756,11 @@ const MapEnhancedFixed = ({
         'circle-radius': [
           'interpolate',
           ['linear'],
-          ['get', 'size'],
-          0, 2,   // Reduced from 6
-          1, 4    // Reduced from 10
+          ['zoom'],
+          10, ['*', ['get', 'size'], 5],   // Large when far
+          12, ['*', ['get', 'size'], 3],
+          14, ['*', ['get', 'size'], 2],   // Small when close
+          16, ['*', ['get', 'size'], 1.5]
         ],
         'circle-color': ['get', 'coreColor'],
         'circle-opacity': ['get', 'coreOpacity'],
@@ -1084,16 +1127,39 @@ const MapEnhancedFixed = ({
     });
     registerLayer('events-impact', 'events');
 
-    // イベントラベル
+    // イベントアイコン
     map.current.addLayer({
-      id: 'events-labels',
+      id: 'events-icons',
       type: 'symbol',
       source: 'events-source',
       layout: {
         visibility: 'none',
         'text-field': ['get', 'icon'],
         'text-size': 24,
-        'text-allow-overlap': true
+        'text-allow-overlap': true,
+        'icon-allow-overlap': true
+      }
+    });
+    registerLayer('events-icons', 'events');
+    
+    // イベント名ラベル
+    map.current.addLayer({
+      id: 'events-labels',
+      type: 'symbol',
+      source: 'events-source',
+      layout: {
+        visibility: 'none',
+        'text-field': ['get', 'name'],
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-size': 12,
+        'text-offset': [0, 2],
+        'text-anchor': 'top',
+        'text-allow-overlap': false
+      },
+      paint: {
+        'text-color': colors.events,
+        'text-halo-color': '#000000',
+        'text-halo-width': 2
       }
     });
     registerLayer('events-labels', 'events');
@@ -1390,7 +1456,7 @@ const MapEnhancedFixed = ({
   // レイヤーデータの更新（必要に応じて）
   const updateLayerData = () => {
     // SNSデータのカテゴリフィルタリング更新
-    if (selectedLayers.includes('heatmap') && selectedCategories.length > 0) {
+    if (selectedLayers.includes('heatmap')) {
       updateHeatmapData();
     }
   };
@@ -1407,9 +1473,9 @@ const MapEnhancedFixed = ({
 
     // Use cached data and filter by selected categories
     const heatmapData = dataCache.current.prefectureData.heatmap;
-    const filteredPoints = heatmapData.filter(point => 
-      selectedCategories.includes(point.category)
-    );
+    const filteredPoints = selectedCategories.length > 0 
+      ? heatmapData.filter(point => selectedCategories.includes(point.category))
+      : []; // If no categories selected, show no points
     
     const features = filteredPoints.map(p => ({
       type: 'Feature',
