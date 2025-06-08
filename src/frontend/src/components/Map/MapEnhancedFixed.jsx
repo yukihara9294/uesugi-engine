@@ -43,6 +43,7 @@ const MapEnhancedFixed = ({
   const [layersInitialized, setLayersInitialized] = useState(false);
   const layersInitializedRef = useRef(false);
   const layerRegistry = useRef({});
+  const mobilityAnimationData = useRef(null);
   
   // Store generated data to prevent regeneration on toggle
   const dataCache = useRef({
@@ -728,8 +729,12 @@ const MapEnhancedFixed = ({
     }, 'mobility-arcs-faint'); // Add below arcs
     registerLayer('mobility-grid', 'mobility');
 
-    // Start cyberpunk animation
-    startCyberpunkMobilityAnimation(arcFeatures, majorHubs, getCyberColor);
+    // Store animation data for later use
+    mobilityAnimationData.current = {
+      arcFeatures,
+      majorHubs,
+      getCyberColor
+    };
   };
 
   // Cyberpunk mobility animation with flowing particles and pulsing hubs
@@ -741,7 +746,12 @@ const MapEnhancedFixed = ({
     const particleTrails = new Map(); // Store trail history for each particle
     
     const animate = () => {
-      if (!map.current || !isLayerVisible('mobility')) {
+      if (!map.current) {
+        return;
+      }
+      
+      // Check if mobility layer is visible
+      if (!isLayerVisible('mobility')) {
         animationFrame.current = requestAnimationFrame(animate);
         return;
       }
@@ -797,13 +807,13 @@ const MapEnhancedFixed = ({
             
             if (congestion >= 0.8) {
               glowColor = 'rgba(255, 0, 128, 0.8)'; // Hot pink
-              coreColor = 'rgba(255, 0, 128, 1)'; // Pink core
+              coreColor = 'rgba(255, 100, 200, 1)'; // Bright pink core
             } else if (congestion >= 0.5) {
               glowColor = 'rgba(0, 150, 255, 0.8)'; // Medium blue
-              coreColor = 'rgba(0, 150, 255, 1)'; // Blue core
+              coreColor = 'rgba(100, 200, 255, 1)'; // Bright blue core
             } else {
               glowColor = 'rgba(0, 100, 255, 0.8)'; // Deep blue
-              coreColor = 'rgba(0, 100, 255, 1)'; // Deep blue core
+              coreColor = 'rgba(0, 150, 255, 1)'; // Bright blue core
             }
             
             // Create particle with multiple glow layers
@@ -1231,6 +1241,22 @@ const MapEnhancedFixed = ({
 
     // データ更新が必要な場合はここで行う
     updateLayerData();
+    
+    // Start or stop mobility animation based on visibility
+    if (selectedLayers.includes('mobility')) {
+      // Start mobility animation if not already running
+      if (!animationFrame.current && mobilityAnimationData.current) {
+        console.log('Starting mobility animation');
+        const { arcFeatures, majorHubs, getCyberColor } = mobilityAnimationData.current;
+        startCyberpunkMobilityAnimation(arcFeatures, majorHubs, getCyberColor);
+      }
+    } else {
+      // Stop animation if mobility layer is hidden
+      if (animationFrame.current) {
+        console.log('Stopping mobility animation');
+        stopAnimations();
+      }
+    }
   }, [selectedLayers, selectedCategories, mapLoaded, layersInitialized]);
 
   // レイヤーデータの更新（必要に応じて）

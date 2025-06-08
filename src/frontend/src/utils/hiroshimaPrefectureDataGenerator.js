@@ -184,11 +184,13 @@ export function generateAccommodationData() {
   
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     // Calculate number of hotels based on population and tourist importance
-    const touristMultiplier = city.touristSpots.length > 3 ? 1.5 : 1;
-    const baseHotels = Math.floor((city.population / 50000) * touristMultiplier);
+    // Increased base multiplier from 50000 to 25000 for more hotels
+    const touristMultiplier = city.touristSpots.length > 3 ? 2.0 : 1.5;
+    const baseHotels = Math.floor((city.population / 25000) * touristMultiplier);
     
     city.districts.forEach(district => {
-      const districtHotels = Math.floor(baseHotels * (district.population / city.population));
+      // Increase district hotels by 1.5x
+      const districtHotels = Math.floor(baseHotels * (district.population / city.population) * 1.5);
       const points = generatePointsAroundCenter(district.center, districtHotels, 0.015);
       
       points.forEach((coord, idx) => {
@@ -212,8 +214,8 @@ export function generateAccommodationData() {
       });
     });
     
-    // Add extra hotels near tourist spots
-    city.touristSpots.slice(0, 3).forEach((spot, idx) => {
+    // Add extra hotels near tourist spots - increased from 3 to 5 spots
+    city.touristSpots.slice(0, 5).forEach((spot, idx) => {
       const touristCoord = [
         city.center[0] + (Math.random() - 0.5) * 0.02,
         city.center[1] + (Math.random() - 0.5) * 0.02
@@ -277,15 +279,15 @@ export function generateConsumptionData() {
   
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     city.commercialAreas.forEach(area => {
-      // Generate initial points (5x more than before for clustering)
-      const pointCount = Math.floor(25 + (city.population / 100000) * 15);
+      // Generate initial points - reduced from 25 to 5 base points
+      const pointCount = Math.floor(5 + (city.population / 100000) * 3);
       const centerOffset = [
         city.center[0] + (Math.random() - 0.5) * 0.01,
         city.center[1] + (Math.random() - 0.5) * 0.01
       ];
       const rawPoints = generatePointsAroundCenter(centerOffset, pointCount, 0.005);
       
-      // Cluster every 5 points into 1
+      // Cluster every 5 points into 1 - no change needed as we already reduced points
       const clusteredPoints = clusterPoints(rawPoints, 5);
       
       clusteredPoints.forEach((coord, idx) => {
@@ -335,8 +337,8 @@ export function generateConsumptionData() {
     // Add extra consumption points specifically at tourist areas
     touristAreas.forEach((touristArea, idx) => {
       if (touristArea.cityName === city.name) {
-        // Generate clustered points around tourist area
-        const touristPointCount = 15; // Will be clustered to 3
+        // Generate clustered points around tourist area - reduced from 15 to 5
+        const touristPointCount = 5; // Will be clustered to 1
         const touristRawPoints = generatePointsAroundCenter(touristArea.coordinates, touristPointCount, 0.003);
         const touristClusteredPoints = clusterPoints(touristRawPoints, 5);
         
