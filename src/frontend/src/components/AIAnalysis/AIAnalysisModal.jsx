@@ -174,8 +174,14 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
     }
   };
 
+  const scrollContainerRef = useRef(null);
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    // Scroll to top when switching tabs
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0;
+    }
   };
 
   return (
@@ -189,8 +195,11 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
           background: 'rgba(10, 10, 10, 0.98)',
           backdropFilter: 'blur(30px)',
           border: '1px solid rgba(102, 126, 234, 0.3)',
-          borderRadius: 3,
+          borderRadius: 1.5,
           overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          maxHeight: '90vh',
         },
       }}
     >
@@ -214,7 +223,7 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 0 }}>
+      <DialogContent sx={{ p: 0, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={activeTab}
@@ -248,7 +257,27 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
           </Tabs>
         </Box>
 
-        <Box sx={{ height: 600, overflow: 'auto' }}>
+        <Box 
+          ref={scrollContainerRef}
+          sx={{ 
+          height: 600, 
+          overflow: 'auto',
+          paddingBottom: 2,
+          '&::-webkit-scrollbar': {
+            width: '8px',
+          },
+          '&::-webkit-scrollbar-track': {
+            background: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '4px',
+          },
+          '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(102, 126, 234, 0.3)',
+            borderRadius: '4px',
+            '&:hover': {
+              background: 'rgba(102, 126, 234, 0.5)',
+            },
+          },
+        }}>
           {/* 過去分析タブ */}
           <TabPanel value={activeTab} index={0}>
             {loading ? (
@@ -791,10 +820,10 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
                                 ROI予測
                               </Typography>
                               <Typography variant="h3" fontWeight={700} sx={{ color: predictionData.roi.roiPercentage > 0 ? '#4CAF50' : '#FF6B6B', my: 2 }}>
-                                {predictionData.roi.roiPercentage > 0 ? '+' : ''}{predictionData.roi.roiPercentage.toFixed(1)}%
+                                {predictionData.roi.roiPercentage > 0 ? '+' : ''}{Math.abs(predictionData.roi.roiPercentage) < 1 ? Math.round(predictionData.roi.roiPercentage) : predictionData.roi.roiPercentage.toFixed(1)}%
                               </Typography>
                               <Typography variant="body2" color="text.secondary">
-                                予想収益: ¥{(predictionData.roi.estimatedRevenue / 1000000).toFixed(1)}M
+                                予想収益: ¥{(predictionData.roi.estimatedRevenue / 1000000) < 1 ? Math.round(predictionData.roi.estimatedRevenue / 1000000) : (predictionData.roi.estimatedRevenue / 1000000).toFixed(1)}M
                               </Typography>
                             </CardContent>
                           </Card>

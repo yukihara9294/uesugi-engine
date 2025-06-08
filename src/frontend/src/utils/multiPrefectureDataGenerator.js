@@ -809,15 +809,37 @@ function generateMobilityForPrefecture(prefectureData) {
   
   // Prefecture-specific transportation routes
   if (prefectureData.bounds.center[0] === 139.7670) { // Tokyo
-    // Yamanote Line (circular route)
+    // Yamanote Line (circular route) - Complete circle
     const yamanoteStations = [
       { name: '東京', coord: [139.7671, 35.6812] },
+      { name: '有楽町', coord: [139.7635, 35.6750] },
+      { name: '新橋', coord: [139.7590, 35.6665] },
+      { name: '浜松町', coord: [139.7566, 35.6554] },
+      { name: '田町', coord: [139.7477, 35.6455] },
       { name: '品川', coord: [139.7400, 35.6286] },
+      { name: '大崎', coord: [139.7285, 35.6198] },
+      { name: '五反田', coord: [139.7236, 35.6262] },
+      { name: '目黒', coord: [139.7158, 35.6339] },
+      { name: '恵比寿', coord: [139.7101, 35.6467] },
       { name: '渋谷', coord: [139.7019, 35.6580] },
+      { name: '原宿', coord: [139.7021, 35.6702] },
+      { name: '代々木', coord: [139.7020, 35.6837] },
       { name: '新宿', coord: [139.7036, 35.6938] },
+      { name: '新大久保', coord: [139.7005, 35.7006] },
+      { name: '高田馬場', coord: [139.7039, 35.7125] },
+      { name: '目白', coord: [139.7068, 35.7211] },
       { name: '池袋', coord: [139.7100, 35.7295] },
+      { name: '大塚', coord: [139.7286, 35.7316] },
+      { name: '巣鴨', coord: [139.7393, 35.7334] },
+      { name: '駒込', coord: [139.7468, 35.7365] },
+      { name: '田端', coord: [139.7608, 35.7381] },
+      { name: '西日暮里', coord: [139.7668, 35.7320] },
+      { name: '日暮里', coord: [139.7706, 35.7280] },
+      { name: '鶯谷', coord: [139.7782, 35.7209] },
       { name: '上野', coord: [139.7774, 35.7141] },
-      { name: '秋葉原', coord: [139.7740, 35.6984] }
+      { name: '御徒町', coord: [139.7747, 35.7074] },
+      { name: '秋葉原', coord: [139.7740, 35.6984] },
+      { name: '神田', coord: [139.7709, 35.6918] }
     ];
     
     for (let i = 0; i < yamanoteStations.length; i++) {
@@ -833,12 +855,39 @@ function generateMobilityForPrefecture(prefectureData) {
       });
     }
     
+    // Chuo Line
+    const chuoStations = [
+      { name: '東京', coord: [139.7671, 35.6812] },
+      { name: '神田', coord: [139.7709, 35.6918] },
+      { name: '御茶ノ水', coord: [139.7636, 35.6993] },
+      { name: '四ツ谷', coord: [139.7298, 35.6858] },
+      { name: '新宿', coord: [139.7036, 35.6938] },
+      { name: '中野', coord: [139.6644, 35.7056] },
+      { name: '高円寺', coord: [139.6496, 35.7056] },
+      { name: '阿佐ヶ谷', coord: [139.6357, 35.7046] },
+      { name: '荻窪', coord: [139.6205, 35.7043] },
+      { name: '吉祥寺', coord: [139.5796, 35.7030] },
+      { name: '三鷹', coord: [139.5606, 35.7028] }
+    ];
+    
+    for (let i = 0; i < chuoStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `chuo-${i}`,
+        name: `中央線: ${chuoStations[i].name} - ${chuoStations[i + 1].name}`,
+        type: 'train',
+        points: [chuoStations[i].coord, chuoStations[i + 1].coord],
+        congestion: 0.75 + Math.random() * 0.2,
+        flow_speed: 40,
+        category: 'JR線'
+      });
+    }
+    
     // Major subway lines
     mobilityData.routes.push({
       id: 'ginza-line',
       name: '銀座線: 渋谷 - 浅草',
       type: 'subway',
-      points: [[139.7019, 35.6580], [139.7966, 35.7120]],
+      points: [[139.7019, 35.6580], [139.7540, 35.6718], [139.7636, 35.6750], [139.7706, 35.6950], [139.7966, 35.7120]],
       congestion: 0.75,
       flow_speed: 30,
       category: '地下鉄'
@@ -848,20 +897,108 @@ function generateMobilityForPrefecture(prefectureData) {
       id: 'marunouchi-line',
       name: '丸ノ内線: 荻窪 - 池袋',
       type: 'subway',
-      points: [[139.6205, 35.7043], [139.7100, 35.7295]],
+      points: [[139.6205, 35.7043], [139.7036, 35.6938], [139.7300, 35.6860], [139.7540, 35.6812], [139.7100, 35.7295]],
       congestion: 0.8,
       flow_speed: 28,
       category: '地下鉄'
     });
     
+    // Tozai Line
+    mobilityData.routes.push({
+      id: 'tozai-line',
+      name: '東西線: 中野 - 西船橋',
+      type: 'subway',
+      points: [[139.6644, 35.7056], [139.6850, 35.7010], [139.7300, 35.6860], [139.7840, 35.6950], [139.8200, 35.7000]],
+      congestion: 0.85,
+      flow_speed: 28,
+      category: '地下鉄'
+    });
+    
+    // Hibiya Line
+    mobilityData.routes.push({
+      id: 'hibiya-line',
+      name: '日比谷線: 中目黒 - 北千住',
+      type: 'subway',
+      points: [[139.6989, 35.6470], [139.7080, 35.6580], [139.7314, 35.6627], [139.7540, 35.6760], [139.7706, 35.6990], [139.7974, 35.7492]],
+      congestion: 0.78,
+      flow_speed: 30,
+      category: '地下鉄'
+    });
+    
+    // Major private railways
+    mobilityData.routes.push({
+      id: 'odakyu-line',
+      name: '小田急線: 新宿 - 町田',
+      type: 'train',
+      points: [[139.7036, 35.6938], [139.6800, 35.6700], [139.6500, 35.6400], [139.4386, 35.5463]],
+      congestion: 0.8,
+      flow_speed: 35,
+      category: '私鉄'
+    });
+    
+    mobilityData.routes.push({
+      id: 'keio-line',
+      name: '京王線: 新宿 - 調布',
+      type: 'train',
+      points: [[139.7036, 35.6938], [139.6700, 35.6800], [139.6200, 35.6600], [139.5439, 35.6517]],
+      congestion: 0.75,
+      flow_speed: 35,
+      category: '私鉄'
+    });
+    
+    mobilityData.routes.push({
+      id: 'tokyu-toyoko',
+      name: '東急東横線: 渋谷 - 横浜',
+      type: 'train',
+      points: [[139.7019, 35.6580], [139.6989, 35.6470], [139.6864, 35.6283], [139.6222, 35.4660]],
+      congestion: 0.82,
+      flow_speed: 35,
+      category: '私鉄'
+    });
+    
+    // Major highways within Tokyo
+    mobilityData.routes.push({
+      id: 'shuto-c1',
+      name: '首都高速都心環状線',
+      type: 'highway',
+      points: [[139.7540, 35.6812], [139.7590, 35.6665], [139.7314, 35.6627], [139.7019, 35.6580], [139.7300, 35.6860], [139.7540, 35.6812]],
+      congestion: 0.85,
+      flow_speed: 40,
+      category: '高速道路'
+    });
+    
+    mobilityData.routes.push({
+      id: 'shuto-3',
+      name: '首都高速3号渋谷線',
+      type: 'highway',
+      points: [[139.7019, 35.6580], [139.6700, 35.6400], [139.6200, 35.6100]],
+      congestion: 0.8,
+      flow_speed: 50,
+      category: '高速道路'
+    });
+    
   } else if (prefectureData.bounds.center[0] === 135.4959) { // Osaka
-    // Osaka Loop Line
+    // Osaka Loop Line - Complete circle
     const loopStations = [
       { name: '大阪', coord: [135.4959, 34.7028] },
-      { name: '天王寺', coord: [135.5189, 34.6466] },
-      { name: '新今宮', coord: [135.5063, 34.6525] },
+      { name: '福島', coord: [135.4846, 34.6977] },
+      { name: '野田', coord: [135.4720, 34.6940] },
       { name: '西九条', coord: [135.4661, 34.6833] },
-      { name: '京橋', coord: [135.5339, 34.6968] }
+      { name: '弁天町', coord: [135.4614, 34.6687] },
+      { name: '大正', coord: [135.4757, 34.6542] },
+      { name: '芦原橋', coord: [135.4936, 34.6515] },
+      { name: '今宮', coord: [135.5016, 34.6508] },
+      { name: '新今宮', coord: [135.5063, 34.6525] },
+      { name: '天王寺', coord: [135.5189, 34.6466] },
+      { name: '寺田町', coord: [135.5188, 34.6570] },
+      { name: '桃谷', coord: [135.5180, 34.6650] },
+      { name: '鶴橋', coord: [135.5247, 34.6679] },
+      { name: '玉造', coord: [135.5283, 34.6737] },
+      { name: '森ノ宮', coord: [135.5315, 34.6820] },
+      { name: '大阪城公園', coord: [135.5285, 34.6875] },
+      { name: '京橋', coord: [135.5339, 34.6968] },
+      { name: '桜ノ宮', coord: [135.5298, 34.7020] },
+      { name: '天満', coord: [135.5188, 34.7054] }
     ];
     
     for (let i = 0; i < loopStations.length; i++) {
@@ -877,37 +1014,320 @@ function generateMobilityForPrefecture(prefectureData) {
       });
     }
     
-    // Osaka Metro lines
-    mobilityData.routes.push({
-      id: 'midosuji-line',
-      name: '御堂筋線: 新大阪 - なんば',
-      type: 'subway',
-      points: [[135.5008, 34.7338], [135.5027, 34.6627]],
-      congestion: 0.85,
-      flow_speed: 30,
-      category: '地下鉄'
-    });
+    // JR Tokaido/Sanyo Line
+    const tokaidoStations = [
+      { name: '新大阪', coord: [135.5008, 34.7338] },
+      { name: '大阪', coord: [135.4959, 34.7028] },
+      { name: '塚本', coord: [135.4803, 34.7133] },
+      { name: '尼崎', coord: [135.4234, 34.7210] },
+      { name: '甲子園口', coord: [135.3717, 34.7247] },
+      { name: '西宮', coord: [135.3426, 34.7375] },
+      { name: '芦屋', coord: [135.3047, 34.7286] },
+      { name: '甲南山手', coord: [135.2731, 34.7243] },
+      { name: '摂津本山', coord: [135.2639, 34.7238] },
+      { name: '住吉', coord: [135.2427, 34.7216] },
+      { name: '六甲道', coord: [135.2378, 34.7172] },
+      { name: '灘', coord: [135.2137, 34.7138] },
+      { name: '三ノ宮', coord: [135.1955, 34.6947] }
+    ];
     
-  } else if (prefectureData.bounds.center[0] === 130.4017) { // Fukuoka
-    // Fukuoka subway lines
+    for (let i = 0; i < tokaidoStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `tokaido-${i}`,
+        name: `東海道本線: ${tokaidoStations[i].name} - ${tokaidoStations[i + 1].name}`,
+        type: 'train',
+        points: [tokaidoStations[i].coord, tokaidoStations[i + 1].coord],
+        congestion: 0.7 + Math.random() * 0.2,
+        flow_speed: 45,
+        category: 'JR線'
+      });
+    }
+    
+    // Osaka Metro Midosuji Line
+    const midosujiStations = [
+      { name: '江坂', coord: [135.4977, 34.7595] },
+      { name: '東三国', coord: [135.5008, 34.7455] },
+      { name: '新大阪', coord: [135.5008, 34.7338] },
+      { name: '西中島南方', coord: [135.4993, 34.7208] },
+      { name: '中津', coord: [135.4975, 34.7089] },
+      { name: '梅田', coord: [135.4959, 34.7028] },
+      { name: '淀屋橋', coord: [135.4986, 34.6926] },
+      { name: '本町', coord: [135.4986, 34.6826] },
+      { name: '心斎橋', coord: [135.5014, 34.6731] },
+      { name: '難波', coord: [135.5027, 34.6627] },
+      { name: '大国町', coord: [135.4992, 34.6515] },
+      { name: '動物園前', coord: [135.5034, 34.6486] },
+      { name: '天王寺', coord: [135.5189, 34.6466] },
+      { name: '昭和町', coord: [135.5192, 34.6378] },
+      { name: '西田辺', coord: [135.5195, 34.6290] },
+      { name: '長居', coord: [135.5188, 34.6111] },
+      { name: 'あびこ', coord: [135.5166, 34.6033] },
+      { name: '北花田', coord: [135.5195, 34.5863] },
+      { name: '新金岡', coord: [135.5194, 34.5700] },
+      { name: '中百舌鳥', coord: [135.5198, 34.5536] }
+    ];
+    
+    for (let i = 0; i < midosujiStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `midosuji-${i}`,
+        name: `御堂筋線: ${midosujiStations[i].name} - ${midosujiStations[i + 1].name}`,
+        type: 'subway',
+        points: [midosujiStations[i].coord, midosujiStations[i + 1].coord],
+        congestion: 0.85,
+        flow_speed: 30,
+        category: '地下鉄'
+      });
+    }
+    
+    // Osaka Metro Yotsubashi Line
+    const yotsubashiStations = [
+      { name: '西梅田', coord: [135.4945, 34.6998] },
+      { name: '肥後橋', coord: [135.4957, 34.6899] },
+      { name: '本町', coord: [135.4986, 34.6826] },
+      { name: '四ツ橋', coord: [135.4971, 34.6763] },
+      { name: '難波', coord: [135.5003, 34.6642] },
+      { name: '大国町', coord: [135.4992, 34.6515] },
+      { name: '花園町', coord: [135.4988, 34.6413] },
+      { name: '岸里', coord: [135.4990, 34.6342] },
+      { name: '玉出', coord: [135.4993, 34.6260] },
+      { name: '北加賀屋', coord: [135.4798, 34.6160] },
+      { name: '住之江公園', coord: [135.4796, 34.6090] }
+    ];
+    
+    for (let i = 0; i < yotsubashiStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `yotsubashi-${i}`,
+        name: `四つ橋線: ${yotsubashiStations[i].name} - ${yotsubashiStations[i + 1].name}`,
+        type: 'subway',
+        points: [yotsubashiStations[i].coord, yotsubashiStations[i + 1].coord],
+        congestion: 0.7,
+        flow_speed: 28,
+        category: '地下鉄'
+      });
+    }
+    
+    // Osaka Metro Chuo Line
     mobilityData.routes.push({
-      id: 'kuko-line',
-      name: '空港線: 福岡空港 - 姪浜',
+      id: 'chuo-line-osaka',
+      name: '中央線: コスモスクエア - 生駒',
       type: 'subway',
-      points: [[130.4510, 33.5859], [130.3235, 33.5851]],
-      congestion: 0.7,
+      points: [[135.4180, 34.6380], [135.4660, 34.6833], [135.4986, 34.6826], [135.5315, 34.6820], [135.5765, 34.6901]],
+      congestion: 0.72,
       flow_speed: 35,
       category: '地下鉄'
     });
     
+    // Hanshin Main Line
     mobilityData.routes.push({
-      id: 'hakozaki-line',
-      name: '箱崎線: 中洲川端 - 貝塚',
-      type: 'subway',
-      points: [[130.4059, 33.5943], [130.4252, 33.6170]],
-      congestion: 0.6,
-      flow_speed: 30,
-      category: '地下鉄'
+      id: 'hanshin-main',
+      name: '阪神本線: 梅田 - 三宮',
+      type: 'train',
+      points: [[135.4959, 34.7028], [135.4846, 34.6977], [135.4660, 34.6833], [135.4234, 34.7210], [135.3426, 34.7375], [135.1955, 34.6947]],
+      congestion: 0.75,
+      flow_speed: 35,
+      category: '私鉄'
+    });
+    
+    // Hankyu Kobe Line
+    mobilityData.routes.push({
+      id: 'hankyu-kobe',
+      name: '阪急神戸線: 梅田 - 三宮',
+      type: 'train',
+      points: [[135.4959, 34.7028], [135.4520, 34.7160], [135.3830, 34.7340], [135.3426, 34.7375], [135.1955, 34.6947]],
+      congestion: 0.78,
+      flow_speed: 35,
+      category: '私鉄'
+    });
+    
+    // Keihan Main Line
+    mobilityData.routes.push({
+      id: 'keihan-main',
+      name: '京阪本線: 淀屋橋 - 出町柳',
+      type: 'train',
+      points: [[135.4986, 34.6926], [135.5339, 34.6968], [135.5520, 34.7100], [135.6830, 34.8830], [135.7720, 35.0304]],
+      congestion: 0.72,
+      flow_speed: 35,
+      category: '私鉄'
+    });
+    
+    // Major highways
+    mobilityData.routes.push({
+      id: 'hanshin-exp',
+      name: '阪神高速1号環状線',
+      type: 'highway',
+      points: [[135.4959, 34.7028], [135.5027, 34.6627], [135.4661, 34.6833], [135.4959, 34.7028]],
+      congestion: 0.82,
+      flow_speed: 45,
+      category: '高速道路'
+    });
+    
+  } else if (prefectureData.bounds.center[0] === 130.4017) { // Fukuoka
+    // Fukuoka Airport Line (Kuko Line) - detailed stations
+    const kukoStations = [
+      { name: '姪浜', coord: [130.3235, 33.5851] },
+      { name: '室見', coord: [130.3373, 33.5840] },
+      { name: '藤崎', coord: [130.3508, 33.5817] },
+      { name: '西新', coord: [130.3590, 33.5790] },
+      { name: '唐人町', coord: [130.3695, 33.5871] },
+      { name: '大濠公園', coord: [130.3780, 33.5850] },
+      { name: '赤坂', coord: [130.3890, 33.5865] },
+      { name: '天神', coord: [130.4017, 33.5904] },
+      { name: '中洲川端', coord: [130.4059, 33.5943] },
+      { name: '祗園', coord: [130.4110, 33.5925] },
+      { name: '博多', coord: [130.4205, 33.5897] },
+      { name: '東比恵', coord: [130.4347, 33.5855] },
+      { name: '福岡空港', coord: [130.4510, 33.5859] }
+    ];
+    
+    for (let i = 0; i < kukoStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `kuko-${i}`,
+        name: `空港線: ${kukoStations[i].name} - ${kukoStations[i + 1].name}`,
+        type: 'subway',
+        points: [kukoStations[i].coord, kukoStations[i + 1].coord],
+        congestion: 0.7 + Math.random() * 0.2,
+        flow_speed: 35,
+        category: '地下鉄'
+      });
+    }
+    
+    // Hakozaki Line - detailed stations
+    const hakozakiStations = [
+      { name: '中洲川端', coord: [130.4059, 33.5943] },
+      { name: '呉服町', coord: [130.4101, 33.5989] },
+      { name: '千代県庁口', coord: [130.4140, 33.6060] },
+      { name: '馬出九大病院前', coord: [130.4180, 33.6110] },
+      { name: '箱崎宮前', coord: [130.4222, 33.6133] },
+      { name: '箱崎九大前', coord: [130.4240, 33.6150] },
+      { name: '貝塚', coord: [130.4252, 33.6170] }
+    ];
+    
+    for (let i = 0; i < hakozakiStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `hakozaki-${i}`,
+        name: `箱崎線: ${hakozakiStations[i].name} - ${hakozakiStations[i + 1].name}`,
+        type: 'subway',
+        points: [hakozakiStations[i].coord, hakozakiStations[i + 1].coord],
+        congestion: 0.6 + Math.random() * 0.2,
+        flow_speed: 30,
+        category: '地下鉄'
+      });
+    }
+    
+    // Nanakuma Line - detailed stations
+    const nanakumaStations = [
+      { name: '天神南', coord: [130.3999, 33.5874] },
+      { name: '渡辺通', coord: [130.4016, 33.5815] },
+      { name: '薬院', coord: [130.3956, 33.5788] },
+      { name: '薬院大通', coord: [130.3922, 33.5750] },
+      { name: '桜坂', coord: [130.3880, 33.5700] },
+      { name: '六本松', coord: [130.3810, 33.5680] },
+      { name: '別府', coord: [130.3720, 33.5730] },
+      { name: '茶山', coord: [130.3640, 33.5760] },
+      { name: '金山', coord: [130.3560, 33.5780] },
+      { name: '七隈', coord: [130.3480, 33.5790] },
+      { name: '福大前', coord: [130.3390, 33.5800] },
+      { name: '梅林', coord: [130.3310, 33.5810] },
+      { name: '野芥', coord: [130.3230, 33.5820] },
+      { name: '賀茂', coord: [130.3150, 33.5830] },
+      { name: '次郎丸', coord: [130.3070, 33.5840] },
+      { name: '橋本', coord: [130.2990, 33.5850] }
+    ];
+    
+    for (let i = 0; i < nanakumaStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `nanakuma-${i}`,
+        name: `七隈線: ${nanakumaStations[i].name} - ${nanakumaStations[i + 1].name}`,
+        type: 'subway',
+        points: [nanakumaStations[i].coord, nanakumaStations[i + 1].coord],
+        congestion: 0.65 + Math.random() * 0.2,
+        flow_speed: 32,
+        category: '地下鉄'
+      });
+    }
+    
+    // JR Kagoshima Main Line
+    const kagoshimaStations = [
+      { name: '博多', coord: [130.4205, 33.5897] },
+      { name: '吉塚', coord: [130.4300, 33.6005] },
+      { name: '箱崎', coord: [130.4252, 33.6170] },
+      { name: '千早', coord: [130.4446, 33.6596] },
+      { name: '香椎', coord: [130.4446, 33.6596] },
+      { name: '九産大前', coord: [130.4450, 33.6780] },
+      { name: '福工大前', coord: [130.4460, 33.6890] },
+      { name: '新宮中央', coord: [130.4470, 33.7100] }
+    ];
+    
+    for (let i = 0; i < kagoshimaStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `kagoshima-${i}`,
+        name: `鹿児島本線: ${kagoshimaStations[i].name} - ${kagoshimaStations[i + 1].name}`,
+        type: 'train',
+        points: [kagoshimaStations[i].coord, kagoshimaStations[i + 1].coord],
+        congestion: 0.7 + Math.random() * 0.2,
+        flow_speed: 40,
+        category: 'JR線'
+      });
+    }
+    
+    // Nishitetsu Tenjin Omuta Line
+    const nishitetsuStations = [
+      { name: '西鉄福岡（天神）', coord: [130.4017, 33.5904] },
+      { name: '薬院', coord: [130.3956, 33.5788] },
+      { name: '西鉄平尾', coord: [130.3890, 33.5700] },
+      { name: '高宮', coord: [130.3850, 33.5600] },
+      { name: '大橋', coord: [130.3800, 33.5520] },
+      { name: '井尻', coord: [130.3750, 33.5450] },
+      { name: '雑餉隈', coord: [130.3700, 33.5380] },
+      { name: '春日原', coord: [130.3650, 33.5310] },
+      { name: '白木原', coord: [130.3600, 33.5240] },
+      { name: '下大利', coord: [130.3550, 33.5170] },
+      { name: '都府楼前', coord: [130.3500, 33.5100] },
+      { name: '西鉄二日市', coord: [130.3450, 33.5030] }
+    ];
+    
+    for (let i = 0; i < nishitetsuStations.length - 1; i++) {
+      mobilityData.routes.push({
+        id: `nishitetsu-${i}`,
+        name: `西鉄天神大牟田線: ${nishitetsuStations[i].name} - ${nishitetsuStations[i + 1].name}`,
+        type: 'train',
+        points: [nishitetsuStations[i].coord, nishitetsuStations[i + 1].coord],
+        congestion: 0.72 + Math.random() * 0.2,
+        flow_speed: 35,
+        category: '私鉄'
+      });
+    }
+    
+    // Major highways
+    mobilityData.routes.push({
+      id: 'fukuoka-exp-1',
+      name: '福岡都市高速1号線',
+      type: 'highway',
+      points: [[130.3235, 33.5851], [130.3590, 33.5790], [130.4017, 33.5904], [130.4205, 33.5897], [130.4510, 33.5859]],
+      congestion: 0.78,
+      flow_speed: 50,
+      category: '高速道路'
+    });
+    
+    mobilityData.routes.push({
+      id: 'fukuoka-exp-circular',
+      name: '福岡都市高速環状線',
+      type: 'highway',
+      points: [[130.4017, 33.5904], [130.4205, 33.5897], [130.4252, 33.6170], [130.3800, 33.6200], [130.3590, 33.5790], [130.4017, 33.5904]],
+      congestion: 0.8,
+      flow_speed: 45,
+      category: '高速道路'
+    });
+    
+    // Add major bus routes
+    mobilityData.routes.push({
+      id: 'bus-100',
+      name: '西鉄バス100番系統: 博多駅 - 天神',
+      type: 'bus',
+      points: [[130.4205, 33.5897], [130.4111, 33.5899], [130.4017, 33.5904]],
+      congestion: 0.75,
+      flow_speed: 20,
+      category: 'バス'
     });
   }
   

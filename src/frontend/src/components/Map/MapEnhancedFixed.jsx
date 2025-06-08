@@ -195,7 +195,9 @@ const MapEnhancedFixed = forwardRef(({
         heatmapCount: dataCache.current.prefectureData?.heatmap?.length || 0,
         hasLandmarks: !!dataCache.current.prefectureData?.landmarks,
         landmarksCount: dataCache.current.prefectureData?.landmarks?.length || 0,
-        hasBounds: !!dataCache.current.prefectureData?.bounds
+        hasBounds: !!dataCache.current.prefectureData?.bounds,
+        hasMobility: !!dataCache.current.prefectureData?.mobility,
+        mobilityRoutesCount: dataCache.current.prefectureData?.mobility?.routes?.length || 0
       });
     } catch (error) {
       console.error('Error generating prefecture data:', error);
@@ -660,6 +662,7 @@ const MapEnhancedFixed = forwardRef(({
 
   // 人流データレイヤーの初期化 - Optimized for Zoom 14
   const initializeMobilityLayers = () => {
+    console.log('Initializing mobility layers for prefecture:', currentPrefecture);
     if (!dataCache.current.prefectureData || 
         !dataCache.current.prefectureData.mobility ||
         !dataCache.current.prefectureData.landmarks ||
@@ -672,6 +675,11 @@ const MapEnhancedFixed = forwardRef(({
     
     const mobilityData = dataCache.current.prefectureData.mobility;
     const routes = mobilityData.routes;
+    console.log('Mobility data:', { 
+      hasRoutes: !!routes, 
+      routesCount: routes?.length || 0,
+      firstRoute: routes?.[0] 
+    });
     const landmarks = dataCache.current.prefectureData.landmarks;
     const events = dataCache.current.prefectureData.events;
     const accommodations = dataCache.current.prefectureData.accommodation;
@@ -857,6 +865,52 @@ const MapEnhancedFixed = forwardRef(({
 
     // Generate diverse arcs between all data points with varying densities
     const arcFeatures = [];
+    
+    // First, add the actual transportation routes from the mobility data
+    if (routes && routes.length > 0) {
+      console.log(`Adding ${routes.length} actual transportation routes for ${currentPrefecture}`);
+      routes.forEach((route, index) => {
+        // Create arc for each route segment
+        const arcHeight = route.type === 'highway' ? 0.05 : route.type === 'subway' ? 0.02 : 0.08;
+        const arcPoints = route.points.length === 2 
+          ? createArc(route.points[0], route.points[1], arcHeight)
+          : route.points; // Use the actual points if more than 2
+        
+        // Determine movement type based on route type
+        let movementType = 'business';
+        if (route.type === 'train' || route.type === 'subway') {
+          movementType = 'business';
+        } else if (route.type === 'highway') {
+          movementType = 'tourism';
+        }
+        
+        arcFeatures.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: arcPoints
+          },
+          properties: {
+            startHub: route.name.split(':')[0] || route.name,
+            endHub: route.name.split(':')[1] || route.name,
+            startType: 'transport',
+            endType: 'transport',
+            importance: 0.8,
+            congestion: route.congestion || 0.5,
+            movementType: movementType,
+            particleCount: Math.round(8 + route.congestion * 7),
+            speed: route.flow_speed ? route.flow_speed / 50 : 0.7,
+            flowDirection: 'forward',
+            showGlowingArc: route.congestion > 0.7,
+            distanceKm: 30, // Approximate
+            distanceGroup: 1,
+            isActualRoute: true,
+            routeType: route.type,
+            routeCategory: route.category || route.type
+          }
+        });
+      });
+    }
     const connectionTypes = [
       // Tourism routes: transport -> landmarks (high volume, medium speed)
       { from: 'transport', to: 'landmark', probability: 0.8, type: 'tourism', 
