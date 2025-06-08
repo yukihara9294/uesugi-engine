@@ -186,9 +186,23 @@ const MapEnhancedFixed = forwardRef(({
   // Generate prefecture data based on current location
   if (!dataCache.current.prefectureData || dataCache.current.currentPrefecture !== currentPrefecture) {
     console.log('Generating prefecture data for:', currentPrefecture);
-    dataCache.current.prefectureData = generateAllPrefectureData(currentPrefecture);
-    dataCache.current.currentPrefecture = currentPrefecture;
-    console.log('Prefecture data generated:', dataCache.current.prefectureData);
+    try {
+      dataCache.current.prefectureData = generateAllPrefectureData(currentPrefecture);
+      dataCache.current.currentPrefecture = currentPrefecture;
+      console.log('Prefecture data generated successfully:', {
+        prefecture: currentPrefecture,
+        hasHeatmap: !!dataCache.current.prefectureData?.heatmap,
+        heatmapCount: dataCache.current.prefectureData?.heatmap?.length || 0,
+        hasLandmarks: !!dataCache.current.prefectureData?.landmarks,
+        landmarksCount: dataCache.current.prefectureData?.landmarks?.length || 0,
+        hasBounds: !!dataCache.current.prefectureData?.bounds
+      });
+    } catch (error) {
+      console.error('Error generating prefecture data:', error);
+      // Fallback to Hiroshima if there's an error
+      dataCache.current.prefectureData = generateAllPrefectureData('広島県');
+      dataCache.current.currentPrefecture = '広島県';
+    }
   }
 
   // カラーパレット
@@ -205,12 +219,83 @@ const MapEnhancedFixed = forwardRef(({
   const registerLayer = (layerId, layerType) => {
     layerRegistry.current[layerId] = { id: layerId, type: layerType };
   };
+  
+  // Comprehensive cleanup function to remove all layers and sources
+  const cleanupAllLayers = () => {
+    console.log('Cleaning up all layers and sources...');
+    
+    // Stop animations first
+    stopAnimations();
+    
+    // Remove all registered layers
+    Object.keys(layerRegistry.current).forEach(layerId => {
+      if (map.current && map.current.getLayer(layerId)) {
+        try {
+          map.current.removeLayer(layerId);
+          console.log(`Removed layer: ${layerId}`);
+        } catch (e) {
+          console.warn(`Failed to remove layer ${layerId}:`, e);
+        }
+      }
+    });
+    
+    // List of all possible sources
+    const allSources = [
+      'heatmap-source',
+      'landmarks-source',
+      'landmarks-buildings-source',
+      'accommodation-source',
+      'consumption-source',
+      'mobility-hubs-source',
+      'mobility-arcs-source',
+      'mobility-particles-source',
+      'mobility-trails-source',
+      'mobility-pulse-source',
+      'mobility-grid-source',
+      'events-source',
+      'events-impact-source'
+    ];
+    
+    // Remove all sources
+    allSources.forEach(sourceId => {
+      if (map.current && map.current.getSource(sourceId)) {
+        try {
+          map.current.removeSource(sourceId);
+          console.log(`Removed source: ${sourceId}`);
+        } catch (e) {
+          console.warn(`Failed to remove source ${sourceId}:`, e);
+        }
+      }
+    });
+    
+    // Clear registries and reset state
+    layerRegistry.current = {};
+    mobilityAnimationData.current = null;
+    layersInitializedRef.current = false;
+    setLayersInitialized(false);
+    
+    console.log('Cleanup completed');
+  };
 
   // Stop any running animations
   const stopAnimations = () => {
     if (animationFrame.current) {
       cancelAnimationFrame(animationFrame.current);
       animationFrame.current = null;
+    }
+  };
+  
+  // Safely add a layer, checking if it already exists
+  const safeAddLayer = (layerConfig) => {
+    if (!map.current.getLayer(layerConfig.id)) {
+      try {
+        map.current.addLayer(layerConfig);
+        console.log(`Added layer: ${layerConfig.id}`);
+      } catch (e) {
+        console.error(`Failed to add layer ${layerConfig.id}:`, e);
+      }
+    } else {
+      console.log(`Layer ${layerConfig.id} already exists, skipping`);
     }
   };
 
@@ -239,6 +324,12 @@ const MapEnhancedFixed = forwardRef(({
 
   // SNS感情分析レイヤーの初期化
   const initializeHeatmapLayers = () => {
+    // Ensure prefecture data exists
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.heatmap) {
+      console.error('Prefecture data or heatmap data is missing');
+      return;
+    }
+    
     // Use prefecture data
     const heatmapPoints = dataCache.current.prefectureData.heatmap;
     const viewportBounds = getViewportBounds();
@@ -261,19 +352,26 @@ const MapEnhancedFixed = forwardRef(({
       }
     }));
 
-    map.current.addSource('heatmap-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features }
-    });
+    // Check if source already exists
+    if (!map.current.getSource('heatmap-source')) {
+      map.current.addSource('heatmap-source', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features }
+      });
+    } else {
+      console.log('heatmap-source already exists, updating data');
+      map.current.getSource('heatmap-source').setData({ type: 'FeatureCollection', features });
+    }
 
     // サイバーヒートマップ
-    map.current.addLayer({
-      id: 'cyber-heatmap',
-      type: 'heatmap',
-      source: 'heatmap-source',
-      layout: {
-        visibility: 'none'
-      },
+    if (!map.current.getLayer('cyber-heatmap')) {
+      map.current.addLayer({
+        id: 'cyber-heatmap',
+        type: 'heatmap',
+        source: 'heatmap-source',
+        layout: {
+          visibility: 'none'
+        },
       paint: {
         'heatmap-weight': ['get', 'intensity'],
         'heatmap-intensity': {
@@ -295,11 +393,12 @@ const MapEnhancedFixed = forwardRef(({
         },
         'heatmap-opacity': 0.85
       }
-    });
+      });
+    }
     registerLayer('cyber-heatmap', 'heatmap');
 
     // パーティクルエフェクト
-    map.current.addLayer({
+    safeAddLayer({
       id: 'cyber-particles',
       type: 'circle',
       source: 'heatmap-source',
@@ -327,20 +426,32 @@ const MapEnhancedFixed = forwardRef(({
 
   // ランドマークレイヤーの初期化
   const initializeLandmarkLayers = () => {
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.landmarks) {
+      console.error('Prefecture data or landmarks data is missing');
+      return;
+    }
+    
     const landmarks = dataCache.current.prefectureData.landmarks;
 
     // ポイントソース
-    map.current.addSource('landmarks-source', {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: landmarks.map(l => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: l.coordinates },
-          properties: { name: l.name, height: l.height }
-        }))
-      }
-    });
+    const landmarksData = {
+      type: 'FeatureCollection',
+      features: landmarks.map(l => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: l.coordinates },
+        properties: { name: l.name, height: l.height }
+      }))
+    };
+    
+    if (!map.current.getSource('landmarks-source')) {
+      map.current.addSource('landmarks-source', {
+        type: 'geojson',
+        data: landmarksData
+      });
+    } else {
+      console.log('landmarks-source already exists, updating data');
+      map.current.getSource('landmarks-source').setData(landmarksData);
+    }
 
     // 3Dランドマーク用のソース
     const buildingFeatures = landmarks.map(l => {
@@ -367,13 +478,20 @@ const MapEnhancedFixed = forwardRef(({
       };
     });
 
-    map.current.addSource('landmarks-buildings-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: buildingFeatures }
-    });
+    const buildingsData = { type: 'FeatureCollection', features: buildingFeatures };
+    
+    if (!map.current.getSource('landmarks-buildings-source')) {
+      map.current.addSource('landmarks-buildings-source', {
+        type: 'geojson',
+        data: buildingsData
+      });
+    } else {
+      console.log('landmarks-buildings-source already exists, updating data');
+      map.current.getSource('landmarks-buildings-source').setData(buildingsData);
+    }
 
     // 3D建物レイヤー
-    map.current.addLayer({
+    safeAddLayer({
       id: 'landmarks-3d',
       type: 'fill-extrusion',
       source: 'landmarks-buildings-source',
@@ -390,7 +508,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('landmarks-3d', 'landmarks');
 
     // ラベルレイヤー
-    map.current.addLayer({
+    safeAddLayer({
       id: 'landmarks-labels',
       type: 'symbol',
       source: 'landmarks-source',
@@ -413,6 +531,11 @@ const MapEnhancedFixed = forwardRef(({
 
   // 宿泊施設レイヤーの初期化
   const initializeAccommodationLayers = () => {
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.accommodation) {
+      console.error('Prefecture data or accommodation data is missing');
+      return;
+    }
+    
     const accommodations = dataCache.current.prefectureData.accommodation;
 
     const accommodationFeatures = accommodations.map(a => {
@@ -440,13 +563,20 @@ const MapEnhancedFixed = forwardRef(({
       };
     });
 
-    map.current.addSource('accommodation-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: accommodationFeatures }
-    });
+    const accommodationData = { type: 'FeatureCollection', features: accommodationFeatures };
+    
+    if (!map.current.getSource('accommodation-source')) {
+      map.current.addSource('accommodation-source', {
+        type: 'geojson',
+        data: accommodationData
+      });
+    } else {
+      console.log('accommodation-source already exists, updating data');
+      map.current.getSource('accommodation-source').setData(accommodationData);
+    }
 
     // 3D棒グラフ
-    map.current.addLayer({
+    safeAddLayer({
       id: 'accommodation-3d',
       type: 'fill-extrusion',
       source: 'accommodation-source',
@@ -465,6 +595,11 @@ const MapEnhancedFixed = forwardRef(({
 
   // 消費データレイヤーの初期化
   const initializeConsumptionLayers = () => {
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.consumption) {
+      console.error('Prefecture data or consumption data is missing');
+      return;
+    }
+    
     const consumptionData = dataCache.current.prefectureData.consumption;
 
     const consumptionFeatures = consumptionData.map(c => {
@@ -493,13 +628,20 @@ const MapEnhancedFixed = forwardRef(({
       };
     });
 
-    map.current.addSource('consumption-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: consumptionFeatures }
-    });
+    const consumptionDataFeatures = { type: 'FeatureCollection', features: consumptionFeatures };
+    
+    if (!map.current.getSource('consumption-source')) {
+      map.current.addSource('consumption-source', {
+        type: 'geojson',
+        data: consumptionDataFeatures
+      });
+    } else {
+      console.log('consumption-source already exists, updating data');
+      map.current.getSource('consumption-source').setData(consumptionDataFeatures);
+    }
 
     // 3D棒グラフ（縦方向）
-    map.current.addLayer({
+    safeAddLayer({
       id: 'consumption-3d',
       type: 'fill-extrusion',
       source: 'consumption-source',
@@ -518,6 +660,16 @@ const MapEnhancedFixed = forwardRef(({
 
   // 人流データレイヤーの初期化 - Optimized for Zoom 14
   const initializeMobilityLayers = () => {
+    if (!dataCache.current.prefectureData || 
+        !dataCache.current.prefectureData.mobility ||
+        !dataCache.current.prefectureData.landmarks ||
+        !dataCache.current.prefectureData.events ||
+        !dataCache.current.prefectureData.accommodation ||
+        !dataCache.current.prefectureData.heatmap) {
+      console.error('Prefecture data or required sub-data is missing');
+      return;
+    }
+    
     const mobilityData = dataCache.current.prefectureData.mobility;
     const routes = mobilityData.routes;
     const landmarks = dataCache.current.prefectureData.landmarks;
@@ -606,13 +758,20 @@ const MapEnhancedFixed = forwardRef(({
       }
     }));
 
-    map.current.addSource('mobility-hubs-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: hubFeatures }
-    });
+    const hubsData = { type: 'FeatureCollection', features: hubFeatures };
+    
+    if (!map.current.getSource('mobility-hubs-source')) {
+      map.current.addSource('mobility-hubs-source', {
+        type: 'geojson',
+        data: hubsData
+      });
+    } else {
+      console.log('mobility-hubs-source already exists, updating data');
+      map.current.getSource('mobility-hubs-source').setData(hubsData);
+    }
 
     // Outer glow for hubs - color coded by type
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-hubs-glow',
       type: 'circle',
       source: 'mobility-hubs-source',
@@ -643,7 +802,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-hubs-glow', 'mobility');
 
     // Inner core for hubs - brighter colors by type
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-hubs-core',
       type: 'circle',
       source: 'mobility-hubs-source',
@@ -894,13 +1053,20 @@ const MapEnhancedFixed = forwardRef(({
       });
     });
 
-    map.current.addSource('mobility-arcs-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: arcFeatures }
-    });
+    const arcsData = { type: 'FeatureCollection', features: arcFeatures };
+    
+    if (!map.current.getSource('mobility-arcs-source')) {
+      map.current.addSource('mobility-arcs-source', {
+        type: 'geojson',
+        data: arcsData
+      });
+    } else {
+      console.log('mobility-arcs-source already exists, updating data');
+      map.current.getSource('mobility-arcs-source').setData(arcsData);
+    }
 
     // Very faint arc lines (minimal visibility)
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-arcs-faint',
       type: 'line',
       source: 'mobility-arcs-source',
@@ -926,7 +1092,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-arcs-faint', 'mobility');
     
     // Glowing arc lines (occasional, more visible) - colored by congestion
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-arcs-glowing',
       type: 'line',
       source: 'mobility-arcs-source',
@@ -961,13 +1127,15 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-arcs-glowing', 'mobility');
 
     // Particle flow sources
-    map.current.addSource('mobility-particles-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] }
-    });
+    if (!map.current.getSource('mobility-particles-source')) {
+      map.current.addSource('mobility-particles-source', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+    }
 
     // Particle outer glow layer - zoom-based sizing
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-particles-glow-outer',
       type: 'circle',
       source: 'mobility-particles-source',
@@ -990,7 +1158,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-particles-glow-outer', 'mobility');
 
     // Particle middle glow layer - zoom-based sizing
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-particles-glow-middle',
       type: 'circle',
       source: 'mobility-particles-source',
@@ -1013,7 +1181,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-particles-glow-middle', 'mobility');
 
     // Particle core (bright center) - zoom-based sizing
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-particles-core',
       type: 'circle',
       source: 'mobility-particles-source',
@@ -1036,12 +1204,14 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-particles-core', 'mobility');
 
     // Data stream trails
-    map.current.addSource('mobility-trails-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] }
-    });
+    if (!map.current.getSource('mobility-trails-source')) {
+      map.current.addSource('mobility-trails-source', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+    }
 
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-trails',
       type: 'line',
       source: 'mobility-trails-source',
@@ -1056,12 +1226,14 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-trails', 'mobility');
 
     // Pulsing effect for hubs
-    map.current.addSource('mobility-pulse-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] }
-    });
+    if (!map.current.getSource('mobility-pulse-source')) {
+      map.current.addSource('mobility-pulse-source', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+    }
 
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-pulse',
       type: 'circle',
       source: 'mobility-pulse-source',
@@ -1076,7 +1248,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('mobility-pulse', 'mobility');
 
     // Hub labels
-    map.current.addLayer({
+    safeAddLayer({
       id: 'mobility-hub-labels',
       type: 'symbol',
       source: 'mobility-hubs-source',
@@ -1100,6 +1272,11 @@ const MapEnhancedFixed = forwardRef(({
     const gridFeatures = [];
     const gridSize = 0.05; // Grid spacing
     const bounds = dataCache.current.prefectureData.bounds;
+    
+    if (!bounds) {
+      console.error('Prefecture bounds data is missing');
+      return;
+    }
     
     // Create vertical grid lines
     for (let lng = bounds.west; lng <= bounds.east; lng += gridSize) {
@@ -1129,12 +1306,19 @@ const MapEnhancedFixed = forwardRef(({
       });
     }
     
-    map.current.addSource('mobility-grid-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: gridFeatures }
-    });
+    const gridData = { type: 'FeatureCollection', features: gridFeatures };
     
-    map.current.addLayer({
+    if (!map.current.getSource('mobility-grid-source')) {
+      map.current.addSource('mobility-grid-source', {
+        type: 'geojson',
+        data: gridData
+      });
+    } else {
+      console.log('mobility-grid-source already exists, updating data');
+      map.current.getSource('mobility-grid-source').setData(gridData);
+    }
+    
+    safeAddLayer({
       id: 'mobility-grid',
       type: 'line',
       source: 'mobility-grid-source',
@@ -1401,24 +1585,36 @@ const MapEnhancedFixed = forwardRef(({
 
   // イベントレイヤーの初期化
   const initializeEventLayers = () => {
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.events) {
+      console.error('Prefecture data or events data is missing');
+      return;
+    }
+    
     const events = dataCache.current.prefectureData.events;
 
     // イベントポイント
-    map.current.addSource('events-source', {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: events.map(e => ({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: e.coordinates },
-          properties: { 
-            name: e.name,
-            category: e.category,
-            icon: e.icon
-          }
-        }))
-      }
-    });
+    const eventsData = {
+      type: 'FeatureCollection',
+      features: events.map(e => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: e.coordinates },
+        properties: { 
+          name: e.name,
+          category: e.category,
+          icon: e.icon
+        }
+      }))
+    };
+    
+    if (!map.current.getSource('events-source')) {
+      map.current.addSource('events-source', {
+        type: 'geojson',
+        data: eventsData
+      });
+    } else {
+      console.log('events-source already exists, updating data');
+      map.current.getSource('events-source').setData(eventsData);
+    }
 
     // イベント影響範囲
     const impactFeatures = events.map(e => ({
@@ -1427,14 +1623,21 @@ const MapEnhancedFixed = forwardRef(({
       properties: { radius: e.impact_radius }
     }));
 
-    map.current.addSource('events-impact-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: impactFeatures }
-    });
+    const impactData = { type: 'FeatureCollection', features: impactFeatures };
+    
+    if (!map.current.getSource('events-impact-source')) {
+      map.current.addSource('events-impact-source', {
+        type: 'geojson',
+        data: impactData
+      });
+    } else {
+      console.log('events-impact-source already exists, updating data');
+      map.current.getSource('events-impact-source').setData(impactData);
+    }
 
     // 影響範囲の表示 - Circle size represents event's economic and crowd impact
     // Festivals have 1.5x radius, Sports 1.0x, Concerts/Exhibitions 0.7x
-    map.current.addLayer({
+    safeAddLayer({
       id: 'events-impact',
       type: 'circle',
       source: 'events-impact-source',
@@ -1453,7 +1656,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('events-impact', 'events');
 
     // イベントアイコン
-    map.current.addLayer({
+    safeAddLayer({
       id: 'events-icons',
       type: 'symbol',
       source: 'events-source',
@@ -1468,7 +1671,7 @@ const MapEnhancedFixed = forwardRef(({
     registerLayer('events-icons', 'events');
     
     // イベント名ラベル
-    map.current.addLayer({
+    safeAddLayer({
       id: 'events-labels',
       type: 'symbol',
       source: 'events-source',
@@ -1500,6 +1703,18 @@ const MapEnhancedFixed = forwardRef(({
       console.log('Map not ready for layers, returning');
       return;
     }
+    
+    // Clean up any existing layers and sources first
+    cleanupAllLayers();
+    
+    // Ensure prefecture data exists
+    if (!dataCache.current.prefectureData) {
+      console.error('Prefecture data is not available for initialization');
+      const currentPrefecture = detectCurrentPrefecture();
+      console.log('Generating missing prefecture data for:', currentPrefecture);
+      dataCache.current.prefectureData = generateAllPrefectureData(currentPrefecture);
+      dataCache.current.currentPrefecture = currentPrefecture;
+    }
 
     console.log('Initializing all layers...');
     console.log('Current layerRegistry before init:', layerRegistry.current);
@@ -1524,6 +1739,10 @@ const MapEnhancedFixed = forwardRef(({
     
     console.log('All layers initialized');
     console.log('Final layerRegistry:', layerRegistry.current);
+    
+    // Mark layers as initialized after all layers are added
+    layersInitializedRef.current = true;
+    setLayersInitialized(true);
     
     // レイヤーが実際に追加されたか確認
     const layerIds = Object.keys(layerRegistry.current);
@@ -1629,32 +1848,34 @@ const MapEnhancedFixed = forwardRef(({
           )?.id;
 
           try {
-            map.current.addLayer({
-              'id': '3d-buildings',
-              'source': 'composite',
-              'source-layer': 'building',
-              'filter': ['==', 'extrude', 'true'],
-              'type': 'fill-extrusion',
-              'minzoom': 15,
-              'paint': {
-                'fill-extrusion-color': '#333',
-                'fill-extrusion-height': [
-                  'interpolate',
-                  ['linear'],
-                  ['zoom'],
-                  15, 0,
-                  15.05, ['get', 'height']
-                ],
-                'fill-extrusion-base': [
-                  'interpolate',
-                  ['linear'],
-                  ['zoom'],
-                  15, 0,
-                  15.05, ['get', 'min_height']
-                ],
-                'fill-extrusion-opacity': 0.6
-              }
-            }, labelLayerId);
+            if (!map.current.getLayer('3d-buildings')) {
+              map.current.addLayer({
+                'id': '3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                  'fill-extrusion-color': '#333',
+                  'fill-extrusion-height': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    15, 0,
+                    15.05, ['get', 'height']
+                  ],
+                  'fill-extrusion-base': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    15, 0,
+                    15.05, ['get', 'min_height']
+                  ],
+                  'fill-extrusion-opacity': 0.6
+                }
+              }, labelLayerId);
+            }
           } catch (e) {
             console.warn('Could not add 3D buildings:', e);
           }
@@ -1670,8 +1891,6 @@ const MapEnhancedFixed = forwardRef(({
               if (!layersInitializedRef.current) {
                 console.log('Calling initializeAllLayers');
                 initializeAllLayers();
-                layersInitializedRef.current = true;
-                setLayersInitialized(true);
                 console.log('Layers initialized successfully');
               } else {
                 console.log('Layers already initialized');
@@ -1692,8 +1911,6 @@ const MapEnhancedFixed = forwardRef(({
           if (!layersInitializedRef.current && map.current && map.current.isStyleLoaded()) {
             console.log('Initializing layers from styledata event');
             initializeAllLayers();
-            layersInitializedRef.current = true;
-            setLayersInitialized(true);
           }
         });
 
@@ -1724,6 +1941,7 @@ const MapEnhancedFixed = forwardRef(({
           const newPrefecture = detectCurrentPrefecture();
           if (newPrefecture !== dataCache.current.currentPrefecture) {
             console.log('Prefecture changed from', dataCache.current.currentPrefecture, 'to', newPrefecture);
+            
             // Generate new prefecture data
             dataCache.current.prefectureData = generateAllPrefectureData(newPrefecture);
             dataCache.current.currentPrefecture = newPrefecture;
@@ -1731,6 +1949,8 @@ const MapEnhancedFixed = forwardRef(({
             // Reinitialize all layers with new data
             if (layersInitializedRef.current) {
               console.log('Reinitializing layers for new prefecture');
+              
+              // Use the cleanup function and reinitialize
               initializeAllLayers();
             }
           } else {
@@ -1851,6 +2071,7 @@ const MapEnhancedFixed = forwardRef(({
   // Update landmarks within viewport
   const updateLandmarksInViewport = (bounds) => {
     if (!map.current.getSource('landmarks-source')) return;
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.landmarks) return;
     
     const landmarks = dataCache.current.prefectureData.landmarks;
     const filteredLandmarks = landmarks.filter(l => 
@@ -1903,6 +2124,7 @@ const MapEnhancedFixed = forwardRef(({
   // Update accommodation within viewport
   const updateAccommodationInViewport = (bounds) => {
     if (!map.current.getSource('accommodation-source')) return;
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.accommodation) return;
     
     const accommodations = dataCache.current.prefectureData.accommodation;
     const filtered = accommodations.filter(a => 
@@ -1943,6 +2165,7 @@ const MapEnhancedFixed = forwardRef(({
   // Update consumption within viewport
   const updateConsumptionInViewport = (bounds) => {
     if (!map.current.getSource('consumption-source')) return;
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.consumption) return;
     
     const consumptionData = dataCache.current.prefectureData.consumption;
     const filtered = consumptionData.filter(c => 
@@ -1983,6 +2206,7 @@ const MapEnhancedFixed = forwardRef(({
   // Update events within viewport
   const updateEventsInViewport = (bounds) => {
     if (!map.current.getSource('events-source')) return;
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.events) return;
     
     const events = dataCache.current.prefectureData.events;
     const filtered = events.filter(e => 
@@ -2147,43 +2371,21 @@ const MapEnhancedFixed = forwardRef(({
   
   // Detect prefecture change and reinitialize layers
   useEffect(() => {
-    if (!map.current || !mapLoaded) return;
+    if (!map.current || !mapLoaded || !layersInitializedRef.current) return;
     
     const newPrefecture = detectCurrentPrefecture();
     if (dataCache.current.currentPrefecture !== newPrefecture) {
       console.log('Prefecture changed to:', newPrefecture);
-      // Clear existing layers
-      Object.keys(layerRegistry.current).forEach(layerId => {
-        if (map.current.getLayer(layerId)) {
-          map.current.removeLayer(layerId);
-        }
-      });
       
-      // Clear sources
-      ['heatmap-source', 'landmarks-source', 'landmarks-buildings-source', 
-       'accommodation-source', 'consumption-source', 'mobility-hubs-source',
-       'mobility-arcs-source', 'mobility-particles-source', 'mobility-trails-source',
-       'mobility-pulse-source', 'mobility-grid-source', 'events-source', 
-       'events-impact-source'].forEach(sourceId => {
-        if (map.current.getSource(sourceId)) {
-          map.current.removeSource(sourceId);
-        }
-      });
+      // Generate new prefecture data
+      dataCache.current.prefectureData = generateAllPrefectureData(newPrefecture);
+      dataCache.current.currentPrefecture = newPrefecture;
       
-      // Reset layer registry
-      layerRegistry.current = {};
-      layersInitializedRef.current = false;
-      
-      // Force data regeneration
-      dataCache.current.prefectureData = null;
-      dataCache.current.currentPrefecture = null;
-      
-      // Reinitialize with new data
+      // Reinitialize with new data using the proper cleanup
       setTimeout(() => {
         if (map.current && map.current.isStyleLoaded()) {
+          console.log('Reinitializing layers for new prefecture data');
           initializeAllLayers();
-          layersInitializedRef.current = true;
-          setLayersInitialized(true);
         }
       }, 100);
     }

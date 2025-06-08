@@ -133,11 +133,63 @@ const TOKYO_DATA = {
     { name: '新宿御苑', coordinates: [139.7106, 35.6852], height: 15 }
   ],
   events: [
+    // Tokyo Dome Events (文京区)
+    { name: '読売ジャイアンツ vs 阪神タイガース', coordinates: [139.7518, 35.7056], category: '野球', icon: '⚾' },
+    { name: '読売ジャイアンツ vs 広島東洋カープ', coordinates: [139.7518, 35.7056], category: '野球', icon: '⚾' },
+    { name: 'B\'z LIVE-GYM 2024', coordinates: [139.7518, 35.7056], category: 'コンサート', icon: '🎵' },
+    { name: 'Mr.Children Tour 2024', coordinates: [139.7518, 35.7056], category: 'コンサート', icon: '🎵' },
+    { name: 'サザンオールスターズ 特別公演', coordinates: [139.7518, 35.7056], category: 'コンサート', icon: '🎵' },
+    { name: '東京ドーム格闘技イベント', coordinates: [139.7518, 35.7056], category: 'スポーツ', icon: '🥊' },
+    
+    // Nippon Budokan Events (千代田区)
+    { name: '全日本柔道選手権大会', coordinates: [139.7497, 35.6932], category: '武道', icon: '🥋' },
+    { name: '全日本剣道選手権大会', coordinates: [139.7497, 35.6932], category: '武道', icon: '⚔️' },
+    { name: '武道館ライブ - 福山雅治', coordinates: [139.7497, 35.6932], category: 'コンサート', icon: '🎵' },
+    { name: '武道館ライブ - 宇多田ヒカル', coordinates: [139.7497, 35.6932], category: 'コンサート', icon: '🎵' },
+    { name: '日本武道館50周年記念公演', coordinates: [139.7497, 35.6932], category: 'イベント', icon: '🎊' },
+    
+    // Tokyo Big Sight Events (江東区)
+    { name: 'コミックマーケット C103', coordinates: [139.7946, 35.6301], category: '展示会', icon: '🎨' },
+    { name: '東京ゲームショウ 2024', coordinates: [139.7946, 35.6301], category: '展示会', icon: '🎮' },
+    { name: '東京モーターショー 2024', coordinates: [139.7946, 35.6301], category: '展示会', icon: '🚗' },
+    { name: 'AnimeJapan 2024', coordinates: [139.7946, 35.6301], category: '展示会', icon: '🎌' },
+    { name: '東京国際ブックフェア', coordinates: [139.7946, 35.6301], category: '展示会', icon: '📚' },
+    { name: 'CEATEC JAPAN 2024', coordinates: [139.7946, 35.6301], category: '展示会', icon: '💻' },
+    
+    // National Stadium Events (新宿区)
+    { name: '日本代表 vs ブラジル代表', coordinates: [139.7147, 35.6781], category: 'サッカー', icon: '⚽' },
+    { name: 'J1リーグ決勝戦', coordinates: [139.7147, 35.6781], category: 'サッカー', icon: '⚽' },
+    { name: '陸上日本選手権', coordinates: [139.7147, 35.6781], category: '陸上', icon: '🏃' },
+    { name: '嵐 復活コンサート', coordinates: [139.7147, 35.6781], category: 'コンサート', icon: '🎵' },
+    { name: 'ラグビーワールドカップ記念試合', coordinates: [139.7147, 35.6781], category: 'ラグビー', icon: '🏈' },
+    
+    // Seasonal Festivals
     { name: '隅田川花火大会', coordinates: [139.8107, 35.7101], category: '花火', icon: '🎆' },
-    { name: 'コミックマーケット', coordinates: [139.7917, 35.6301], category: '展示会', icon: '🎨' },
-    { name: '東京マラソン', coordinates: [139.7540, 35.6812], category: 'スポーツ', icon: '⚽' },
     { name: '神田祭', coordinates: [139.7671, 35.6989], category: '祭り', icon: '🎊' },
-    { name: '三社祭', coordinates: [139.7966, 35.7147], category: '祭り', icon: '🎊' }
+    { name: '三社祭', coordinates: [139.7966, 35.7147], category: '祭り', icon: '🎊' },
+    { name: '深川八幡祭り', coordinates: [139.7996, 35.6726], category: '祭り', icon: '🎊' },
+    { name: '山王祭', coordinates: [139.7454, 35.6795], category: '祭り', icon: '🎊' },
+    
+    // Cherry Blossom Festivals
+    { name: '上野桜まつり', coordinates: [139.7734, 35.7141], category: '花見', icon: '🌸' },
+    { name: '千鳥ヶ淵桜まつり', coordinates: [139.7518, 35.6895], category: '花見', icon: '🌸' },
+    { name: '目黒川桜まつり', coordinates: [139.6993, 35.6337], category: '花見', icon: '🌸' },
+    { name: '代々木公園桜まつり', coordinates: [139.6969, 35.6721], category: '花見', icon: '🌸' },
+    { name: '新宿御苑桜まつり', coordinates: [139.7106, 35.6852], category: '花見', icon: '🌸' },
+    
+    // Summer Festivals
+    { name: '高円寺阿波おどり', coordinates: [139.6496, 35.7056], category: '祭り', icon: '🎊' },
+    { name: '築地本願寺納涼盆踊り大会', coordinates: [139.7714, 35.6661], category: '祭り', icon: '🎊' },
+    { name: '麻布十番納涼まつり', coordinates: [139.7366, 35.6564], category: '祭り', icon: '🎊' },
+    { name: '神楽坂まつり', coordinates: [139.7408, 35.7012], category: '祭り', icon: '🎊' },
+    { name: '六本木ヒルズ盆踊り', coordinates: [139.7293, 35.6600], category: '祭り', icon: '🎊' },
+    
+    // Other Major Events
+    { name: '東京マラソン', coordinates: [139.7540, 35.6812], category: 'スポーツ', icon: '🏃' },
+    { name: 'コミコン東京', coordinates: [139.6917, 35.6295], category: 'イベント', icon: '🎭' },
+    { name: '東京国際映画祭', coordinates: [139.7314, 35.6627], category: '映画', icon: '🎬' },
+    { name: '東京ラーメンショー', coordinates: [139.7670, 35.6700], category: 'グルメ', icon: '🍜' },
+    { name: 'デザインフェスタ', coordinates: [139.7946, 35.6301], category: 'アート', icon: '🎨' }
   ]
 };
 
@@ -244,11 +296,64 @@ const OSAKA_DATA = {
     { name: '黒門市場', coordinates: [135.5050, 34.6650], height: 15 }
   ],
   events: [
+    // Kyocera Dome Events (西区)
+    { name: 'オリックス・バファローズ vs ソフトバンクホークス', coordinates: [135.4760, 34.6695], category: '野球', icon: '⚾' },
+    { name: 'オリックス・バファローズ vs 日本ハムファイターズ', coordinates: [135.4760, 34.6695], category: '野球', icon: '⚾' },
+    { name: 'BTS WORLD TOUR 大阪', coordinates: [135.4760, 34.6695], category: 'K-POP', icon: '🎵' },
+    { name: 'SEVENTEEN CONCERT 大阪', coordinates: [135.4760, 34.6695], category: 'K-POP', icon: '🎵' },
+    { name: 'TWICE JAPAN TOUR 大阪', coordinates: [135.4760, 34.6695], category: 'K-POP', icon: '🎵' },
+    { name: '関ジャニ∞ DOME TOUR', coordinates: [135.4760, 34.6695], category: 'コンサート', icon: '🎵' },
+    { name: 'Perfume LIVE 大阪', coordinates: [135.4760, 34.6695], category: 'コンサート', icon: '🎵' },
+    
+    // Osaka-jo Hall Events (中央区)
+    { name: 'EXILE LIVE TOUR 大阪', coordinates: [135.5256, 34.6873], category: 'コンサート', icon: '🎵' },
+    { name: '三代目 J SOUL BROTHERS LIVE', coordinates: [135.5256, 34.6873], category: 'コンサート', icon: '🎵' },
+    { name: '安室奈美恵 復活ライブ', coordinates: [135.5256, 34.6873], category: 'コンサート', icon: '🎵' },
+    { name: '大阪プロレス祭り', coordinates: [135.5256, 34.6873], category: 'スポーツ', icon: '🤼' },
+    { name: '全日本フィギュアスケート選手権', coordinates: [135.5256, 34.6873], category: 'スポーツ', icon: '⛸️' },
+    
+    // Grand Cube Osaka Events (住之江区)
+    { name: '大阪国際会議', coordinates: [135.4290, 34.6380], category: '会議', icon: '🏢' },
+    { name: '関西医学会総会', coordinates: [135.4290, 34.6380], category: '学会', icon: '🔬' },
+    { name: '大阪モーターサイクルショー', coordinates: [135.4290, 34.6380], category: '展示会', icon: '🏍️' },
+    { name: 'コスプレ博 in 大阪', coordinates: [135.4290, 34.6380], category: 'イベント', icon: '🎭' },
+    { name: '大阪コミコン', coordinates: [135.4290, 34.6380], category: 'イベント', icon: '🎨' },
+    
+    // Universal Studios Japan Special Events
+    { name: 'ユニバーサル・クールジャパン', coordinates: [135.4322, 34.6655], category: 'テーマパーク', icon: '🎢' },
+    { name: 'ハロウィーン・ホラー・ナイト', coordinates: [135.4322, 34.6655], category: 'テーマパーク', icon: '🎃' },
+    { name: 'ユニバーサル・カウントダウン・パーティ', coordinates: [135.4322, 34.6655], category: 'テーマパーク', icon: '🎆' },
+    { name: 'ウィザーディング・ワールド特別イベント', coordinates: [135.4322, 34.6655], category: 'テーマパーク', icon: '🪄' },
+    { name: 'ミニオン・パーク新アトラクション', coordinates: [135.4322, 34.6655], category: 'テーマパーク', icon: '🎠' },
+    
+    // Traditional Festivals
     { name: '天神祭', coordinates: [135.5131, 34.6959], category: '祭り', icon: '🎊' },
-    { name: 'なにわ淀川花火大会', coordinates: [135.4850, 34.7206], category: '花火', icon: '🎆' },
     { name: '岸和田だんじり祭', coordinates: [135.3714, 34.4606], category: '祭り', icon: '🎊' },
-    { name: '大阪マラソン', coordinates: [135.5256, 34.6873], category: 'スポーツ', icon: '⚽' },
-    { name: '今宮戎十日戎', coordinates: [135.4963, 34.6500], category: '祭り', icon: '🎊' }
+    { name: '住吉大社 夏祭り', coordinates: [135.4930, 34.6125], category: '祭り', icon: '🎊' },
+    { name: '今宮戎十日戎', coordinates: [135.4963, 34.6500], category: '祭り', icon: '🎊' },
+    { name: '四天王寺 どやどや', coordinates: [135.5166, 34.6534], category: '祭り', icon: '🎊' },
+    { name: '愛染まつり', coordinates: [135.5166, 34.6460], category: '祭り', icon: '🎊' },
+    { name: '生國魂神社夏祭り', coordinates: [135.5133, 34.6536], category: '祭り', icon: '🎊' },
+    
+    // Fireworks and Summer Events
+    { name: 'なにわ淀川花火大会', coordinates: [135.4850, 34.7206], category: '花火', icon: '🎆' },
+    { name: 'PL花火芸術', coordinates: [135.6020, 34.5090], category: '花火', icon: '🎆' },
+    { name: '天神祭奉納花火', coordinates: [135.5131, 34.6959], category: '花火', icon: '🎆' },
+    { name: '泉州夢花火', coordinates: [135.3166, 34.3407], category: '花火', icon: '🎆' },
+    
+    // Sports Events
+    { name: '大阪マラソン', coordinates: [135.5256, 34.6873], category: 'スポーツ', icon: '🏃' },
+    { name: '大阪国際女子マラソン', coordinates: [135.5189, 34.6780], category: 'スポーツ', icon: '🏃' },
+    { name: 'セレッソ大阪 vs ガンバ大阪', coordinates: [135.5189, 34.6142], category: 'サッカー', icon: '⚽' },
+    { name: '関西学生アメフト決勝', coordinates: [135.5189, 34.6142], category: 'スポーツ', icon: '🏈' },
+    
+    // Cultural Events
+    { name: '大阪城音楽堂コンサート', coordinates: [135.5256, 34.6873], category: 'コンサート', icon: '🎵' },
+    { name: '大阪アジアン映画祭', coordinates: [135.5014, 34.6731], category: '映画', icon: '🎬' },
+    { name: 'サマーソニック大阪', coordinates: [135.4290, 34.6380], category: '音楽フェス', icon: '🎸' },
+    { name: '食博覧会・大阪', coordinates: [135.4290, 34.6380], category: 'グルメ', icon: '🍜' },
+    { name: '大阪モーターショー', coordinates: [135.4290, 34.6380], category: '展示会', icon: '🚗' },
+    { name: '御堂筋イルミネーション', coordinates: [135.5014, 34.6831], category: 'イルミネーション', icon: '✨' }
   ]
 };
 
@@ -355,11 +460,58 @@ const FUKUOKA_DATA = {
     { name: 'ももち浜海浜公園', coordinates: [130.3514, 33.5933], height: 5 }
   ],
   events: [
-    { name: '博多どんたく', coordinates: [130.4017, 33.5904], category: '祭り', icon: '🎊' },
+    // PayPay Dome Events (中央区)
+    { name: '福岡ソフトバンクホークス vs 西武ライオンズ', coordinates: [130.3620, 33.5953], category: '野球', icon: '⚾' },
+    { name: '福岡ソフトバンクホークス vs 楽天イーグルス', coordinates: [130.3620, 33.5953], category: '野球', icon: '⚾' },
+    { name: '福岡ソフトバンクホークス 日本シリーズ', coordinates: [130.3620, 33.5953], category: '野球', icon: '⚾' },
+    { name: 'BIGBANG JAPAN DOME TOUR 福岡', coordinates: [130.3620, 33.5953], category: 'K-POP', icon: '🎵' },
+    { name: 'Hey! Say! JUMP LIVE 福岡', coordinates: [130.3620, 33.5953], category: 'コンサート', icon: '🎵' },
+    { name: '浜崎あゆみ DOME TOUR 福岡', coordinates: [130.3620, 33.5953], category: 'コンサート', icon: '🎵' },
+    
+    // Marine Messe Fukuoka Events (博多区)
+    { name: 'ONE OK ROCK LIVE 福岡', coordinates: [130.4090, 33.6047], category: 'コンサート', icon: '🎵' },
+    { name: 'RADWIMPS TOUR 福岡', coordinates: [130.4090, 33.6047], category: 'コンサート', icon: '🎵' },
+    { name: '福岡モーターショー', coordinates: [130.4090, 33.6047], category: '展示会', icon: '🚗' },
+    { name: '九州コミティア', coordinates: [130.4090, 33.6047], category: '展示会', icon: '🎨' },
+    { name: '福岡ゲームショウ', coordinates: [130.4090, 33.6047], category: '展示会', icon: '🎮' },
+    { name: '九州ペット博', coordinates: [130.4090, 33.6047], category: '展示会', icon: '🐕' },
+    
+    // Traditional Festivals
+    { name: '博多どんたく港まつり', coordinates: [130.4017, 33.5904], category: '祭り', icon: '🎊' },
     { name: '博多祇園山笠', coordinates: [130.4108, 33.5930], category: '祭り', icon: '🎊' },
-    { name: '西日本大濠花火大会', coordinates: [130.3760, 33.5850], category: '花火', icon: '🎆' },
     { name: '放生会', coordinates: [130.4252, 33.6170], category: '祭り', icon: '🎊' },
-    { name: '福岡マラソン', coordinates: [130.4017, 33.5904], category: 'スポーツ', icon: '⚽' }
+    { name: '博多おくんち', coordinates: [130.4108, 33.5930], category: '祭り', icon: '🎊' },
+    { name: '飯盛神社秋季大祭', coordinates: [130.3570, 33.5840], category: '祭り', icon: '🎊' },
+    
+    // Hakata Station Area Events
+    { name: 'JR博多シティ イルミネーション', coordinates: [130.4205, 33.5897], category: 'イルミネーション', icon: '✨' },
+    { name: '博多駅前広場 夏祭り', coordinates: [130.4205, 33.5897], category: '祭り', icon: '🎊' },
+    { name: '九州物産展', coordinates: [130.4205, 33.5897], category: '物産展', icon: '🛍️' },
+    
+    // Asian Cultural Events
+    { name: 'アジアンパーティ', coordinates: [130.4111, 33.5899], category: '文化', icon: '🌏' },
+    { name: '福岡アジア文化賞', coordinates: [130.4048, 33.5880], category: '文化', icon: '🏆' },
+    { name: 'アジア太平洋フェスティバル', coordinates: [130.4017, 33.5904], category: 'フェス', icon: '🎪' },
+    { name: '福岡アジア映画祭', coordinates: [130.4111, 33.5899], category: '映画', icon: '🎬' },
+    { name: '九州・アジア国際音楽祭', coordinates: [130.4048, 33.5880], category: '音楽', icon: '🎵' },
+    
+    // Sports Events
+    { name: '福岡マラソン', coordinates: [130.4017, 33.5904], category: 'スポーツ', icon: '🏃' },
+    { name: '福岡国際マラソン', coordinates: [130.3760, 33.5850], category: 'スポーツ', icon: '🏃' },
+    { name: 'アビスパ福岡 vs サガン鳥栖', coordinates: [130.4520, 33.5860], category: 'サッカー', icon: '⚽' },
+    { name: '九州場所 大相撲', coordinates: [130.4090, 33.5900], category: 'スポーツ', icon: '🤼' },
+    
+    // Fireworks and Summer Events
+    { name: '西日本大濠花火大会', coordinates: [130.3760, 33.5850], category: '花火', icon: '🎆' },
+    { name: '関門海峡花火大会', coordinates: [130.8842, 33.9610], category: '花火', icon: '🎆' },
+    { name: '筑後川花火大会', coordinates: [130.5080, 33.3190], category: '花火', icon: '🎆' },
+    
+    // Cultural Events
+    { name: '博多座 歌舞伎公演', coordinates: [130.4059, 33.5943], category: '伝統芸能', icon: '🎭' },
+    { name: 'サンセットライブ', coordinates: [130.3514, 33.5933], category: '音楽フェス', icon: '🎸' },
+    { name: '福岡城さくらまつり', coordinates: [130.3809, 33.5845], category: '花見', icon: '🌸' },
+    { name: 'ももち浜 SUMMER FESTIVAL', coordinates: [130.3514, 33.5933], category: 'フェス', icon: '🏖️' },
+    { name: '天神きらめき通りイルミネーション', coordinates: [130.4017, 33.5904], category: 'イルミネーション', icon: '✨' }
   ]
 };
 
@@ -369,9 +521,9 @@ function generateAccommodationForPrefecture(prefectureData) {
   
   Object.values(prefectureData.cities).forEach(city => {
     city.districts.forEach(district => {
-      // Generate more hotels for major cities (15-25 per district based on population)
-      const baseHotelCount = city.population > 300000 ? 15 : 10;
-      const hotelCount = Math.floor(baseHotelCount + (district.population / 30000) * 5);
+      // Generate more hotels for major cities (25-50 per district based on population)
+      const baseHotelCount = city.population > 300000 ? 30 : 20;
+      const hotelCount = Math.floor(baseHotelCount + (district.population / 20000) * 10);
       const points = generatePointsAroundCenter(district.center, hotelCount, 0.005);
       
       points.forEach((coord, idx) => {
@@ -409,15 +561,22 @@ function generateAccommodationForPrefecture(prefectureData) {
         const hotelNames = {
           'シティホテル': ['ヒルトン', 'シェラトン', 'マリオット', 'インターコンチネンタル', 
                       'パークハイアット', 'グランドハイアット', 'ザ・リッツ・カールトン', 
-                      'コンラッド', 'アンダーズ', 'ハイアットリージェンシー'],
+                      'コンラッド', 'アンダーズ', 'ハイアットリージェンシー', 'ウェスティン',
+                      'プリンスホテル', 'ニューオータニ', 'オークラ', 'インペリアル',
+                      'セントレジス', 'フォーシーズンズ', 'マンダリンオリエンタル'],
           'ビジネスホテル': ['東横イン', 'アパホテル', 'スーパーホテル', 'ルートイン', 
                        'ドーミーイン', 'リッチモンドホテル', 'ダイワロイネット', 
-                       'ホテルサンルート', 'ワシントンホテル', 'コンフォートホテル'],
+                       'ホテルサンルート', 'ワシントンホテル', 'コンフォートホテル',
+                       'チサンホテル', 'ホテル法華クラブ', 'ホテルリブマックス', 'ユニゾイン',
+                       'ホテルモントレ', 'ホテルグランヴィア', 'ホテルメッツ', 'ビスタホテル'],
           'カプセルホテル': ['ナインアワーズ', 'ファーストキャビン', 'カプセルイン', 
-                       'グランパーク・イン', 'ベイサイドホテル アジュール'],
+                       'グランパーク・イン', 'ベイサイドホテル アジュール', 'コンパクトホテル',
+                       'スマートホテル', 'ポッドイン', 'キャビンホテル'],
           'ゲストハウス': ['ホステル', 'バックパッカーズ', 'ゲストハウス', 
-                      'K\'s House', 'サクラホステル', 'カオサン'],
-          '旅館': ['旅館', '温泉旅館', '料亭旅館', '和風旅館']
+                      'K\'s House', 'サクラホステル', 'カオサン', 'ゲストハウス品川宿',
+                      'トーキョーハウス', '東京ひかりゲストハウス', 'BOOK AND BED'],
+          '旅館': ['旅館', '温泉旅館', '料亭旅館', '和風旅館', '老舗旅館', '湯宿',
+                  '民宿', '町家旅館', '庭園旅館']
         };
         
         const nameOptions = hotelNames[type] || hotelNames['ビジネスホテル'];
@@ -452,10 +611,43 @@ function generateAccommodationForPrefecture(prefectureData) {
       });
     });
     
+    // Add hotels near major train stations
+    const stationHotelNames = ['JR', '駅前', 'ステーション', 'グランド', 'プレミア'];
+    const stationAreas = ['駅前', '駅南', '駅北', '駅東', '駅西'];
+    
+    stationAreas.forEach((area, areaIdx) => {
+      const stationHotels = Math.floor(8 + Math.random() * 7);
+      const stationCoord = [
+        city.center[0] + (Math.random() - 0.5) * 0.01,
+        city.center[1] + (Math.random() - 0.5) * 0.01
+      ];
+      const stationPoints = generatePointsAroundCenter(stationCoord, stationHotels, 0.002);
+      
+      stationPoints.forEach((coord, idx) => {
+        const hotelTypes = ['ビジネスホテル', 'シティホテル'];
+        const type = hotelTypes[Math.floor(Math.random() * hotelTypes.length)];
+        const stationPrefix = stationHotelNames[Math.floor(Math.random() * stationHotelNames.length)];
+        
+        accommodations.push({
+          id: `${city.nameEn}-station-${areaIdx}-hotel-${idx}`,
+          coordinates: coord,
+          name: `${stationPrefix}ホテル${city.name}${area}`,
+          type: type,
+          occupancy: 0.75 + Math.random() * 0.2,
+          capacity: type === 'シティホテル' ? 250 + Math.floor(Math.random() * 150) :
+                   150 + Math.floor(Math.random() * 100),
+          city: city.name,
+          district: city.districts[0].name,
+          nearStation: true,
+          rating: 3.5 + Math.random() * 1.0
+        });
+      });
+    });
+    
     // Add extra hotels near tourist spots
     if (city.touristSpots) {
       city.touristSpots.slice(0, 5).forEach((spot, spotIdx) => {
-        const touristHotels = Math.floor(3 + Math.random() * 3);
+        const touristHotels = Math.floor(5 + Math.random() * 5);
         const spotCoord = [
           city.center[0] + (Math.random() - 0.5) * 0.02,
           city.center[1] + (Math.random() - 0.5) * 0.02
@@ -615,18 +807,123 @@ function generateMobilityForPrefecture(prefectureData) {
     congestionPoints: []
   };
   
-  // Generate routes between major areas
+  // Prefecture-specific transportation routes
+  if (prefectureData.bounds.center[0] === 139.7670) { // Tokyo
+    // Yamanote Line (circular route)
+    const yamanoteStations = [
+      { name: '東京', coord: [139.7671, 35.6812] },
+      { name: '品川', coord: [139.7400, 35.6286] },
+      { name: '渋谷', coord: [139.7019, 35.6580] },
+      { name: '新宿', coord: [139.7036, 35.6938] },
+      { name: '池袋', coord: [139.7100, 35.7295] },
+      { name: '上野', coord: [139.7774, 35.7141] },
+      { name: '秋葉原', coord: [139.7740, 35.6984] }
+    ];
+    
+    for (let i = 0; i < yamanoteStations.length; i++) {
+      const next = (i + 1) % yamanoteStations.length;
+      mobilityData.routes.push({
+        id: `yamanote-${i}`,
+        name: `山手線: ${yamanoteStations[i].name} - ${yamanoteStations[next].name}`,
+        type: 'train',
+        points: [yamanoteStations[i].coord, yamanoteStations[next].coord],
+        congestion: 0.7 + Math.random() * 0.25,
+        flow_speed: 35,
+        category: 'JR線'
+      });
+    }
+    
+    // Major subway lines
+    mobilityData.routes.push({
+      id: 'ginza-line',
+      name: '銀座線: 渋谷 - 浅草',
+      type: 'subway',
+      points: [[139.7019, 35.6580], [139.7966, 35.7120]],
+      congestion: 0.75,
+      flow_speed: 30,
+      category: '地下鉄'
+    });
+    
+    mobilityData.routes.push({
+      id: 'marunouchi-line',
+      name: '丸ノ内線: 荻窪 - 池袋',
+      type: 'subway',
+      points: [[139.6205, 35.7043], [139.7100, 35.7295]],
+      congestion: 0.8,
+      flow_speed: 28,
+      category: '地下鉄'
+    });
+    
+  } else if (prefectureData.bounds.center[0] === 135.4959) { // Osaka
+    // Osaka Loop Line
+    const loopStations = [
+      { name: '大阪', coord: [135.4959, 34.7028] },
+      { name: '天王寺', coord: [135.5189, 34.6466] },
+      { name: '新今宮', coord: [135.5063, 34.6525] },
+      { name: '西九条', coord: [135.4661, 34.6833] },
+      { name: '京橋', coord: [135.5339, 34.6968] }
+    ];
+    
+    for (let i = 0; i < loopStations.length; i++) {
+      const next = (i + 1) % loopStations.length;
+      mobilityData.routes.push({
+        id: `osaka-loop-${i}`,
+        name: `大阪環状線: ${loopStations[i].name} - ${loopStations[next].name}`,
+        type: 'train',
+        points: [loopStations[i].coord, loopStations[next].coord],
+        congestion: 0.65 + Math.random() * 0.25,
+        flow_speed: 35,
+        category: 'JR線'
+      });
+    }
+    
+    // Osaka Metro lines
+    mobilityData.routes.push({
+      id: 'midosuji-line',
+      name: '御堂筋線: 新大阪 - なんば',
+      type: 'subway',
+      points: [[135.5008, 34.7338], [135.5027, 34.6627]],
+      congestion: 0.85,
+      flow_speed: 30,
+      category: '地下鉄'
+    });
+    
+  } else if (prefectureData.bounds.center[0] === 130.4017) { // Fukuoka
+    // Fukuoka subway lines
+    mobilityData.routes.push({
+      id: 'kuko-line',
+      name: '空港線: 福岡空港 - 姪浜',
+      type: 'subway',
+      points: [[130.4510, 33.5859], [130.3235, 33.5851]],
+      congestion: 0.7,
+      flow_speed: 35,
+      category: '地下鉄'
+    });
+    
+    mobilityData.routes.push({
+      id: 'hakozaki-line',
+      name: '箱崎線: 中洲川端 - 貝塚',
+      type: 'subway',
+      points: [[130.4059, 33.5943], [130.4252, 33.6170]],
+      congestion: 0.6,
+      flow_speed: 30,
+      category: '地下鉄'
+    });
+  }
+  
+  // Generate highway routes between major areas
   const cities = Object.values(prefectureData.cities);
   for (let i = 0; i < cities.length - 1; i++) {
     for (let j = i + 1; j < cities.length; j++) {
       const congestionLevel = 0.5 + Math.random() * 0.4;
       mobilityData.routes.push({
-        id: `route-${cities[i].nameEn}-${cities[j].nameEn}`,
-        name: `${cities[i].name} - ${cities[j].name}`,
+        id: `highway-${cities[i].nameEn}-${cities[j].nameEn}`,
+        name: `高速道路: ${cities[i].name} - ${cities[j].name}`,
         type: 'highway',
         points: [cities[i].center, cities[j].center],
         congestion: congestionLevel,
-        flow_speed: 60 - (congestionLevel * 30)
+        flow_speed: 60 - (congestionLevel * 30),
+        category: '高速道路'
       });
     }
   }

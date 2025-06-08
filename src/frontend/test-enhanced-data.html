@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Multi-Prefecture Data Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .prefecture-section {
+            background: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .stat-card h4 {
+            margin: 0 0 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        .stat-card .value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .event-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .event-icon {
+            font-size: 24px;
+        }
+        .event-details {
+            flex: 1;
+        }
+        .event-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .event-category {
+            font-size: 12px;
+            color: #666;
+        }
+        .transport-list {
+            margin-top: 15px;
+        }
+        .transport-item {
+            background: #e9ecef;
+            padding: 8px 12px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .hotel-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .hotel-type {
+            background: #e8f4f8;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .hotel-type-name {
+            font-size: 12px;
+            color: #666;
+        }
+        .hotel-count {
+            font-size: 20px;
+            font-weight: bold;
+            color: #0066cc;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enhanced Multi-Prefecture Data Generator Test</h1>
+        <p>Testing comprehensive enhancements for Tokyo, Osaka, and Fukuoka</p>
+        
+        <div id="results"></div>
+    </div>
+
+    <script type="module">
+        import { generateAllPrefectureData, generateInterPrefectureMobilityRoutes } from './src/utils/multiPrefectureDataGenerator.js';
+        
+        const prefectures = ['東京都', '大阪府', '福岡県'];
+        const resultsDiv = document.getElementById('results');
+        
+        // Test each prefecture
+        prefectures.forEach(prefecture => {
+            const data = generateAllPrefectureData(prefecture);
+            
+            // Count hotels by type
+            const hotelsByType = {};
+            data.accommodation.forEach(hotel => {
+                hotelsByType[hotel.type] = (hotelsByType[hotel.type] || 0) + 1;
+            });
+            
+            // Count events by category
+            const eventsByCategory = {};
+            data.events.forEach(event => {
+                eventsByCategory[event.category] = (eventsByCategory[event.category] || 0) + 1;
+            });
+            
+            // Count transportation routes
+            const routesByType = {};
+            data.mobility.routes.forEach(route => {
+                const type = route.category || route.type;
+                routesByType[type] = (routesByType[type] || 0) + 1;
+            });
+            
+            const section = document.createElement('div');
+            section.className = 'prefecture-section';
+            section.innerHTML = `
+                <h2>${prefecture}</h2>
+                
+                <div class="stats">
+                    <div class="stat-card">
+                        <h4>Total Events</h4>
+                        <div class="value">${data.events.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Total Hotels</h4>
+                        <div class="value">${data.accommodation.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Transportation Routes</h4>
+                        <div class="value">${data.mobility.routes.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <h4>Landmarks</h4>
+                        <div class="value">${data.landmarks.length}</div>
+                    </div>
+                </div>
+                
+                <h3>Events by Category (${data.events.length} total)</h3>
+                <div class="events-grid">
+                    ${Object.entries(eventsByCategory).map(([category, count]) => `
+                        <div class="event-item">
+                            <div class="event-icon">${getEventIcon(category)}</div>
+                            <div class="event-details">
+                                <div class="event-name">${category}</div>
+                                <div class="event-category">${count} events</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <h3>Hotels by Type (${data.accommodation.length} total)</h3>
+                <div class="hotel-summary">
+                    ${Object.entries(hotelsByType).map(([type, count]) => `
+                        <div class="hotel-type">
+                            <div class="hotel-type-name">${type}</div>
+                            <div class="hotel-count">${count}</div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <h3>Transportation Routes</h3>
+                <div class="transport-list">
+                    ${Object.entries(routesByType).map(([type, count]) => `
+                        <div class="transport-item">
+                            <span>${type}</span>
+                            <span>${count} routes</span>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <h3>Sample Events</h3>
+                <div class="events-grid">
+                    ${data.events.slice(0, 9).map(event => `
+                        <div class="event-item">
+                            <div class="event-icon">${event.icon}</div>
+                            <div class="event-details">
+                                <div class="event-name">${event.name}</div>
+                                <div class="event-category">${event.category}</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            resultsDiv.appendChild(section);
+        });
+        
+        // Test inter-prefecture routes
+        const interRoutes = generateInterPrefectureMobilityRoutes();
+        const interSection = document.createElement('div');
+        interSection.className = 'prefecture-section';
+        interSection.innerHTML = `
+            <h2>Inter-Prefecture Transportation</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <h4>Total Routes</h4>
+                    <div class="value">${interRoutes.length}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Shinkansen Routes</h4>
+                    <div class="value">${interRoutes.filter(r => r.type === 'shinkansen').length}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Highway Routes</h4>
+                    <div class="value">${interRoutes.filter(r => r.type === 'highway').length}</div>
+                </div>
+                <div class="stat-card">
+                    <h4>Air Routes</h4>
+                    <div class="value">${interRoutes.filter(r => r.type === 'air').length}</div>
+                </div>
+            </div>
+        `;
+        resultsDiv.appendChild(interSection);
+        
+        function getEventIcon(category) {
+            const icons = {
+                '野球': '⚾',
+                'コンサート': '🎵',
+                'K-POP': '🎵',
+                '展示会': '🎨',
+                '祭り': '🎊',
+                '花火': '🎆',
+                'スポーツ': '⚽',
+                '映画': '🎬',
+                'イベント': '🎭',
+                '花見': '🌸',
+                'テーマパーク': '🎢',
+                '会議': '🏢',
+                '伝統芸能': '🎭',
+                'フェス': '🎪',
+                '物産展': '🛍️',
+                '文化': '🌏',
+                'グルメ': '🍜',
+                'イルミネーション': '✨',
+                '音楽フェス': '🎸',
+                '学会': '🔬',
+                '武道': '🥋',
+                'サッカー': '⚽',
+                '陸上': '🏃',
+                'ラグビー': '🏈',
+                'アート': '🎨'
+            };
+            return icons[category] || '📍';
+        }
+    </script>
+</body>
+</html>

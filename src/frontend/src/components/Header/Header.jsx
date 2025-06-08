@@ -27,7 +27,8 @@ const Header = ({
   timeRange,
   onTimeRangeChange,
   onPrefectureSelect,
-  currentPrefecture = '広島県'
+  currentPrefecture = '広島県',
+  onAIAnalysisClick
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -143,6 +144,7 @@ const Header = ({
             startIcon={<AutoAwesome />}
             variant="text"
             size="small"
+            onClick={onAIAnalysisClick}
             sx={{
               color: 'rgba(255, 255, 255, 0.7)',
               textTransform: 'none',

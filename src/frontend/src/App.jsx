@@ -16,6 +16,7 @@ import MapErrorBoundary from './components/Map/MapErrorBoundary';
 import LeftSidebar from './components/Sidebar/LeftSidebar';
 import RightSidebar from './components/Sidebar/RightSidebar';
 import Dashboard from './components/Dashboard/Dashboard';
+import AIAnalysisModal from './components/AIAnalysis/AIAnalysisModal';
 
 // サービス
 import { weatherService, heatmapService, mobilityService, eventService } from './services/api';
@@ -154,6 +155,7 @@ function App() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [dashboardOpen, setDashboardOpen] = useState(false);
   const [currentPrefecture, setCurrentPrefecture] = useState('広島県');
+  const [aiAnalysisOpen, setAIAnalysisOpen] = useState(false);
 
   // 初期データ読み込み
   useEffect(() => {
@@ -445,6 +447,7 @@ function App() {
           onTimeRangeChange={setTimeRange}
           currentPrefecture={currentPrefecture}
           onPrefectureSelect={handlePrefectureSelect}
+          onAIAnalysisClick={() => setAIAnalysisOpen(true)}
         />
         
         {/* メインコンテンツ */}
@@ -591,6 +594,21 @@ function App() {
             />
           )}
         </Box>
+
+        {/* AI分析モーダル */}
+        <AIAnalysisModal
+          open={aiAnalysisOpen}
+          onClose={() => setAIAnalysisOpen(false)}
+          currentData={{
+            heatmapData,
+            weatherData,
+            mobilityData,
+            eventData,
+            statistics,
+          }}
+          timeRange={timeRange}
+          currentPrefecture={currentPrefecture}
+        />
         
         {/* エラー通知 */}
         <Snackbar
