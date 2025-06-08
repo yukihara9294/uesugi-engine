@@ -6,17 +6,19 @@
 import React, { useState, useEffect } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Box, Container, Alert, Snackbar } from '@mui/material';
+import { Box, Container, Alert, Snackbar, IconButton } from '@mui/material';
+import { ChevronRight, ChevronLeft } from '@mui/icons-material';
 
 // コンポーネント
 import Header from './components/Header/Header';
-import MapEnhanced from './components/Map/MapEnhanced';
+import MapEnhancedFixed from './components/Map/MapEnhancedFixed';
 import MapErrorBoundary from './components/Map/MapErrorBoundary';
-import Sidebar from './components/Sidebar/Sidebar';
+import LeftSidebar from './components/Sidebar/LeftSidebar';
+import RightSidebar from './components/Sidebar/RightSidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 
 // サービス
-import { weatherService, heatmapService, mobilityService } from './services/api';
+import { weatherService, heatmapService, mobilityService, eventService } from './services/api';
 
 // テーマ設定
 const theme = createTheme({
@@ -120,7 +122,7 @@ function App() {
   const [viewport, setViewport] = useState(HIROSHIMA_CENTER);
   
   // フィルタ・表示設定
-  const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather', 'accommodation', 'consumption']);
+  const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather', 'accommodation', 'consumption', 'events']);
   const [selectedCategories, setSelectedCategories] = useState(['観光', 'グルメ']);
   const [timeRange, setTimeRange] = useState({
     start: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24時間前
@@ -134,6 +136,7 @@ function App() {
   const [mobilityData, setMobilityData] = useState(null);
   const [accommodationData, setAccommodationData] = useState(null);
   const [consumptionData, setConsumptionData] = useState(null);
+  const [eventData, setEventData] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // エラー・通知状態
@@ -141,8 +144,10 @@ function App() {
   const [notification, setNotification] = useState(null);
   
   // サイドバー表示状態
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [dashboardOpen, setDashboardOpen] = useState(false);
+  const [currentPrefecture, setCurrentPrefecture] = useState('広島県');
 
   // 初期データ読み込み
   useEffect(() => {
@@ -157,7 +162,8 @@ function App() {
           statsResult,
           mobilityResult,
           accommodationResult,
-          consumptionResult
+          consumptionResult,
+          eventResult
         ] = await Promise.allSettled([
           loadHeatmapData(),
           loadWeatherData(), // 初回のみ読み込み
@@ -165,6 +171,7 @@ function App() {
           loadMobilityData(),
           loadAccommodationData(),
           loadConsumptionData(),
+          loadEventData(),
         ]);
         
         // エラーチェック
@@ -175,6 +182,7 @@ function App() {
         if (mobilityResult.status === 'rejected') errors.push('人流データ');
         if (accommodationResult.status === 'rejected') errors.push('宿泊データ');
         if (consumptionResult.status === 'rejected') errors.push('消費データ');
+        if (eventResult.status === 'rejected') errors.push('イベントデータ');
         
         if (errors.length > 0) {
           setNotification({
@@ -314,6 +322,19 @@ function App() {
     }
   };
 
+  // イベントデータの読み込み
+  const loadEventData = async () => {
+    try {
+      const data = await eventService.getEvents();
+      console.log('App - Event data loaded:', data);
+      setEventData(data);
+      return data;
+    } catch (error) {
+      console.error('Failed to load event data:', error);
+      throw error;
+    }
+  };
+
   // 地図の境界を計算
   const calculateBounds = () => {
     const padding = 0.5; // 度
@@ -378,10 +399,10 @@ function App() {
       }}>
         {/* ヘッダー */}
         <Header
-          onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
-          onDashboardToggle={() => setDashboardOpen(!dashboardOpen)}
-          sidebarOpen={sidebarOpen}
-          dashboardOpen={dashboardOpen}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+          currentPrefecture={currentPrefecture}
+          onPrefectureSelect={setCurrentPrefecture}
         />
         
         {/* メインコンテンツ */}
@@ -391,23 +412,20 @@ function App() {
           overflow: 'hidden',
           position: 'relative'
         }}>
-          {/* サイドバー */}
-          {sidebarOpen && (
-            <Sidebar
+          {/* 左サイドバー - 現実世界データ */}
+          {leftSidebarOpen && (
+            <LeftSidebar
               selectedLayers={selectedLayers}
               onLayerChange={setSelectedLayers}
-              selectedCategories={selectedCategories}
-              onCategoryChange={setSelectedCategories}
-              timeRange={timeRange}
-              onTimeRangeChange={setTimeRange}
-              statistics={statistics}
+              viewport={viewport}
               weatherData={weatherData}
               onRefresh={() => {
-                loadHeatmapData();
-                // loadWeatherData(); // 天気データは自動更新しない
-                loadStatistics();
                 loadMobilityData();
+                loadAccommodationData();
+                loadConsumptionData();
+                loadEventData();
               }}
+              onClose={() => setLeftSidebarOpen(false)}
             />
           )}
           
@@ -418,7 +436,7 @@ function App() {
             overflow: 'hidden'
           }}>
             <MapErrorBoundary>
-              <MapEnhanced
+              <MapEnhancedFixed
                 viewport={viewport}
                 onViewportChange={setViewport}
                 heatmapData={heatmapData}
@@ -427,13 +445,76 @@ function App() {
                 accommodationData={accommodationData}
                 consumptionData={consumptionData}
                 landmarkData={null}
+                eventData={eventData}
                 selectedLayers={selectedLayers}
                 selectedCategories={selectedCategories}
                 loading={loading}
                 onError={(error) => handleError(error, 'Map')}
               />
             </MapErrorBoundary>
+            
+            {/* 左サイドバー開くボタン */}
+            {!leftSidebarOpen && (
+              <IconButton
+                onClick={() => setLeftSidebarOpen(true)}
+                sx={{
+                  position: 'absolute',
+                  left: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(102, 126, 234, 0.9)',
+                  color: 'white',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
+                  '&:hover': {
+                    bgcolor: 'rgba(102, 126, 234, 1)',
+                    transform: 'translateY(-50%) scale(1.1)',
+                  },
+                  transition: 'all 0.2s ease',
+                  zIndex: 1000,
+                }}
+              >
+                <ChevronRight />
+              </IconButton>
+            )}
+            
+            {/* 右サイドバー開くボタン */}
+            {!rightSidebarOpen && (
+              <IconButton
+                onClick={() => setRightSidebarOpen(true)}
+                sx={{
+                  position: 'absolute',
+                  right: 16,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'rgba(255, 87, 34, 0.9)',
+                  color: 'white',
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: '0 4px 20px rgba(255, 87, 34, 0.3)',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 87, 34, 1)',
+                    transform: 'translateY(-50%) scale(1.1)',
+                  },
+                  transition: 'all 0.2s ease',
+                  zIndex: 1000,
+                }}
+              >
+                <ChevronLeft />
+              </IconButton>
+            )}
           </Box>
+          
+          {/* 右サイドバー - ソーシャルネットワーキングデータ */}
+          {rightSidebarOpen && (
+            <RightSidebar
+              selectedLayers={selectedLayers}
+              onLayerChange={setSelectedLayers}
+              selectedCategories={selectedCategories}
+              onCategoryChange={setSelectedCategories}
+              statistics={statistics}
+              onClose={() => setRightSidebarOpen(false)}
+            />
+          )}
           
           {/* ダッシュボード */}
           {dashboardOpen && (

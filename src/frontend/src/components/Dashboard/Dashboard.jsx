@@ -377,23 +377,7 @@ const Dashboard = ({
                                   {weather.landmark_name}
                                 </Typography>
                               }
-                              secondary={
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
-                                  <Chip 
-                                    label={`${weather.temperature}°C`}
-                                    size="small"
-                                    sx={{ 
-                                      height: 20,
-                                      fontSize: '0.75rem',
-                                      bgcolor: 'rgba(255, 165, 0, 0.2)',
-                                      color: '#FFA500'
-                                    }}
-                                  />
-                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                    {weather.weather_condition}
-                                  </Typography>
-                                </Box>
-                              }
+                              secondary={`${weather.temperature}°C - ${weather.weather_condition}`}
                             />
                           </ListItem>
                         ))}

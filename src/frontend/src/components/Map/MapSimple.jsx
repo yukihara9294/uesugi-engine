@@ -37,8 +37,8 @@ const MapSimple = ({
     initialized.current = true;
 
     const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
-    if (!MAPBOX_TOKEN) {
-      setMapboxError('Mapboxアクセストークンが設定されていません');
+    if (!MAPBOX_TOKEN || MAPBOX_TOKEN === 'YOUR_MAPBOX_TOKEN_HERE') {
+      setMapboxError('Mapboxアクセストークンが設定されていません。.envファイルにMAPBOX_ACCESS_TOKENを設定してください。');
       return;
     }
 

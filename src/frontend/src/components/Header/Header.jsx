@@ -2,7 +2,7 @@
  * ヘッダーコンポーネント
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -10,23 +10,39 @@ import {
   Box,
   Chip,
   Button,
+  Menu,
+  MenuItem,
+  Typography,
 } from '@mui/material';
 import {
-  Menu as MenuIcon,
-  Analytics,
-  Explore,
   LocationOn,
   TrendingUp,
   AutoAwesome,
+  ArrowDropDown,
 } from '@mui/icons-material';
+import DatePeriodSelector from './DatePeriodSelector';
 
 const Header = ({ 
-  onSidebarToggle, 
-  onDashboardToggle, 
-  sidebarOpen, 
-  dashboardOpen,
-  onRefresh 
+  onRefresh,
+  timeRange,
+  onTimeRangeChange,
+  onPrefectureSelect,
+  currentPrefecture = '広島県'
 }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handlePrefectureClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handlePrefectureClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handlePrefectureSelect = (prefecture) => {
+    onPrefectureSelect(prefecture);
+    handlePrefectureClose();
+  };
   return (
     <AppBar 
       position="static" 
@@ -39,53 +55,60 @@ const Header = ({
       elevation={0}
     >
       <Toolbar sx={{ px: { xs: 2, sm: 3 }, py: 1 }}>
-        <IconButton
-          edge="start"
-          color="inherit"
-          onClick={onSidebarToggle}
-          sx={{ 
-            mr: 2,
-            background: 'rgba(255, 255, 255, 0.05)',
-            backdropFilter: 'blur(10px)',
-            '&:hover': {
-              background: 'rgba(255, 255, 255, 0.1)',
-              transform: 'scale(1.05)'
-            },
-            transition: 'all 0.2s ease'
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
-        
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
           gap: 2,
           flexGrow: 1 
         }}>
-          <Box sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            px: 2,
-            py: 0.75,
-            borderRadius: 3,
-            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 4px 20px rgba(102, 126, 234, 0.1)'
-          }}>
-            <Explore sx={{ fontSize: 20, color: '#667eea' }} />
-            <Chip 
-              icon={<LocationOn sx={{ fontSize: '16px !important' }} />}
-              label="広島県" 
-              size="small" 
-              sx={{
-                background: 'rgba(102, 126, 234, 0.2)',
-                border: '1px solid rgba(102, 126, 234, 0.3)',
-                '& .MuiChip-label': { px: 1.5, fontWeight: 500 }
-              }}
-            />
-          </Box>
+          {/* 都道府県選択ボタン */}
+          <Button
+            startIcon={<LocationOn />}
+            endIcon={<ArrowDropDown />}
+            onClick={handlePrefectureClick}
+            sx={{
+              px: 2,
+              py: 0.75,
+              borderRadius: 3,
+              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 4px 20px rgba(102, 126, 234, 0.1)',
+              textTransform: 'none',
+              fontSize: '18px',
+              fontWeight: 700,
+              color: '#fff',
+              '&:hover': {
+                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)',
+                borderColor: 'rgba(102, 126, 234, 0.3)',
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            {currentPrefecture}
+          </Button>
+          
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handlePrefectureClose}
+            sx={{
+              '& .MuiPaper-root': {
+                bgcolor: 'rgba(10, 10, 10, 0.95)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)',
+              },
+            }}
+          >
+            <MenuItem onClick={() => handlePrefectureSelect('広島県')}>
+              広島県
+            </MenuItem>
+            <MenuItem onClick={() => handlePrefectureSelect('東京都')} disabled>
+              東京都（準備中）
+            </MenuItem>
+            <MenuItem onClick={() => handlePrefectureSelect('大阪府')} disabled>
+              大阪府（準備中）
+            </MenuItem>
+          </Menu>
           
           <Chip
             icon={<TrendingUp sx={{ fontSize: '16px !important' }} />}
@@ -107,6 +130,12 @@ const Header = ({
         </Box>
 
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {/* 日付・期間選択 */}
+          <DatePeriodSelector 
+            timeRange={timeRange}
+            onTimeRangeChange={onTimeRangeChange}
+          />
+          
           <Button
             startIcon={<AutoAwesome />}
             variant="text"
@@ -121,34 +150,6 @@ const Header = ({
             }}
           >
             AI分析
-          </Button>
-          
-          <Button
-            startIcon={<Analytics />}
-            color="inherit"
-            onClick={onDashboardToggle}
-            sx={{
-              textTransform: 'none',
-              px: 3,
-              py: 1,
-              borderRadius: 3,
-              background: dashboardOpen 
-                ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)' 
-                : 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid',
-              borderColor: dashboardOpen ? 'rgba(102, 126, 234, 0.5)' : 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(10px)',
-              fontWeight: 500,
-              '&:hover': {
-                background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%)',
-                borderColor: 'rgba(102, 126, 234, 0.7)',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 8px 24px rgba(102, 126, 234, 0.2)'
-              },
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-          >
-            ダッシュボード
           </Button>
         </Box>
       </Toolbar>

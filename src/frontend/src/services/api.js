@@ -72,4 +72,10 @@ export const mobilityService = {
   getConsumption: (params) => apiService.get('/api/v1/mobility/consumption', params),
 };
 
+// イベントサービス
+export const eventService = {
+  getEvents: (params) => apiService.get('/api/v1/events', params),
+  getImpactZones: () => apiService.get('/api/v1/events/impact-zones'),
+};
+
 export default apiService;

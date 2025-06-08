@@ -53,6 +53,7 @@ const Sidebar = ({
     { id: 'consumption', label: '消費データ', icon: <ShoppingCart />, color: '#FF69B4' },
     { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#4CAF50' },
     { id: 'weather', label: '気象データ', icon: <WbSunny />, color: '#FFA500' },
+    { id: 'events', label: 'イベント情報', icon: <ShareIcon />, color: '#FF6B6B' },
   ];
   
   // ソーシャル・ネットワーキング・データ

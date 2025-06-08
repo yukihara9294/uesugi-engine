@@ -3,7 +3,7 @@
  */
 
 import React, { useRef, useEffect, useState } from 'react';
-import { Box, CircularProgress } from '@mui/material';
+import { Box, CircularProgress, Alert } from '@mui/material';
 
 const MapEnhanced = ({ 
   viewport, 
@@ -14,6 +14,7 @@ const MapEnhanced = ({
   accommodationData,
   consumptionData,
   landmarkData,
+  eventData,
   selectedLayers, 
   selectedCategories,
   loading 
@@ -21,10 +22,11 @@ const MapEnhanced = ({
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapboxError, setMapboxError] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
   const animationFrame = useRef(null);
   
-  console.log('MapEnhanced component rendered');
+  // console.log('MapEnhanced component rendered, loading:', loading, 'mapLoaded:', mapLoaded);
 
   // カラーパレット（Sidebarと統一）
   const colors = {
@@ -33,11 +35,18 @@ const MapEnhanced = ({
     consumption: '#FF69B4',
     accommodation: '#4CAF50',
     weather: '#FFA500',
-    heatmap: '#FF5722'
+    heatmap: '#FF5722',
+    events: '#FF6B6B'
   };
 
   useEffect(() => {
-    console.log('Map useEffect triggered');
+    console.log('Map useEffect triggered, loading:', loading);
+    
+    // ローディング中はマップを初期化しない
+    if (loading) {
+      console.log('Still loading, skipping map initialization');
+      return;
+    }
     
     // クリーンアップフラグ
     let isMounted = true;
@@ -50,8 +59,9 @@ const MapEnhanced = ({
 
     const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
     console.log('MAPBOX_TOKEN:', MAPBOX_TOKEN ? 'Found' : 'Not found');
-    if (!MAPBOX_TOKEN) {
-      console.error('Mapbox token not found');
+    if (!MAPBOX_TOKEN || MAPBOX_TOKEN === 'YOUR_MAPBOX_TOKEN_HERE') {
+      console.error('Mapbox token not found or using placeholder');
+      setMapboxError('Mapboxアクセストークンが設定されていません。');
       return;
     }
 
@@ -68,14 +78,18 @@ const MapEnhanced = ({
       let attempts = 0;
       const checkContainer = () => {
         attempts++;
-        console.log(`Checking container... attempt ${attempts}`);
-        if (mapContainer.current) {
-          console.log('Container is ready!');
+        console.log(`Checking container... attempt ${attempts}`, 'mapContainer.current:', !!mapContainer.current);
+        
+        // DOM要素を直接探す
+        const containerElement = document.getElementById('map-container');
+        
+        if (containerElement || mapContainer.current) {
+          console.log('Container is ready!', 'found by:', containerElement ? 'getElementById' : 'ref');
           callback();
         } else if (attempts < 20 && isMounted) { // 最大2秒待つ
           setTimeout(checkContainer, 100);
         } else {
-          console.error('Container never became ready');
+          console.error('Container never became ready', 'mapContainer.current:', mapContainer.current);
         }
       };
       checkContainer();
@@ -136,7 +150,10 @@ const MapEnhanced = ({
         return;
       }
       
-      if (!mapContainer.current) {
+      // コンテナ要素を取得
+      const containerElement = mapContainer.current || document.getElementById('map-container');
+      
+      if (!containerElement) {
         console.log('Container not ready yet');
         return;
       }
@@ -151,7 +168,7 @@ const MapEnhanced = ({
         
         // Mapboxの標準ダークスタイルを使用
         map.current = new window.mapboxgl.Map({
-          container: mapContainer.current,
+          container: containerElement,
           style: 'mapbox://styles/mapbox/dark-v10',
           center: [viewport.longitude, viewport.latitude],
           zoom: viewport.zoom,
@@ -235,16 +252,11 @@ const MapEnhanced = ({
       }
     };
 
-    // DOMが準備できるまで少し待つ
-    const initTimeout = setTimeout(() => {
-      if (isMounted) {
-        loadMapbox();
-      }
-    }, 100);
+    // 即座に初期化を試みる
+    loadMapbox();
 
     return () => {
       isMounted = false;
-      clearTimeout(initTimeout);
       if (animationFrame.current) {
         cancelAnimationFrame(animationFrame.current);
         animationFrame.current = null;
@@ -255,7 +267,7 @@ const MapEnhanced = ({
         setMapLoaded(false);
       }
     };
-  }, []); // 依存配列を空にして、初回のみ実行
+  }, [loading]); // loading状態が変わったときのみ再実行
 
   // レイヤー更新
   useEffect(() => {
@@ -1160,8 +1172,160 @@ const MapEnhanced = ({
     } catch (e) {
       console.error('Landmarks error:', e);
     }
+
+    // イベントデータレイヤー
+    try {
+      const eventLayers = ['event-icons', 'event-impact-zones', 'event-pulse'];
+      eventLayers.forEach(layer => {
+        if (map.current.getLayer(layer)) {
+          map.current.removeLayer(layer);
+        }
+      });
+      const eventSources = ['event-icons-source', 'event-impact-zones-source', 'event-pulse-source'];
+      eventSources.forEach(source => {
+        if (map.current.getSource(source)) {
+          map.current.removeSource(source);
+        }
+      });
+
+      if (eventData && selectedLayers.includes('events')) {
+        // EventLayerコンポーネントの機能を直接実装
+        const categoryColors = {
+          festival: '#FF6B6B',
+          sports: '#4ECDC4',
+          concert: '#FFE66D',
+          exhibition: '#A8E6CF',
+          market: '#C7CEEA'
+        };
+
+        const categoryIcons = {
+          festival: '🎊',
+          sports: '⚽',
+          concert: '🎵',
+          exhibition: '🎨',
+          market: '🛍️'
+        };
+
+        const iconFeatures = eventData.map(event => ({
+          type: 'Feature',
+          properties: {
+            id: event.id,
+            name: event.name,
+            category: event.category,
+            venue: event.venue,
+            attendees: event.expected_attendees,
+            icon: categoryIcons[event.category] || '📍',
+            color: categoryColors[event.category] || '#888888'
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [event.longitude, event.latitude]
+          }
+        }));
+
+        const impactZoneFeatures = eventData.map(event => ({
+          type: 'Feature',
+          properties: {
+            id: event.id,
+            name: event.name,
+            radius: event.impact_radius,
+            color: categoryColors[event.category] || '#888888'
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [event.longitude, event.latitude]
+          }
+        }));
+
+        // 影響範囲レイヤー
+        map.current.addSource('event-impact-zones-source', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: impactZoneFeatures }
+        });
+
+        map.current.addLayer({
+          id: 'event-impact-zones',
+          type: 'circle',
+          source: 'event-impact-zones-source',
+          paint: {
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              10, ['/', ['get', 'radius'], 100],
+              15, ['/', ['get', 'radius'], 20],
+              20, ['/', ['get', 'radius'], 5]
+            ],
+            'circle-color': ['get', 'color'],
+            'circle-opacity': 0.15,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': ['get', 'color'],
+            'circle-stroke-opacity': 0.3
+          }
+        });
+
+        // イベントアイコンレイヤー
+        map.current.addSource('event-icons-source', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: iconFeatures }
+        });
+
+        map.current.addLayer({
+          id: 'event-icons',
+          type: 'symbol',
+          source: 'event-icons-source',
+          layout: {
+            'text-field': ['get', 'icon'],
+            'text-size': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              10, 24,
+              15, 32,
+              20, 48
+            ],
+            'text-allow-overlap': true,
+            'text-ignore-placement': true
+          }
+        });
+      }
+    } catch (e) {
+      console.error('Events error:', e);
+    }
     } // updateLayers関数の終了
-  }, [mapLoaded, heatmapData, accommodationData, mobilityData, weatherData, consumptionData, landmarkData, selectedLayers, selectedCategories]);
+  }, [mapLoaded, heatmapData, accommodationData, mobilityData, weatherData, consumptionData, landmarkData, eventData, selectedLayers, selectedCategories]);
+
+  // エラー表示
+  if (mapboxError) {
+    return (
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        height: '100%',
+        backgroundColor: '#0a0a0a',
+        padding: 2
+      }}>
+        <Alert severity="error" sx={{ maxWidth: 600 }}>
+          <strong>地図を表示できません</strong>
+          <br />
+          {mapboxError}
+          <br /><br />
+          <strong>解決方法:</strong>
+          <ol style={{ marginLeft: 20, marginTop: 10 }}>
+            <li>Mapboxアカウントを作成: <a href="https://www.mapbox.com/" target="_blank" rel="noopener noreferrer" style={{ color: '#90caf9' }}>https://www.mapbox.com/</a></li>
+            <li>ダッシュボードから新しいアクセストークンを作成</li>
+            <li>プロジェクトルートに .env ファイルを作成し、以下を追加:
+              <pre style={{ backgroundColor: '#333', padding: 10, marginTop: 5, borderRadius: 4 }}>
+                MAPBOX_ACCESS_TOKEN=your_actual_token_here
+              </pre>
+            </li>
+            <li>Docker Composeを再起動: <code>docker compose restart frontend</code></li>
+          </ol>
+        </Alert>
+      </Box>
+    );
+  }
 
   if (loading) {
     return (
@@ -1187,6 +1351,7 @@ const MapEnhanced = ({
       }} 
     >
       <div 
+        id="map-container"
         ref={mapContainer} 
         style={{ 
           width: '100%', 

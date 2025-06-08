@@ -13,7 +13,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.core.database import create_tables
-from app.api.endpoints import heatmap, weather, statistics, health, mobility, landmark
+from app.api.endpoints import heatmap, weather, statistics, health, mobility, landmark, event
 from app.services.dummy_data_generator import generate_initial_data
 
 # アプリケーションの初期化
@@ -55,6 +55,7 @@ app.include_router(weather.router, prefix="/api/v1/weather", tags=["weather"])
 app.include_router(statistics.router, prefix="/api/v1/statistics", tags=["statistics"])
 app.include_router(mobility.router, prefix="/api/v1/mobility", tags=["mobility"])
 app.include_router(landmark.router, prefix="/api/v1/landmarks", tags=["landmarks"])
+app.include_router(event.router, prefix="/api/v1/events", tags=["events"])
 
 # イベントハンドラー
 @app.on_event("startup")
@@ -116,7 +117,8 @@ async def root():
             "weather": "/api/v1/weather",
             "statistics": "/api/v1/statistics",
             "mobility": "/api/v1/mobility",
-            "landmarks": "/api/v1/landmarks"
+            "landmarks": "/api/v1/landmarks",
+            "events": "/api/v1/events"
         },
         "status": "running"
     }
