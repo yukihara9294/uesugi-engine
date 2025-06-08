@@ -90,6 +90,15 @@ const MapEnhancedFixed = ({
     if (map.current && map.current.getLayer(layerId)) {
       console.log(`Setting ${layerId} visibility to ${visible ? 'visible' : 'none'}`);
       map.current.setLayoutProperty(layerId, 'visibility', visible ? 'visible' : 'none');
+      
+      // Ensure particle layers are on top when made visible
+      if (visible && layerId.includes('particles')) {
+        try {
+          map.current.moveLayer(layerId);
+        } catch (e) {
+          // Layer order might be fine already
+        }
+      }
     } else {
       console.warn(`Layer ${layerId} not found on map`);
     }
@@ -507,9 +516,9 @@ const MapEnhancedFixed = ({
       data: { type: 'FeatureCollection', features: arcFeatures }
     });
 
-    // Outer glow for arcs
+    // Very faint arc lines (minimal visibility)
     map.current.addLayer({
-      id: 'mobility-arcs-glow',
+      id: 'mobility-arcs-faint',
       type: 'line',
       source: 'mobility-arcs-source',
       layout: { visibility: 'none' },
@@ -518,49 +527,16 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['get', 'congestion'],
-          0, 'rgba(100, 200, 255, 0.3)',
-          0.5, 'rgba(0, 255, 255, 0.3)',
-          1, 'rgba(255, 0, 128, 0.3)'
+          0, 'rgba(100, 200, 255, 0.1)',
+          0.5, 'rgba(0, 255, 255, 0.1)',
+          1, 'rgba(255, 0, 128, 0.1)'
         ],
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['get', 'importance'],
-          0, 15,
-          1, 30
-        ],
-        'line-blur': 15,
-        'line-opacity': 0.4
+        'line-width': 1,
+        'line-opacity': 0.2,
+        'line-blur': 0.5
       }
     });
-    registerLayer('mobility-arcs-glow', 'mobility');
-
-    // Main arc lines
-    map.current.addLayer({
-      id: 'mobility-arcs',
-      type: 'line',
-      source: 'mobility-arcs-source',
-      layout: { visibility: 'none' },
-      paint: {
-        'line-color': [
-          'interpolate',
-          ['linear'],
-          ['get', 'congestion'],
-          0, 'rgba(150, 220, 255, 0.9)',
-          0.5, 'rgba(0, 255, 255, 0.9)',
-          1, 'rgba(255, 100, 200, 0.9)'
-        ],
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['get', 'importance'],
-          0, 2,
-          1, 4
-        ],
-        'line-opacity': 0.9
-      }
-    });
-    registerLayer('mobility-arcs', 'mobility');
+    registerLayer('mobility-arcs-faint', 'mobility');
 
     // Particle flow sources
     map.current.addSource('mobility-particles-source', {
@@ -568,9 +544,9 @@ const MapEnhancedFixed = ({
       data: { type: 'FeatureCollection', features: [] }
     });
 
-    // Glowing particles
+    // Particle outer glow layer
     map.current.addLayer({
-      id: 'mobility-particles',
+      id: 'mobility-particles-glow-outer',
       type: 'circle',
       source: 'mobility-particles-source',
       layout: { visibility: 'none' },
@@ -579,15 +555,57 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['get', 'size'],
-          0, 2,
-          1, 6
+          0, 20,
+          1, 30
         ],
-        'circle-color': ['get', 'color'],
-        'circle-opacity': ['get', 'opacity'],
+        'circle-color': ['get', 'glowColor'],
+        'circle-opacity': ['get', 'glowOpacityOuter'],
+        'circle-blur': 1
+      }
+    });
+    registerLayer('mobility-particles-glow-outer', 'mobility');
+
+    // Particle middle glow layer
+    map.current.addLayer({
+      id: 'mobility-particles-glow-middle',
+      type: 'circle',
+      source: 'mobility-particles-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['get', 'size'],
+          0, 12,
+          1, 18
+        ],
+        'circle-color': ['get', 'glowColor'],
+        'circle-opacity': ['get', 'glowOpacityMiddle'],
         'circle-blur': 0.8
       }
     });
-    registerLayer('mobility-particles', 'mobility');
+    registerLayer('mobility-particles-glow-middle', 'mobility');
+
+    // Particle core (bright center)
+    map.current.addLayer({
+      id: 'mobility-particles-core',
+      type: 'circle',
+      source: 'mobility-particles-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['get', 'size'],
+          0, 6,
+          1, 10
+        ],
+        'circle-color': ['get', 'coreColor'],
+        'circle-opacity': ['get', 'coreOpacity'],
+        'circle-blur': 0.3
+      }
+    });
+    registerLayer('mobility-particles-core', 'mobility');
 
     // Data stream trails
     map.current.addSource('mobility-trails-source', {
@@ -602,9 +620,9 @@ const MapEnhancedFixed = ({
       layout: { visibility: 'none' },
       paint: {
         'line-color': ['get', 'color'],
-        'line-width': 2,
+        'line-width': 3,
         'line-opacity': ['get', 'opacity'],
-        'line-blur': 1
+        'line-blur': 2
       }
     });
     registerLayer('mobility-trails', 'mobility');
@@ -694,18 +712,18 @@ const MapEnhancedFixed = ({
       source: 'mobility-grid-source',
       layout: { visibility: 'none' },
       paint: {
-        'line-color': 'rgba(0, 255, 255, 0.1)',
-        'line-width': 0.5,
+        'line-color': 'rgba(0, 255, 255, 0.05)',
+        'line-width': 0.3,
         'line-opacity': [
           'interpolate',
           ['linear'],
           ['zoom'],
           10, 0,
-          12, 0.2,
-          15, 0.1
+          12, 0.1,
+          15, 0.05
         ]
       }
-    }, 'mobility-arcs-glow'); // Add below arcs
+    }, 'mobility-arcs-faint'); // Add below arcs
     registerLayer('mobility-grid', 'mobility');
 
     // Start cyberpunk animation
@@ -734,8 +752,8 @@ const MapEnhancedFixed = ({
       
       arcFeatures.forEach((arc, arcIndex) => {
         const coordinates = arc.geometry.coordinates;
-        const particleCount = Math.ceil(arc.properties.importance * 8) + 3;
-        const flowSpeed = (1 - arc.properties.congestion) * 0.02 + 0.005;
+        const particleCount = Math.ceil(arc.properties.importance * 12) + 5; // More particles
+        const flowSpeed = (1 - arc.properties.congestion) * 0.015 + 0.003; // Slower for visibility
         
         for (let i = 0; i < particleCount; i++) {
           const offset = i / particleCount;
@@ -766,7 +784,27 @@ const MapEnhancedFixed = ({
             trail.push(particleCoord);
             if (trail.length > 10) trail.shift(); // Keep last 10 positions
             
-            // Create particle
+            // Calculate particle properties with enhanced visibility
+            const pulsePhase = Math.sin(animationTime * Math.PI * 2 + offset * Math.PI * 2);
+            const sizeMultiplier = 0.8 + pulsePhase * 0.2;
+            const opacityPulse = 0.7 + pulsePhase * 0.3;
+            
+            // Color based on congestion with enhanced brightness
+            const congestion = arc.properties.congestion;
+            let glowColor, coreColor;
+            
+            if (congestion >= 0.8) {
+              glowColor = 'rgba(255, 0, 128, 0.8)'; // Hot pink
+              coreColor = 'rgba(255, 150, 200, 1)'; // Bright pink core
+            } else if (congestion >= 0.5) {
+              glowColor = 'rgba(0, 255, 255, 0.8)'; // Cyan
+              coreColor = 'rgba(150, 255, 255, 1)'; // Bright cyan core
+            } else {
+              glowColor = 'rgba(100, 200, 255, 0.8)'; // Light blue
+              coreColor = 'rgba(200, 230, 255, 1)'; // Bright blue-white core
+            }
+            
+            // Create particle with multiple glow layers
             particles.push({
               type: 'Feature',
               geometry: {
@@ -774,13 +812,16 @@ const MapEnhancedFixed = ({
                 coordinates: particleCoord
               },
               properties: {
-                size: 0.3 + Math.sin(animationTime * Math.PI * 2 + offset * Math.PI * 2) * 0.2,
-                color: getCyberColor(arc.properties.congestion),
-                opacity: 0.6 + Math.sin(animationTime * Math.PI * 4 + offset * Math.PI) * 0.3
+                size: sizeMultiplier,
+                glowColor: glowColor,
+                coreColor: coreColor,
+                glowOpacityOuter: 0.2 * opacityPulse,
+                glowOpacityMiddle: 0.4 * opacityPulse,
+                coreOpacity: 0.9 * opacityPulse
               }
             });
             
-            // Create trail
+            // Create glowing trail
             if (trail.length > 1) {
               trails.push({
                 type: 'Feature',
@@ -789,8 +830,8 @@ const MapEnhancedFixed = ({
                   coordinates: trail.slice(-5) // Use last 5 points for trail
                 },
                 properties: {
-                  color: getCyberColor(arc.properties.congestion, 0.3),
-                  opacity: 0.3
+                  color: glowColor,
+                  opacity: 0.6 * opacityPulse
                 }
               });
             }
