@@ -44,10 +44,16 @@ const ConsumptionLayer = ({ map, data, visible }) => {
       };
 
       // GeoJSONデータの作成
-      const features = storesData.map(store => {
+      const features = storesData.map((store, index) => {
         const color = categoryColors[store.store_category] || '#999999';
-        // 取引額に基づいて高さを計算（最大200m）
-        const height = Math.min(200, (store.total_amount / 1000000) * 50);
+        // 取引額に基づいて高さを計算（最大50m、元の1/4）
+        // より多様な高さのバリエーションを追加
+        const baseHeight = (store.total_amount / 1000000) * 12.5; // 元の50を12.5に
+        const variation = Math.sin(index * 0.5) * 5 + Math.cos(index * 0.3) * 3; // 変動を追加
+        const height = Math.min(50, Math.max(10, baseHeight + variation));
+        
+        // 半径も1/2に縮小
+        const radius = Math.sqrt(store.transaction_count) * 1;
         
         return {
           type: 'Feature',
@@ -59,7 +65,7 @@ const ConsumptionLayer = ({ map, data, visible }) => {
             ...store,
             color: color,
             height: height,
-            radius: Math.sqrt(store.transaction_count) * 2
+            radius: radius
           }
         };
       });
@@ -86,13 +92,13 @@ const ConsumptionLayer = ({ map, data, visible }) => {
         }
       });
 
-      // ベース円レイヤー
+      // ベース円レイヤー（サイズ縮小）
       map.addLayer({
         id: 'consumption-base',
         type: 'circle',
         source: 'consumption-source',
         paint: {
-          'circle-radius': ['/', ['get', 'radius'], 2],
+          'circle-radius': ['/', ['get', 'radius'], 3], // さらに小さく
           'circle-color': ['get', 'color'],
           'circle-opacity': 0.8
         }

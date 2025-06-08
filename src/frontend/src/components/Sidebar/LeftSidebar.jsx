@@ -17,7 +17,6 @@ import {
   Chip,
 } from '@mui/material';
 import { 
-  Refresh as RefreshIcon,
   Layers,
   WbSunny,
   Map as MapIcon,
@@ -81,37 +80,20 @@ const LeftSidebar = ({
               リアルワールドデータ
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <IconButton 
-              size="small" 
-              onClick={onRefresh} 
-              sx={{ 
-                color: '#667eea',
-                background: 'rgba(102, 126, 234, 0.1)',
-                '&:hover': {
-                  background: 'rgba(102, 126, 234, 0.2)',
-                  transform: 'rotate(180deg)'
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={onClose}
-              sx={{
-                color: '#667eea',
-                background: 'rgba(102, 126, 234, 0.1)',
-                '&:hover': {
-                  background: 'rgba(102, 126, 234, 0.2)',
-                },
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <ChevronLeft />
-            </IconButton>
-          </Box>
+          <IconButton
+            size="small"
+            onClick={onClose}
+            sx={{
+              color: '#667eea',
+              background: 'rgba(102, 126, 234, 0.1)',
+              '&:hover': {
+                background: 'rgba(102, 126, 234, 0.2)',
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <ChevronLeft />
+          </IconButton>
         </Box>
       </Box>
 

@@ -253,7 +253,7 @@ export function generateConsumptionData() {
         const categories = ['飲食', 'ショッピング', '観光', 'エンターテイメント', 'サービス'];
         const category = categories[Math.floor(Math.random() * categories.length)];
         
-        // Base amount on city population and category
+        // Base amount on city population and category with more variation
         const baseAmount = city.population * 0.1;
         const categoryMultiplier = {
           '飲食': 1.2,
@@ -263,7 +263,12 @@ export function generateConsumptionData() {
           'サービス': 0.7
         };
         
-        const amount = baseAmount * categoryMultiplier[category] * (0.5 + Math.random());
+        // Add more variation based on time, location, and randomness
+        const timeVariation = Math.sin(idx * 0.3) * 0.3 + 0.7; // 0.4 to 1.0
+        const locationVariation = area.includes('駅前') ? 1.3 : 1.0; // Station areas get boost
+        const randomVariation = 0.2 + Math.random() * 1.3; // 0.2 to 1.5
+        
+        const amount = baseAmount * categoryMultiplier[category] * timeVariation * locationVariation * randomVariation;
         
         consumptionData.push({
           id: `${city.nameEn}-${area}-consumption-${idx}`,
@@ -341,15 +346,46 @@ export function generateMobilityData() {
 export function generateLandmarkData() {
   const landmarks = [];
   
+  // Define actual coordinates for major landmarks
+  const actualLandmarkCoordinates = {
+    '原爆ドーム': [132.4530, 34.3930],
+    '平和記念公園': [132.4500, 34.3920],
+    '広島城': [132.4590, 34.4027],
+    '縮景園': [132.4677, 34.4004],
+    'マツダスタジアム': [132.4840, 34.3925],
+    '厳島神社': [132.3185, 34.2908],
+    '弥山': [132.3200, 34.2800],
+    '福山城': [133.3627, 34.4900],
+    '鞆の浦': [133.3833, 34.3833],
+    'みろくの里': [133.3100, 34.4300],
+    '大和ミュージアム': [132.5550, 34.2410],
+    '海上自衛隊呉史料館': [132.5560, 34.2420],
+    '音戸の瀬戸': [132.5283, 34.1619],
+    '西条酒蔵通り': [132.7426, 34.4286],
+    '正福寺山公園': [132.7600, 34.4200],
+    '千光寺': [133.2050, 34.4100],
+    '尾道商店街': [133.2050, 34.4090],
+    'しまなみ海道': [133.2100, 34.3900],
+    '向島': [133.2150, 34.3890],
+    'もみじの名所': [132.3200, 34.3000],
+    '三原城跡': [133.0794, 34.4011],
+    '佛通寺': [133.0900, 34.4500],
+    '白竜湖': [133.1200, 34.4200],
+    '奥田元宋・小由女美術館': [132.8526, 34.8058],
+    '尾関山公園': [132.8600, 34.8100],
+    '霧の海': [132.8700, 34.8200]
+  };
+  
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     city.touristSpots.forEach((spot, idx) => {
-      const coord = [
-        city.center[0] + (Math.random() - 0.5) * 0.02,
-        city.center[1] + (Math.random() - 0.5) * 0.02
+      // Use actual coordinates if available, otherwise generate near city center
+      const coord = actualLandmarkCoordinates[spot] || [
+        city.center[0] + (Math.random() - 0.5) * 0.01,
+        city.center[1] + (Math.random() - 0.5) * 0.01
       ];
       
       // Height based on landmark importance
-      const importantLandmarks = ['原爆ドーム', '厳島神社', '福山城', '大和ミュージアム'];
+      const importantLandmarks = ['原爆ドーム', '厳島神社', '福山城', '大和ミュージアム', '広島城'];
       const height = importantLandmarks.includes(spot) ? 40 + Math.random() * 20 : 
                     20 + Math.random() * 20;
       
