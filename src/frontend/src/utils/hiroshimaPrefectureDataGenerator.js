@@ -239,17 +239,56 @@ export function generateAccommodationData() {
 export function generateConsumptionData() {
   const consumptionData = [];
   
+  // Define major tourist areas with exact locations
+  const touristAreas = [
+    { name: '宮島', coordinates: [132.3196, 34.2960], cityName: '廿日市市' }, // Miyajima
+    { name: '平和記念公園', coordinates: [132.4500, 34.3920], cityName: '広島市' }, // Peace Memorial Park
+    { name: '原爆ドーム', coordinates: [132.4530, 34.3930], cityName: '広島市' }, // Atomic Bomb Dome
+    { name: '厳島神社', coordinates: [132.3185, 34.2908], cityName: '廿日市市' }, // Itsukushima Shrine
+  ];
+  
+  // Helper function to check if a point is near a tourist area
+  const isNearTouristArea = (coord, threshold = 0.01) => {
+    return touristAreas.some(area => {
+      const distance = Math.sqrt(
+        Math.pow(coord[0] - area.coordinates[0], 2) + 
+        Math.pow(coord[1] - area.coordinates[1], 2)
+      );
+      return distance < threshold;
+    });
+  };
+  
+  // Helper function to cluster points
+  const clusterPoints = (points, clusterSize = 5) => {
+    const clustered = [];
+    for (let i = 0; i < points.length; i += clusterSize) {
+      const cluster = points.slice(i, i + clusterSize);
+      if (cluster.length > 0) {
+        // Calculate centroid of cluster
+        const centroid = [
+          cluster.reduce((sum, p) => sum + p[0], 0) / cluster.length,
+          cluster.reduce((sum, p) => sum + p[1], 0) / cluster.length
+        ];
+        clustered.push(centroid);
+      }
+    }
+    return clustered;
+  };
+  
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     city.commercialAreas.forEach(area => {
-      // Generate multiple consumption points per commercial area
-      const pointCount = Math.floor(5 + (city.population / 100000) * 3);
+      // Generate initial points (5x more than before for clustering)
+      const pointCount = Math.floor(25 + (city.population / 100000) * 15);
       const centerOffset = [
         city.center[0] + (Math.random() - 0.5) * 0.01,
         city.center[1] + (Math.random() - 0.5) * 0.01
       ];
-      const points = generatePointsAroundCenter(centerOffset, pointCount, 0.005);
+      const rawPoints = generatePointsAroundCenter(centerOffset, pointCount, 0.005);
       
-      points.forEach((coord, idx) => {
+      // Cluster every 5 points into 1
+      const clusteredPoints = clusterPoints(rawPoints, 5);
+      
+      clusteredPoints.forEach((coord, idx) => {
         const categories = ['飲食', 'ショッピング', '観光', 'エンターテイメント', 'サービス'];
         const category = categories[Math.floor(Math.random() * categories.length)];
         
@@ -263,12 +302,22 @@ export function generateConsumptionData() {
           'サービス': 0.7
         };
         
+        // Check if this point is in a tourist area
+        const isTouristArea = isNearTouristArea(coord);
+        
         // Add more variation based on time, location, and randomness
         const timeVariation = Math.sin(idx * 0.3) * 0.3 + 0.7; // 0.4 to 1.0
         const locationVariation = area.includes('駅前') ? 1.3 : 1.0; // Station areas get boost
         const randomVariation = 0.2 + Math.random() * 1.3; // 0.2 to 1.5
         
-        const amount = baseAmount * categoryMultiplier[category] * timeVariation * locationVariation * randomVariation;
+        // Apply 20x multiplier for tourist areas
+        const touristMultiplier = isTouristArea ? 20 : 1;
+        
+        // Since we're clustering 5 points into 1, multiply the amount by 5
+        const clusterMultiplier = 5;
+        
+        const amount = baseAmount * categoryMultiplier[category] * timeVariation * 
+                      locationVariation * randomVariation * touristMultiplier * clusterMultiplier;
         
         consumptionData.push({
           id: `${city.nameEn}-${area}-consumption-${idx}`,
@@ -277,9 +326,35 @@ export function generateConsumptionData() {
           category: category,
           area: area,
           city: city.name,
+          isTouristArea: isTouristArea,
           peak_time: Math.floor(Math.random() * 24) // Peak hour (0-23)
         });
       });
+    });
+    
+    // Add extra consumption points specifically at tourist areas
+    touristAreas.forEach((touristArea, idx) => {
+      if (touristArea.cityName === city.name) {
+        // Generate clustered points around tourist area
+        const touristPointCount = 15; // Will be clustered to 3
+        const touristRawPoints = generatePointsAroundCenter(touristArea.coordinates, touristPointCount, 0.003);
+        const touristClusteredPoints = clusterPoints(touristRawPoints, 5);
+        
+        touristClusteredPoints.forEach((coord, pointIdx) => {
+          const amount = city.population * 2.5 * (0.8 + Math.random() * 0.4) * 20 * 5; // Base * variation * tourist * cluster
+          
+          consumptionData.push({
+            id: `${city.nameEn}-tourist-${touristArea.name}-consumption-${pointIdx}`,
+            coordinates: coord,
+            amount: Math.floor(amount),
+            category: '観光',
+            area: touristArea.name,
+            city: city.name,
+            isTouristArea: true,
+            peak_time: Math.floor(10 + Math.random() * 6) // Tourist peak hours 10-16
+          });
+        });
+      }
     });
   });
   
@@ -409,13 +484,88 @@ export function generateLandmarkData() {
 // Generate event data based on venues and population
 export function generateEventData() {
   const events = [];
+  
+  // Realistic event names for each category
   const eventTypes = [
-    { category: '祭り', icon: '🎊', seasonal: true },
-    { category: 'スポーツ', icon: '⚽', seasonal: false },
-    { category: 'コンサート', icon: '🎵', seasonal: false },
-    { category: '展示会', icon: '🎨', seasonal: false },
-    { category: '花火', icon: '🎆', seasonal: true }
+    { 
+      category: '祭り', 
+      icon: '🎊', 
+      seasonal: true,
+      names: [
+        'フラワーフェスティバル',
+        '管絃祭',
+        '胡子大祭',
+        '住吉神社例大祭',
+        'とうかさん大祭',
+        '秋祭り',
+        '盆踊り大会',
+        '七夕まつり'
+      ]
+    },
+    { 
+      category: 'スポーツ', 
+      icon: '⚽', 
+      seasonal: false,
+      names: [
+        'サンフレッチェ広島 vs ガンバ大阪',
+        'カープ vs 巨人戦',
+        '広島国際マラソン',
+        '市民スポーツ大会',
+        'プロバスケットボール試合',
+        '高校野球県大会',
+        'サッカーJ1リーグ戦',
+        'ひろしまMIKANマラソン'
+      ]
+    },
+    { 
+      category: 'コンサート', 
+      icon: '🎵', 
+      seasonal: false,
+      names: [
+        'B\'z LIVE TOUR 2024',
+        '広島交響楽団定期演奏会',
+        'DREAMS COME TRUE コンサート',
+        'Mr.Children Tour 2024',
+        'ジャズフェスティバル',
+        'クラシック音楽祭',
+        '地元アーティストライブ',
+        'K-POPフェスティバル'
+      ]
+    },
+    { 
+      category: '展示会', 
+      icon: '🎨', 
+      seasonal: false,
+      names: [
+        '現代アート展',
+        '広島県美術展',
+        '写真展「瀬戸内の風景」',
+        '伝統工芸品展示会',
+        'マンガ・アニメ展',
+        '科学技術展',
+        '歴史資料特別展',
+        '地域産業展示会'
+      ]
+    },
+    { 
+      category: '花火', 
+      icon: '🎆', 
+      seasonal: true,
+      names: [
+        '宮島水中花火大会',
+        '広島みなと夢花火大会',
+        '福山夏まつり花火大会',
+        '三原やっさ花火大会',
+        '呉海上花火大会',
+        '尾道住吉花火まつり',
+        '因島水軍まつり花火大会',
+        '江田島サマーフェスタ花火'
+      ]
+    }
   ];
+  
+  // Keep track of used names to avoid duplicates
+  const usedNames = new Set();
   
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     // Number of events based on population
@@ -423,6 +573,23 @@ export function generateEventData() {
     
     for (let i = 0; i < eventCount; i++) {
       const eventType = eventTypes[Math.floor(Math.random() * eventTypes.length)];
+      
+      // Select a unique name from the category
+      let eventName;
+      let attempts = 0;
+      do {
+        const nameIndex = Math.floor(Math.random() * eventType.names.length);
+        eventName = eventType.names[nameIndex];
+        attempts++;
+        // If we've tried too many times, add a number suffix to make it unique
+        if (attempts > 10) {
+          eventName = `${eventName} ${Math.floor(Math.random() * 100)}`;
+          break;
+        }
+      } while (usedNames.has(eventName));
+      
+      usedNames.add(eventName);
+      
       const coord = [
         city.center[0] + (Math.random() - 0.5) * 0.015,
         city.center[1] + (Math.random() - 0.5) * 0.015
@@ -434,17 +601,30 @@ export function generateEventData() {
                           eventType.category === 'スポーツ' ? baseRadius :
                           baseRadius * 0.7;
       
+      // Generate more realistic attendance based on event type
+      const attendanceMultiplier = {
+        '祭り': 0.3,
+        'スポーツ': 0.15,
+        'コンサート': 0.1,
+        '展示会': 0.05,
+        '花火': 0.4
+      };
+      
+      const baseAttendance = city.population * attendanceMultiplier[eventType.category];
+      const attendance = Math.floor(baseAttendance * (0.5 + Math.random() * 0.5));
+      
       events.push({
         id: `${city.nameEn}-event-${i}`,
         coordinates: coord,
-        name: `${city.name}${eventType.category}`,
+        name: eventName,
         category: eventType.category,
         icon: eventType.icon,
         impact_radius: impactRadius,
-        expected_attendance: Math.floor((city.population / 100) * (0.1 + Math.random() * 0.2)),
+        expected_attendance: attendance,
         city: city.name,
+        location: city.commercialAreas[Math.floor(Math.random() * city.commercialAreas.length)],
         date: eventType.seasonal ? 
-              `${Math.floor(Math.random() * 4) + 1}月` : 
+              `${Math.floor(Math.random() * 4) + 5}月${Math.floor(Math.random() * 28) + 1}日` : 
               '通年'
       });
     }

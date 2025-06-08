@@ -350,8 +350,10 @@ const MapEnhancedFixed = ({
         properties: {
           amount: c.amount,
           category: c.category,
+          // Height represents spending amount - tourist areas are 20x taller
           height: Math.sqrt(c.amount) / 50, // Adjusted for larger amounts
-          color: colors.consumption
+          color: colors.consumption,
+          isTouristArea: c.isTouristArea
         }
       };
     });
@@ -384,11 +386,11 @@ const MapEnhancedFixed = ({
     const mobilityData = dataCache.current.prefectureData.mobility;
     const routes = mobilityData.routes;
 
-    // Cyberpunk color scheme
+    // Cyberpunk color scheme - blue particles
     const getCyberColor = (congestion, opacity = 1) => {
       if (congestion >= 0.8) return `rgba(255, 0, 128, ${opacity})`; // Hot pink for high congestion
-      if (congestion >= 0.5) return `rgba(0, 255, 255, ${opacity})`; // Cyan for medium
-      return `rgba(100, 200, 255, ${opacity})`; // Light blue for low
+      if (congestion >= 0.5) return `rgba(0, 150, 255, ${opacity})`; // Medium blue for medium
+      return `rgba(0, 100, 255, ${opacity})`; // Deep blue for low
     };
 
     // Major transportation hubs with glowing orbs
@@ -795,13 +797,13 @@ const MapEnhancedFixed = ({
             
             if (congestion >= 0.8) {
               glowColor = 'rgba(255, 0, 128, 0.8)'; // Hot pink
-              coreColor = 'rgba(255, 150, 200, 1)'; // Bright pink core
+              coreColor = 'rgba(255, 0, 128, 1)'; // Pink core
             } else if (congestion >= 0.5) {
-              glowColor = 'rgba(0, 255, 255, 0.8)'; // Cyan
-              coreColor = 'rgba(150, 255, 255, 1)'; // Bright cyan core
+              glowColor = 'rgba(0, 150, 255, 0.8)'; // Medium blue
+              coreColor = 'rgba(0, 150, 255, 1)'; // Blue core
             } else {
-              glowColor = 'rgba(100, 200, 255, 0.8)'; // Light blue
-              coreColor = 'rgba(200, 230, 255, 1)'; // Bright blue-white core
+              glowColor = 'rgba(0, 100, 255, 0.8)'; // Deep blue
+              coreColor = 'rgba(0, 100, 255, 1)'; // Deep blue core
             }
             
             // Create particle with multiple glow layers
@@ -924,7 +926,8 @@ const MapEnhancedFixed = ({
       data: { type: 'FeatureCollection', features: impactFeatures }
     });
 
-    // 影響範囲の表示
+    // 影響範囲の表示 - Circle size represents event's economic and crowd impact
+    // Festivals have 1.5x radius, Sports 1.0x, Concerts/Exhibitions 0.7x
     map.current.addLayer({
       id: 'events-impact',
       type: 'circle',
