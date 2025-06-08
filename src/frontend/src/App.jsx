@@ -20,6 +20,9 @@ import Dashboard from './components/Dashboard/Dashboard';
 // サービス
 import { weatherService, heatmapService, mobilityService, eventService } from './services/api';
 
+// データジェネレーター
+import { getHiroshimaPrefectureBounds } from './utils/hiroshimaPrefectureDataGenerator';
+
 // テーマ設定
 const theme = createTheme({
   palette: {
@@ -111,10 +114,11 @@ const theme = createTheme({
 });
 
 // 広島県の中心座標とズームレベル
+const prefectureBounds = getHiroshimaPrefectureBounds();
 const HIROSHIMA_CENTER = {
-  latitude: 34.3853,
-  longitude: 132.4553,
-  zoom: 9,
+  latitude: prefectureBounds.center[1],
+  longitude: prefectureBounds.center[0],
+  zoom: prefectureBounds.defaultZoom,
 };
 
 function App() {

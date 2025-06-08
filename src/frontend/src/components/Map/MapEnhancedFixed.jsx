@@ -7,6 +7,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Box, CircularProgress, Typography } from '@mui/material';
+import { 
+  generateAllPrefectureData,
+  getHiroshimaPrefectureBounds,
+  TRANSPORTATION_ROUTES 
+} from '../../utils/hiroshimaPrefectureDataGenerator';
 
 // Mapbox access token from environment variable
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoieXVraWhhcmE5Mjk0IiwiYSI6ImNtYmh1MG1kbTAxOHYyanBseWMyYzU0bzgifQ.qXWlSlsfZfHWKWJ1JPdvOg';
@@ -46,8 +51,16 @@ const MapEnhancedFixed = ({
     accommodationData: null,
     consumptionData: null,
     mobilityData: null,
-    eventsData: null
+    eventsData: null,
+    prefectureData: null
   });
+  
+  // Generate prefecture data once
+  if (!dataCache.current.prefectureData) {
+    console.log('Generating prefecture data...');
+    dataCache.current.prefectureData = generateAllPrefectureData();
+    console.log('Prefecture data generated:', dataCache.current.prefectureData);
+  }
 
   // カラーパレット
   const colors = {
@@ -80,34 +93,8 @@ const MapEnhancedFixed = ({
 
   // SNS感情分析レイヤーの初期化
   const initializeHeatmapLayers = () => {
-    // Use cached data if available, otherwise generate once
-    if (!dataCache.current.heatmapData) {
-      const heatmapPoints = [];
-      const baseLocations = [
-        [132.4536, 34.3955], [132.4520, 34.3920], [132.3196, 34.2960],
-        [132.4615, 34.3905], [132.4570, 34.3935], [132.4757, 34.3972],
-        [132.4846, 34.3915], [132.4635, 34.3940], [132.4565, 34.3950]
-      ];
-      
-      // サンプルデータ生成（一度だけ）
-      baseLocations.forEach(loc => {
-        for (let i = 0; i < 15; i++) {
-          const category = ['観光', 'グルメ', 'ショッピング', 'イベント', '交通'][Math.floor(Math.random() * 5)];
-          heatmapPoints.push({
-            coordinates: [
-              loc[0] + (Math.random() - 0.5) * 0.008,
-              loc[1] + (Math.random() - 0.5) * 0.008
-            ],
-            intensity: Math.random() * 0.8 + 0.2,
-            sentiment: Math.random() * 0.8 + 0.2,
-            category: category
-          });
-        }
-      });
-      dataCache.current.heatmapData = heatmapPoints;
-    }
-    
-    const heatmapPoints = dataCache.current.heatmapData;
+    // Use prefecture data
+    const heatmapPoints = dataCache.current.prefectureData.heatmap;
     
     const features = heatmapPoints.map(p => ({
       type: 'Feature',
@@ -188,15 +175,7 @@ const MapEnhancedFixed = ({
 
   // ランドマークレイヤーの初期化
   const initializeLandmarkLayers = () => {
-    const landmarks = [
-      { coordinates: [132.4536, 34.3955], name: '原爆ドーム', height: 25 },
-      { coordinates: [132.4520, 34.3920], name: '平和記念公園', height: 10 },
-      { coordinates: [132.3196, 34.2960], name: '宮島', height: 50 },
-      { coordinates: [132.4615, 34.3905], name: '広島城', height: 35 },
-      { coordinates: [132.4570, 34.3935], name: '縮景園', height: 15 },
-      { coordinates: [132.4757, 34.3972], name: '広島駅', height: 40 },
-      { coordinates: [132.4846, 34.3915], name: 'マツダスタジアム', height: 45 }
-    ];
+    const landmarks = dataCache.current.prefectureData.landmarks;
 
     // ポイントソース
     map.current.addSource('landmarks-source', {
@@ -213,7 +192,7 @@ const MapEnhancedFixed = ({
 
     // 3Dランドマーク用のソース
     const buildingFeatures = landmarks.map(l => {
-      const size = 0.0008;
+      const size = 0.0006; // Slightly smaller for prefecture scale
       const coords = l.coordinates;
       return {
         type: 'Feature',
@@ -282,16 +261,10 @@ const MapEnhancedFixed = ({
 
   // 宿泊施設レイヤーの初期化
   const initializeAccommodationLayers = () => {
-    const accommodations = [
-      { coordinates: [132.4590, 34.3915], name: 'ホテル広島', occupancy: 0.85 },
-      { coordinates: [132.4550, 34.3940], name: '平和ホテル', occupancy: 0.72 },
-      { coordinates: [132.4620, 34.3890], name: 'ビジネスホテル駅前', occupancy: 0.90 },
-      { coordinates: [132.4580, 34.3960], name: 'シティホテル', occupancy: 0.65 },
-      { coordinates: [132.4640, 34.3920], name: 'グランドホテル', occupancy: 0.78 }
-    ];
+    const accommodations = dataCache.current.prefectureData.accommodation;
 
     const accommodationFeatures = accommodations.map(a => {
-      const size = 0.0003;
+      const size = 0.0002; // Smaller for prefecture scale
       const coords = a.coordinates;
       return {
         type: 'Feature',
@@ -307,7 +280,7 @@ const MapEnhancedFixed = ({
         },
         properties: {
           name: a.name,
-          height: 10 + a.occupancy * 30,
+          height: 10 + a.occupancy * 50, // Taller buildings for visibility
           base_height: 0,
           occupancy: a.occupancy,
           color: colors.accommodation
@@ -340,16 +313,10 @@ const MapEnhancedFixed = ({
 
   // 消費データレイヤーの初期化
   const initializeConsumptionLayers = () => {
-    const consumptionData = [
-      { coordinates: [132.4600, 34.3930], amount: 850000, category: '飲食' },
-      { coordinates: [132.4570, 34.3950], amount: 1200000, category: 'ショッピング' },
-      { coordinates: [132.4630, 34.3910], amount: 650000, category: '観光' },
-      { coordinates: [132.4585, 34.3940], amount: 920000, category: '飲食' },
-      { coordinates: [132.4615, 34.3925], amount: 780000, category: 'ショッピング' }
-    ];
+    const consumptionData = dataCache.current.prefectureData.consumption;
 
     const consumptionFeatures = consumptionData.map(c => {
-      const size = 0.0004;
+      const size = 0.0003; // Adjusted for prefecture scale
       const coords = c.coordinates;
       return {
         type: 'Feature',
@@ -366,7 +333,7 @@ const MapEnhancedFixed = ({
         properties: {
           amount: c.amount,
           category: c.category,
-          height: Math.sqrt(c.amount) / 20,
+          height: Math.sqrt(c.amount) / 50, // Adjusted for larger amounts
           color: colors.consumption
         }
       };
@@ -397,37 +364,70 @@ const MapEnhancedFixed = ({
 
   // 人流データレイヤーの初期化
   const initializeMobilityLayers = () => {
-    // 道路フローデータ
-    const roadFlows = [
-      {
-        route: [[132.4757, 34.3972], [132.4700, 34.3960], [132.4650, 34.3950], [132.4600, 34.3940]],
-        congestion: 0.8,
-        name: '駅前通り'
-      },
-      {
-        route: [[132.4536, 34.3955], [132.4550, 34.3945], [132.4570, 34.3935], [132.4590, 34.3925]],
-        congestion: 0.6,
-        name: '平和大通り'
-      }
-    ];
+    // Use prefecture mobility data
+    const mobilityData = dataCache.current.prefectureData.mobility;
+    const roadFlows = mobilityData.routes;
 
     const getCongestionColor = (congestion) => {
       if (congestion >= 0.8) return '#FF0000';
       if (congestion >= 0.5) return '#FFFF00';
       return '#00FF00';
     };
+    
+    // Add congestion points
+    const congestionFeatures = mobilityData.congestionPoints.map((point, i) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: point.coordinates
+      },
+      properties: {
+        level: point.level,
+        radius: point.radius * 1000, // Convert to meters for visualization
+        type: point.type,
+        name: point.name,
+        color: getCongestionColor(point.level)
+      }
+    }));
+    
+    map.current.addSource('mobility-congestion-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: congestionFeatures }
+    });
+    
+    // Congestion areas visualization
+    map.current.addLayer({
+      id: 'mobility-congestion',
+      type: 'circle',
+      source: 'mobility-congestion-source',
+      layout: {
+        visibility: 'none'
+      },
+      paint: {
+        'circle-radius': {
+          property: 'radius',
+          type: 'identity'
+        },
+        'circle-color': ['get', 'color'],
+        'circle-opacity': 0.3,
+        'circle-blur': 0.8
+      }
+    });
+    registerLayer('mobility-congestion', 'mobility');
 
     const roadFeatures = roadFlows.map((flow, i) => ({
       type: 'Feature',
       geometry: {
         type: 'LineString',
-        coordinates: flow.route
+        coordinates: flow.points || flow.route
       },
       properties: {
         congestion: flow.congestion,
         color: getCongestionColor(flow.congestion),
         name: flow.name,
-        id: i
+        type: flow.type,
+        flow_speed: flow.flow_speed,
+        id: flow.id || i
       }
     }));
 
@@ -511,7 +511,8 @@ const MapEnhancedFixed = ({
       
       const roadParticles = [];
       roadFlows.forEach((flow, flowIndex) => {
-        const routeLength = flow.route.length;
+        const route = flow.points || flow.route;
+        const routeLength = route.length;
         const particleCount = Math.floor(flow.congestion * 10) + 3;
         
         for (let i = 0; i < particleCount; i++) {
@@ -520,8 +521,8 @@ const MapEnhancedFixed = ({
           const segmentProgress = (progress * (routeLength - 1)) % 1;
           
           if (segmentIndex < routeLength - 1) {
-            const start = flow.route[segmentIndex];
-            const end = flow.route[segmentIndex + 1];
+            const start = route[segmentIndex];
+            const end = route[segmentIndex + 1];
             const lng = start[0] + (end[0] - start[0]) * segmentProgress;
             const lat = start[1] + (end[1] - start[1]) * segmentProgress;
             
@@ -532,9 +533,10 @@ const MapEnhancedFixed = ({
                 coordinates: [lng, lat]
               },
               properties: {
-                flowId: flowIndex,
+                flowId: flow.id || flowIndex,
                 congestion: flow.congestion,
-                color: getCongestionColor(flow.congestion)
+                color: getCongestionColor(flow.congestion),
+                type: flow.type
               }
             });
           }
@@ -556,22 +558,7 @@ const MapEnhancedFixed = ({
 
   // イベントレイヤーの初期化
   const initializeEventLayers = () => {
-    const events = [
-      { 
-        coordinates: [132.4536, 34.3955], 
-        name: '平和記念式典',
-        category: '祭り',
-        icon: '🎊',
-        impact_radius: 50
-      },
-      { 
-        coordinates: [132.4757, 34.3972], 
-        name: 'カープ観戦',
-        category: 'スポーツ',
-        icon: '⚽',
-        impact_radius: 30
-      }
-    ];
+    const events = dataCache.current.prefectureData.events;
 
     // イベントポイント
     map.current.addSource('events-source', {
@@ -734,16 +721,23 @@ const MapEnhancedFixed = ({
       console.log('Initializing Mapbox with viewport:', viewport);
 
       try {
+        // Use prefecture bounds for initial viewport
+        const bounds = dataCache.current.prefectureData.bounds;
+        const initialCenter = viewport.longitude && viewport.latitude ? 
+          [viewport.longitude, viewport.latitude] : bounds.center;
+        const initialZoom = viewport.zoom || bounds.defaultZoom;
+        
         map.current = new mapboxgl.Map({
           container: container,
           style: 'mapbox://styles/mapbox/dark-v11',
-          center: [viewport.longitude, viewport.latitude],
-          zoom: viewport.zoom,
+          center: initialCenter,
+          zoom: initialZoom,
           pitch: 45,
           bearing: -17.6,
           antialias: true,
           preserveDrawingBuffer: true,
           trackResize: true,
+          maxBounds: [[bounds.west - 0.5, bounds.south - 0.5], [bounds.east + 0.5, bounds.north + 0.5]]
         });
 
         map.current.on('load', () => {
@@ -922,7 +916,8 @@ const MapEnhancedFixed = ({
     }
 
     // Use cached data and filter by selected categories
-    const filteredPoints = dataCache.current.heatmapData.filter(point => 
+    const heatmapData = dataCache.current.prefectureData.heatmap;
+    const filteredPoints = heatmapData.filter(point => 
       selectedCategories.includes(point.category)
     );
     

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hiroshima Prefecture Data Generator Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 30px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        .city-stats {
+            margin-top: 20px;
+        }
+        .city-card {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .city-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        .city-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            font-size: 14px;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .sample-data {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        .validation {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .validation.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .validation.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .validation.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗾 広島県データジェネレーター テスト</h1>
+        
+        <div id="loading">データを生成中...</div>
+        <div id="content" style="display: none;">
+            <h2>📊 生成データ統計</h2>
+            <div id="overall-stats" class="stats"></div>
+            
+            <h2>🏙️ 市区町村別データ</h2>
+            <div id="city-stats" class="city-stats"></div>
+            
+            <h2>🔍 サンプルデータ</h2>
+            <div id="sample-data"></div>
+            
+            <h2>✅ データ検証</h2>
+            <div id="validation"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the data generator functions
+        const script = document.createElement('script');
+        script.type = 'module';
+        script.textContent = `
+            import { 
+                generateAllPrefectureData,
+                HIROSHIMA_CITIES,
+                TRANSPORTATION_ROUTES,
+                getHiroshimaPrefectureBounds
+            } from '/src/utils/hiroshimaPrefectureDataGenerator.js';
+
+            // Generate data
+            console.log('Generating prefecture data...');
+            const prefectureData = generateAllPrefectureData();
+            console.log('Prefecture data generated:', prefectureData);
+
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+
+            // Overall statistics
+            const overallStats = [
+                { label: '宿泊施設', value: prefectureData.accommodation.length },
+                { label: '消費データポイント', value: prefectureData.consumption.length },
+                { label: '交通ルート', value: prefectureData.mobility.routes.length },
+                { label: '渋滞ポイント', value: prefectureData.mobility.congestionPoints.length },
+                { label: 'ランドマーク', value: prefectureData.landmarks.length },
+                { label: 'イベント', value: prefectureData.events.length },
+                { label: 'SNSヒートマップ', value: prefectureData.heatmap.length }
+            ];
+
+            const statsHtml = overallStats.map(stat => \`
+                <div class="stat-card">
+                    <div class="stat-value">\${stat.value.toLocaleString()}</div>
+                    <div class="stat-label">\${stat.label}</div>
+                </div>
+            \`).join('');
+            document.getElementById('overall-stats').innerHTML = statsHtml;
+
+            // City statistics
+            const cityStatsHtml = Object.values(HIROSHIMA_CITIES).map(city => {
+                const cityAccommodations = prefectureData.accommodation.filter(a => a.city === city.name);
+                const cityConsumption = prefectureData.consumption.filter(c => c.city === city.name);
+                const cityLandmarks = prefectureData.landmarks.filter(l => l.city === city.name);
+                const cityEvents = prefectureData.events.filter(e => e.city === city.name);
+                const cityHeatmap = prefectureData.heatmap.filter(h => h.city === city.name);
+
+                return \`
+                    <div class="city-card">
+                        <div class="city-name">\${city.name} (\${city.nameEn})</div>
+                        <div class="city-details">
+                            <div class="detail-item">
+                                <span>人口</span>
+                                <span>\${city.population.toLocaleString()}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>地区数</span>
+                                <span>\${city.districts.length}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>宿泊施設</span>
+                                <span>\${cityAccommodations.length}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>消費ポイント</span>
+                                <span>\${cityConsumption.length}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>ランドマーク</span>
+                                <span>\${cityLandmarks.length}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>イベント</span>
+                                <span>\${cityEvents.length}</span>
+                            </div>
+                            <div class="detail-item">
+                                <span>SNSポイント</span>
+                                <span>\${cityHeatmap.length}</span>
+                            </div>
+                        </div>
+                    </div>
+                \`;
+            }).join('');
+            document.getElementById('city-stats').innerHTML = cityStatsHtml;
+
+            // Sample data
+            const samples = [
+                { title: '宿泊施設サンプル', data: prefectureData.accommodation[0] },
+                { title: '消費データサンプル', data: prefectureData.consumption[0] },
+                { title: '交通ルートサンプル', data: prefectureData.mobility.routes[0] },
+                { title: 'ランドマークサンプル', data: prefectureData.landmarks[0] },
+                { title: 'イベントサンプル', data: prefectureData.events[0] }
+            ];
+
+            const sampleHtml = samples.map(sample => \`
+                <h3>\${sample.title}</h3>
+                <div class="sample-data">
+                    <pre>\${JSON.stringify(sample.data, null, 2)}</pre>
+                </div>
+            \`).join('');
+            document.getElementById('sample-data').innerHTML = sampleHtml;
+
+            // Validation
+            const bounds = prefectureData.bounds;
+            let validationIssues = [];
+            let outOfBounds = 0;
+
+            // Check coordinates
+            const checkCoordinates = (items, type) => {
+                items.forEach(item => {
+                    if (item.coordinates) {
+                        const [lng, lat] = item.coordinates;
+                        if (lng < bounds.west || lng > bounds.east || lat < bounds.south || lat > bounds.north) {
+                            outOfBounds++;
+                            validationIssues.push(\`\${type} "\${item.name || item.id}" is out of bounds at [\${lng.toFixed(4)}, \${lat.toFixed(4)}]\`);
+                        }
+                    }
+                });
+            };
+
+            checkCoordinates(prefectureData.accommodation, 'Accommodation');
+            checkCoordinates(prefectureData.consumption, 'Consumption');
+            checkCoordinates(prefectureData.landmarks, 'Landmark');
+            checkCoordinates(prefectureData.events, 'Event');
+            checkCoordinates(prefectureData.heatmap, 'Heatmap');
+
+            // Population distribution check
+            const totalPopulation = Object.values(HIROSHIMA_CITIES).reduce((sum, city) => sum + city.population, 0);
+            const distributionCheck = Object.values(HIROSHIMA_CITIES).map(city => {
+                const populationRatio = city.population / totalPopulation;
+                const cityHeatmap = prefectureData.heatmap.filter(h => h.city === city.name);
+                const heatmapRatio = cityHeatmap.length / prefectureData.heatmap.length;
+                const deviation = Math.abs(populationRatio - heatmapRatio) * 100;
+                
+                return {
+                    city: city.name,
+                    populationRatio: (populationRatio * 100).toFixed(1),
+                    dataRatio: (heatmapRatio * 100).toFixed(1),
+                    deviation: deviation.toFixed(1)
+                };
+            });
+
+            let validationClass = 'success';
+            let validationMessage = '✅ すべてのデータが正常に生成されました';
+            
+            if (outOfBounds > 0) {
+                validationClass = 'error';
+                validationMessage = \`❌ \${outOfBounds}個のデータポイントが境界外にあります\`;
+            } else if (validationIssues.length > 0) {
+                validationClass = 'warning';
+                validationMessage = \`⚠️ \${validationIssues.length}個の警告があります\`;
+            }
+
+            const distributionHtml = \`
+                <h3>人口分布との整合性</h3>
+                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="padding: 8px; text-align: left; border-bottom: 2px solid #dee2e6;">市町村</th>
+                            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #dee2e6;">人口比率</th>
+                            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #dee2e6;">データ比率</th>
+                            <th style="padding: 8px; text-align: right; border-bottom: 2px solid #dee2e6;">偏差</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        \${distributionCheck.map(item => \`
+                            <tr>
+                                <td style="padding: 8px; border-bottom: 1px solid #dee2e6;">\${item.city}</td>
+                                <td style="padding: 8px; text-align: right; border-bottom: 1px solid #dee2e6;">\${item.populationRatio}%</td>
+                                <td style="padding: 8px; text-align: right; border-bottom: 1px solid #dee2e6;">\${item.dataRatio}%</td>
+                                <td style="padding: 8px; text-align: right; border-bottom: 1px solid #dee2e6; color: \${item.deviation > 10 ? '#dc3545' : '#28a745'};">\${item.deviation}%</td>
+                            </tr>
+                        \`).join('')}
+                    </tbody>
+                </table>
+            \`;
+
+            document.getElementById('validation').innerHTML = \`
+                <div class="validation \${validationClass}">
+                    <div>\${validationMessage}</div>
+                    \${validationIssues.length > 0 ? '<ul>' + validationIssues.slice(0, 10).map(issue => '<li>' + issue + '</li>').join('') + '</ul>' : ''}
+                    \${distributionHtml}
+                </div>
+            \`;
+
+            // Export to global scope for debugging
+            window.prefectureData = prefectureData;
+            window.HIROSHIMA_CITIES = HIROSHIMA_CITIES;
+            window.TRANSPORTATION_ROUTES = TRANSPORTATION_ROUTES;
+            console.log('Data exported to window.prefectureData for debugging');
+        `;
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
