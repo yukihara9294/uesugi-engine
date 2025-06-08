@@ -3,7 +3,7 @@
  * 広島県ソーシャルヒートマップのフロントエンド
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Container, Alert, Snackbar, IconButton } from '@mui/material';
@@ -21,7 +21,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import { weatherService, heatmapService, mobilityService, eventService } from './services/api';
 
 // データジェネレーター
-import { getHiroshimaPrefectureBounds } from './utils/hiroshimaPrefectureDataGenerator';
+import { getPrefectureBounds } from './utils/multiPrefectureDataGenerator';
 
 // テーマ設定
 const theme = createTheme({
@@ -113,17 +113,19 @@ const theme = createTheme({
   },
 });
 
-// 広島県の中心座標とズームレベル
-const prefectureBounds = getHiroshimaPrefectureBounds();
-const HIROSHIMA_CENTER = {
-  latitude: prefectureBounds.center[1],
-  longitude: prefectureBounds.center[0],
-  zoom: prefectureBounds.defaultZoom,
+// 初期ビューポート設定（広島県をデフォルトとする）
+const getInitialViewport = (prefecture = '広島県') => {
+  const bounds = getPrefectureBounds(prefecture);
+  return {
+    latitude: bounds.center[1],
+    longitude: bounds.center[0],
+    zoom: bounds.defaultZoom,
+  };
 };
 
 function App() {
   // 地図ビューステート
-  const [viewport, setViewport] = useState(HIROSHIMA_CENTER);
+  const [viewport, setViewport] = useState(getInitialViewport());
   
   // フィルタ・表示設定
   const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather', 'accommodation', 'consumption', 'events']);
@@ -364,11 +366,8 @@ function App() {
       if (!loading) {
         loadHeatmapData();
         // 人流データも更新（ただし大きな移動時のみ）
-        const viewportChanged = Math.abs(viewport.latitude - HIROSHIMA_CENTER.latitude) > 0.1 ||
-                              Math.abs(viewport.longitude - HIROSHIMA_CENTER.longitude) > 0.1;
-        if (viewportChanged) {
-          loadMobilityData();
-        }
+        // Removed the HIROSHIMA_CENTER check - always update on significant viewport changes
+        loadMobilityData();
       }
     }, 2000); // デバウンス時間を長く
 
@@ -390,6 +389,45 @@ function App() {
   const handleCloseError = () => {
     setError(null);
   };
+  
+  // Map reference for smooth camera animation
+  const mapRef = useRef(null);
+  
+  // State to track if prefecture was clicked
+  const [prefectureClicked, setPrefectureClicked] = useState(false);
+  
+  // Handle prefecture selection with smooth camera animation
+  const handlePrefectureSelect = (prefecture) => {
+    setCurrentPrefecture(prefecture);
+    setPrefectureClicked(true);
+  };
+  
+  useEffect(() => {
+    if (prefectureClicked && mapRef.current && mapRef.current.flyToCenter) {
+      // Reset the flag
+      setPrefectureClicked(false);
+      
+      // Fly to the specified coordinates based on prefecture
+      setTimeout(() => {
+        switch (currentPrefecture) {
+          case '広島県':
+            mapRef.current.flyToCenter([132.75, 34.5], 9.2);
+            break;
+          case '東京都':
+            mapRef.current.flyToCenter([139.7670, 35.6812], 10.5);
+            break;
+          case '大阪府':
+            mapRef.current.flyToCenter([135.4959, 34.7028], 10.5);
+            break;
+          case '福岡県':
+            mapRef.current.flyToCenter([130.4017, 33.5904], 10);
+            break;
+          default:
+            mapRef.current.flyToCenter([132.75, 34.5], 9.2);
+        }
+      }, 100);
+    }
+  }, [currentPrefecture, prefectureClicked]);
 
   return (
     <ThemeProvider theme={theme}>
@@ -406,7 +444,7 @@ function App() {
           timeRange={timeRange}
           onTimeRangeChange={setTimeRange}
           currentPrefecture={currentPrefecture}
-          onPrefectureSelect={setCurrentPrefecture}
+          onPrefectureSelect={handlePrefectureSelect}
         />
         
         {/* メインコンテンツ */}
@@ -449,6 +487,7 @@ function App() {
           }}>
             <MapErrorBoundary>
               <MapEnhancedFixed
+                ref={mapRef}
                 viewport={viewport}
                 onViewportChange={setViewport}
                 heatmapData={heatmapData}

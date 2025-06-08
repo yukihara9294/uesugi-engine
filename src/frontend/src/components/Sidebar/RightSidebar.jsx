@@ -240,7 +240,7 @@ const RightSidebar = ({
                 過去24時間の投稿数
               </Typography>
               <Typography variant="h4" sx={{ color: socialLayer.color, fontWeight: 700 }}>
-                {statistics.total_points?.toLocaleString() || 0}
+                {selectedCategories.length === 0 ? 0 : (statistics.total_points?.toLocaleString() || 0)}
               </Typography>
               <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                 件のソーシャル投稿を分析

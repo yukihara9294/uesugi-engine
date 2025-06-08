@@ -102,11 +102,14 @@ const Header = ({
             <MenuItem onClick={() => handlePrefectureSelect('広島県')}>
               広島県
             </MenuItem>
-            <MenuItem onClick={() => handlePrefectureSelect('東京都')} disabled>
-              東京都（準備中）
+            <MenuItem onClick={() => handlePrefectureSelect('東京都')}>
+              東京都
             </MenuItem>
-            <MenuItem onClick={() => handlePrefectureSelect('大阪府')} disabled>
-              大阪府（準備中）
+            <MenuItem onClick={() => handlePrefectureSelect('大阪府')}>
+              大阪府
+            </MenuItem>
+            <MenuItem onClick={() => handlePrefectureSelect('福岡県')}>
+              福岡県
             </MenuItem>
           </Menu>
           

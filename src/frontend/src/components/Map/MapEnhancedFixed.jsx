@@ -3,22 +3,22 @@
  * 3D表示と高度なデータ可視化を実装
  */
 
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { Box, CircularProgress, Typography } from '@mui/material';
 import { 
   generateAllPrefectureData,
-  getHiroshimaPrefectureBounds,
-  TRANSPORTATION_ROUTES 
-} from '../../utils/hiroshimaPrefectureDataGenerator';
+  getPrefectureBounds,
+  generateInterPrefectureMobilityRoutes
+} from '../../utils/multiPrefectureDataGenerator';
 
 // Mapbox access token from environment variable
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoieXVraWhhcmE5Mjk0IiwiYSI6ImNtYmh1MG1kbTAxOHYyanBseWMyYzU0bzgifQ.qXWlSlsfZfHWKWJ1JPdvOg';
 console.log('Mapbox token loaded:', MAPBOX_TOKEN ? 'Token present' : 'No token');
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
-const MapEnhancedFixed = ({ 
+const MapEnhancedFixed = forwardRef(({ 
   viewport,
   onViewportChange,
   heatmapData,
@@ -34,7 +34,7 @@ const MapEnhancedFixed = ({
   onError,
   leftSidebarOpen,
   rightSidebarOpen 
-}) => {
+}, ref) => {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const animationFrame = useRef(null);
@@ -44,6 +44,130 @@ const MapEnhancedFixed = ({
   const layersInitializedRef = useRef(false);
   const layerRegistry = useRef({});
   const mobilityAnimationData = useRef(null);
+  
+  // Detect current prefecture from viewport or map center
+  const detectCurrentPrefecture = (customCenter = null) => {
+    let lng, lat;
+    
+    if (customCenter) {
+      lng = customCenter.lng || customCenter[0];
+      lat = customCenter.lat || customCenter[1];
+    } else if (map.current) {
+      const center = map.current.getCenter();
+      lng = center.lng;
+      lat = center.lat;
+    } else {
+      lng = viewport.longitude;
+      lat = viewport.latitude;
+    }
+    
+    // Tokyo area
+    if (lng >= 139.5 && lng <= 140.0 && lat >= 35.5 && lat <= 35.9) {
+      return '東京都';
+    }
+    // Osaka area
+    else if (lng >= 135.3 && lng <= 135.7 && lat >= 34.5 && lat <= 34.9) {
+      return '大阪府';
+    }
+    // Fukuoka area
+    else if (lng >= 130.2 && lng <= 130.6 && lat >= 33.4 && lat <= 33.7) {
+      return '福岡県';
+    }
+    // Hiroshima area (default)
+    else {
+      return '広島県';
+    }
+  };
+  
+  // Get viewport bounds for data filtering
+  const getViewportBounds = () => {
+    if (!map.current) return null;
+    
+    const bounds = map.current.getBounds();
+    return {
+      north: bounds.getNorth(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      west: bounds.getWest()
+    };
+  };
+  
+  // Check if a point is within viewport bounds (with buffer)
+  const isPointInViewport = (coordinates, bounds, buffer = 0.1) => {
+    if (!bounds) return true; // If no bounds, show all
+    
+    return coordinates[0] >= bounds.west - buffer &&
+           coordinates[0] <= bounds.east + buffer &&
+           coordinates[1] >= bounds.south - buffer &&
+           coordinates[1] <= bounds.north + buffer;
+  };
+  
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    flyToCenter: (center, zoom) => {
+      console.log('flyToCenter called with:', { center, zoom, mapLoaded, hasMap: !!map.current });
+      
+      if (!map.current) {
+        console.warn('Map instance not available');
+        return;
+      }
+      
+      if (!mapLoaded) {
+        console.warn('Map not loaded yet, queuing flyTo request');
+        // Queue the request to be executed once map is loaded
+        const checkMapLoaded = setInterval(() => {
+          if (map.current && mapLoaded) {
+            clearInterval(checkMapLoaded);
+            performFlyTo();
+          }
+        }, 100);
+        
+        // Clear interval after 5 seconds to prevent memory leak
+        setTimeout(() => clearInterval(checkMapLoaded), 5000);
+        return;
+      }
+      
+      const performFlyTo = () => {
+        try {
+          // Get current position
+          const currentCenter = map.current.getCenter();
+          const currentZoom = map.current.getZoom();
+          
+          console.log('Performing flyTo from:', { 
+            from: [currentCenter.lng, currentCenter.lat, currentZoom], 
+            to: [center[0], center[1], zoom] 
+          });
+          
+          // Calculate distance for duration
+          const distance = Math.sqrt(
+            Math.pow(center[0] - currentCenter.lng, 2) + 
+            Math.pow(center[1] - currentCenter.lat, 2)
+          );
+          
+          // Adjust duration based on distance (min 1.5s, max 3s)
+          const duration = Math.min(3000, Math.max(1500, distance * 10000));
+          
+          map.current.flyTo({
+            center: center,
+            zoom: zoom,
+            bearing: 0, // Reset to north
+            pitch: 45, // Keep 3D view
+            duration: duration,
+            essential: true,
+            curve: 1.42, // Smooth curve
+            speed: 1.2,
+            easing: (t) => t // Linear easing for consistent speed
+          });
+          
+          console.log('FlyTo animation started');
+        } catch (error) {
+          console.error('Error in flyToCenter:', error);
+        }
+      };
+      
+      performFlyTo();
+    }
+  }), [mapLoaded]);
   
   // Store generated data to prevent regeneration on toggle
   const dataCache = useRef({
@@ -56,10 +180,14 @@ const MapEnhancedFixed = ({
     prefectureData: null
   });
   
-  // Generate prefecture data once
-  if (!dataCache.current.prefectureData) {
-    console.log('Generating prefecture data...');
-    dataCache.current.prefectureData = generateAllPrefectureData();
+  // Get current prefecture
+  const currentPrefecture = detectCurrentPrefecture();
+  
+  // Generate prefecture data based on current location
+  if (!dataCache.current.prefectureData || dataCache.current.currentPrefecture !== currentPrefecture) {
+    console.log('Generating prefecture data for:', currentPrefecture);
+    dataCache.current.prefectureData = generateAllPrefectureData(currentPrefecture);
+    dataCache.current.currentPrefecture = currentPrefecture;
     console.log('Prefecture data generated:', dataCache.current.prefectureData);
   }
 
@@ -113,8 +241,14 @@ const MapEnhancedFixed = ({
   const initializeHeatmapLayers = () => {
     // Use prefecture data
     const heatmapPoints = dataCache.current.prefectureData.heatmap;
+    const viewportBounds = getViewportBounds();
     
-    const features = heatmapPoints.map(p => ({
+    // Filter points based on viewport
+    const filteredPoints = viewportBounds ? 
+      heatmapPoints.filter(p => isPointInViewport(p.coordinates, viewportBounds)) :
+      heatmapPoints;
+    
+    const features = filteredPoints.map(p => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
@@ -390,12 +524,17 @@ const MapEnhancedFixed = ({
     const events = dataCache.current.prefectureData.events;
     const accommodations = dataCache.current.prefectureData.accommodation;
     const heatmapData = dataCache.current.prefectureData.heatmap;
+    
+    // Add inter-prefecture routes (Shinkansen, highways, etc.)
+    const interPrefectureRoutes = generateInterPrefectureMobilityRoutes();
 
-    // Cyberpunk color scheme - blue particles
+    // Flow density color scheme - traffic light colors
     const getCyberColor = (congestion, opacity = 1) => {
-      if (congestion >= 0.8) return `rgba(255, 0, 128, ${opacity})`; // Hot pink for high congestion
-      if (congestion >= 0.5) return `rgba(0, 150, 255, ${opacity})`; // Medium blue for medium
-      return `rgba(0, 100, 255, ${opacity})`; // Deep blue for low
+      if (congestion >= 0.8) return `rgba(255, 50, 50, ${opacity})`; // Red for high traffic
+      if (congestion >= 0.6) return `rgba(255, 150, 0, ${opacity})`; // Orange for medium-high
+      if (congestion >= 0.4) return `rgba(255, 255, 0, ${opacity})`; // Yellow for medium
+      if (congestion >= 0.2) return `rgba(100, 255, 100, ${opacity})`; // Light green for low-medium
+      return `rgba(0, 200, 255, ${opacity})`; // Light blue for low traffic
     };
 
     // Get movement type color
@@ -557,28 +696,36 @@ const MapEnhancedFixed = ({
       return arcPoints;
     };
 
-    // Generate diverse arcs between all data points
+    // Generate diverse arcs between all data points with varying densities
     const arcFeatures = [];
     const connectionTypes = [
-      // Tourism routes: transport -> landmarks
-      { from: 'transport', to: 'landmark', probability: 0.8, type: 'tourism' },
-      // Event attendance: transport/accommodation -> events
-      { from: 'transport', to: 'event', probability: 0.7, type: 'event' },
-      { from: 'accommodation', to: 'event', probability: 0.6, type: 'event' },
-      // Shopping routes: accommodation -> SNS hotspots
-      { from: 'accommodation', to: 'sns_hotspot', probability: 0.5, type: 'shopping' },
-      // Business travel: transport -> accommodation
-      { from: 'transport', to: 'accommodation', probability: 0.6, type: 'business' },
-      // Tourist movement: landmarks -> SNS hotspots
-      { from: 'landmark', to: 'sns_hotspot', probability: 0.7, type: 'tourism' },
-      // Inter-transport connections
-      { from: 'transport', to: 'transport', probability: 0.9, type: 'business' },
-      // Event to landmark visits
-      { from: 'event', to: 'landmark', probability: 0.5, type: 'tourism' }
+      // Tourism routes: transport -> landmarks (high volume, medium speed)
+      { from: 'transport', to: 'landmark', probability: 0.8, type: 'tourism', 
+        congestionBase: 0.5, baseParticleCount: 6, speed: 0.7 },
+      // Event attendance: transport/accommodation -> events (very high volume during events)
+      { from: 'transport', to: 'event', probability: 0.7, type: 'event', 
+        congestionBase: 0.7, baseParticleCount: 10, speed: 0.6 },
+      { from: 'accommodation', to: 'event', probability: 0.6, type: 'event', 
+        congestionBase: 0.6, baseParticleCount: 7, speed: 0.6 },
+      // Shopping routes: accommodation -> SNS hotspots (medium volume, slow)
+      { from: 'accommodation', to: 'sns_hotspot', probability: 0.5, type: 'shopping', 
+        congestionBase: 0.4, baseParticleCount: 4, speed: 0.5 },
+      // Business travel: transport -> accommodation (high volume during rush hours)
+      { from: 'transport', to: 'accommodation', probability: 0.6, type: 'business', 
+        congestionBase: 0.6, baseParticleCount: 8, speed: 0.8 },
+      // Tourist movement: landmarks -> SNS hotspots (medium volume, very slow)
+      { from: 'landmark', to: 'sns_hotspot', probability: 0.7, type: 'tourism', 
+        congestionBase: 0.4, baseParticleCount: 5, speed: 0.4 },
+      // Inter-transport connections (very high volume, fast)
+      { from: 'transport', to: 'transport', probability: 0.9, type: 'business', 
+        congestionBase: 0.8, baseParticleCount: 15, speed: 1.0 },
+      // Event to landmark visits (low volume, slow)
+      { from: 'event', to: 'landmark', probability: 0.5, type: 'tourism', 
+        congestionBase: 0.3, baseParticleCount: 3, speed: 0.5 }
     ];
 
-    // Create connections based on types - reduce to 80% for performance
-    const connectionLimit = Math.floor(allDataPoints.length * allDataPoints.length * 0.8 / 2);
+    // Create connections based on types - reduce to 60% for performance due to increased particles
+    const connectionLimit = Math.floor(allDataPoints.length * allDataPoints.length * 0.6 / 2);
     let connectionCount = 0;
     
     for (let i = 0; i < allDataPoints.length && connectionCount < connectionLimit; i++) {
@@ -592,7 +739,7 @@ const MapEnhancedFixed = ({
           (ct.from === end.type && ct.to === start.type)
         );
         
-        if (connType && Math.random() < connType.probability * 0.8) { // Reduce probability by 20%
+        if (connType && Math.random() < connType.probability * 0.6) { // Reduce probability by 40% for performance
           const importance = (start.importance + end.importance) / 2;
           const distance = Math.sqrt(
             Math.pow(end.coordinates[0] - start.coordinates[0], 2) + 
@@ -602,15 +749,57 @@ const MapEnhancedFixed = ({
           // Skip very long connections for cleaner visualization
           if (distance > 0.5) continue;
           
+          // Calculate actual distance in km (rough approximation)
+          const distanceKm = distance * 111; // 1 degree ≈ 111km
+          
+          // Skip lines shorter than 10km
+          if (distanceKm < 10) continue;
+          
+          // Determine distance group for synchronized timing
+          let distanceGroup;
+          if (distanceKm < 20) {
+            distanceGroup = 0; // 10-20km
+          } else if (distanceKm < 40) {
+            distanceGroup = 1; // 20-40km
+          } else if (distanceKm < 60) {
+            distanceGroup = 2; // 40-60km
+          } else if (distanceKm < 100) {
+            distanceGroup = 3; // 60-100km
+          } else if (distanceKm < 200) {
+            distanceGroup = 4; // 100-200km
+          } else if (distanceKm < 500) {
+            distanceGroup = 5; // 200-500km
+          } else {
+            continue; // Skip lines longer than 500km
+          }
+          
           // Vary arc height based on distance and type
           const arcHeight = 0.08 + Math.min(distance * 0.3, 0.15);
           const arcPoints = createArc(start.coordinates, end.coordinates, arcHeight);
           
-          // Calculate congestion based on type and time of day simulation
-          let congestion = 0.3;
-          if (connType.type === 'tourism') congestion = 0.5 + Math.random() * 0.3;
-          if (connType.type === 'business') congestion = 0.4 + Math.random() * 0.4;
-          if (connType.type === 'event') congestion = 0.6 + Math.random() * 0.3;
+          // Calculate congestion based on connection type with some variation
+          const congestion = connType.congestionBase + (Math.random() - 0.5) * 0.2;
+          const finalCongestion = Math.max(0, Math.min(1, congestion)); // Clamp between 0 and 1
+          
+          // Calculate particle count based on congestion level
+          // Red (0.8-1.0) = 3x particles, scale down proportionally
+          let particleMultiplier = 1;
+          if (finalCongestion >= 0.8) {
+            particleMultiplier = 3; // Red = 3x
+          } else if (finalCongestion >= 0.6) {
+            particleMultiplier = 2.2; // Orange = 2.2x
+          } else if (finalCongestion >= 0.4) {
+            particleMultiplier = 1.5; // Yellow = 1.5x
+          } else if (finalCongestion >= 0.2) {
+            particleMultiplier = 1; // Green = 1x
+          } else {
+            particleMultiplier = 0.7; // Blue = 0.7x
+          }
+          
+          const finalParticleCount = Math.round(connType.baseParticleCount * particleMultiplier);
+          
+          // Only show glowing arcs for certain distance groups
+          const showGlowingArc = Math.random() < 0.15; // 15% chance base
           
           arcFeatures.push({
             type: 'Feature',
@@ -624,16 +813,86 @@ const MapEnhancedFixed = ({
               startType: start.type,
               endType: end.type,
               importance: importance,
-              congestion: congestion,
+              congestion: finalCongestion,
               movementType: connType.type,
+              particleCount: finalParticleCount,
+              speed: connType.speed,
               flowDirection: Math.random() > 0.5 ? 'forward' : 'reverse',
-              showGlowingArc: Math.random() < 0.15 // 15% chance for glowing arc
+              showGlowingArc: showGlowingArc,
+              distanceKm: distanceKm,
+              distanceGroup: distanceGroup
             }
           });
           connectionCount++;
         }
       }
     }
+    
+    // Add inter-prefecture routes to arc features
+    interPrefectureRoutes.forEach((route, index) => {
+      const arcHeight = route.type === 'air' ? 0.3 : 0.15; // Higher arcs for air routes
+      const arcPoints = createArc(route.points[0], route.points[1], arcHeight);
+      
+      // Calculate distance and group
+      const distance = Math.sqrt(
+        Math.pow(route.points[1][0] - route.points[0][0], 2) + 
+        Math.pow(route.points[1][1] - route.points[0][1], 2)
+      );
+      const distanceKm = distance * 111;
+      
+      let distanceGroup;
+      if (distanceKm < 100) {
+        distanceGroup = 3;
+      } else if (distanceKm < 200) {
+        distanceGroup = 4;
+      } else if (distanceKm < 500) {
+        distanceGroup = 5;
+      } else {
+        distanceGroup = 6; // Very long distance
+      }
+      
+      // Normalize flow count to congestion level
+      const maxFlow = 150000; // Maximum expected flow
+      const congestion = Math.min(route.flow_count / maxFlow, 1);
+      
+      // Calculate particle count based on route type
+      let baseParticleCount = 10;
+      if (route.type === 'shinkansen') {
+        baseParticleCount = 20; // More particles for Shinkansen
+      } else if (route.type === 'air') {
+        baseParticleCount = 15; // Medium for air routes
+      } else {
+        baseParticleCount = 12; // Highway routes
+      }
+      
+      const particleMultiplier = congestion * 2 + 0.5;
+      const finalParticleCount = Math.round(baseParticleCount * particleMultiplier);
+      
+      arcFeatures.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: arcPoints
+        },
+        properties: {
+          startHub: route.name.split(':')[1].trim().split(' - ')[0],
+          endHub: route.name.split(':')[1].trim().split(' - ')[1],
+          startType: 'transport',
+          endType: 'transport',
+          importance: 1.0, // Inter-prefecture routes are very important
+          congestion: congestion,
+          movementType: route.type,
+          particleCount: finalParticleCount,
+          speed: route.speed / 800, // Normalize speed (800 km/h max)
+          flowDirection: 'forward',
+          showGlowingArc: route.type === 'shinkansen' || route.type === 'air', // Always show for major routes
+          distanceKm: distanceKm,
+          distanceGroup: distanceGroup,
+          routeCategory: route.category,
+          isInterPrefecture: true
+        }
+      });
+    });
 
     map.current.addSource('mobility-arcs-source', {
       type: 'geojson',
@@ -646,7 +905,10 @@ const MapEnhancedFixed = ({
       type: 'line',
       source: 'mobility-arcs-source',
       layout: { visibility: 'none' },
-      filter: ['==', ['get', 'showGlowingArc'], false],
+      filter: ['all',
+        ['==', ['get', 'showGlowingArc'], false],
+        ['>=', ['get', 'distanceKm'], 10]  // Only show lines 10km or longer
+      ],
       paint: {
         'line-color': [
           'interpolate',
@@ -663,22 +925,26 @@ const MapEnhancedFixed = ({
     });
     registerLayer('mobility-arcs-faint', 'mobility');
     
-    // Glowing arc lines (occasional, more visible)
+    // Glowing arc lines (occasional, more visible) - colored by congestion
     map.current.addLayer({
       id: 'mobility-arcs-glowing',
       type: 'line',
       source: 'mobility-arcs-source',
       layout: { visibility: 'none' },
-      filter: ['==', ['get', 'showGlowingArc'], true],
+      filter: ['all',
+        ['==', ['get', 'showGlowingArc'], true],
+        ['>=', ['get', 'distanceKm'], 10]  // Only show lines 10km or longer
+      ],
       paint: {
         'line-color': [
-          'match',
-          ['get', 'movementType'],
-          'tourism', 'rgba(255, 200, 0, 0.8)',
-          'business', 'rgba(0, 150, 255, 0.8)',
-          'shopping', 'rgba(255, 0, 200, 0.8)',
-          'event', 'rgba(0, 255, 100, 0.8)',
-          'rgba(100, 100, 255, 0.8)'
+          'interpolate',
+          ['linear'],
+          ['get', 'congestion'],
+          0, 'rgba(0, 200, 255, 0.8)',      // Light blue for low traffic
+          0.2, 'rgba(100, 255, 100, 0.8)',  // Light green for low-medium
+          0.4, 'rgba(255, 255, 0, 0.8)',    // Yellow for medium
+          0.6, 'rgba(255, 150, 0, 0.8)',    // Orange for medium-high
+          0.8, 'rgba(255, 50, 50, 0.8)'     // Red for high traffic
         ],
         'line-width': [
           'interpolate',
@@ -688,7 +954,7 @@ const MapEnhancedFixed = ({
           14, 2,
           16, 1.5
         ],
-        'line-opacity': 0.6,
+        'line-opacity': ['coalesce', ['get', 'currentOpacity'], 0],
         'line-blur': 1
       }
     });
@@ -711,7 +977,7 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, ['*', ['get', 'size'], 15],  // Large when far
+          10, ['*', ['get', 'size'], 7.5],  // Half size when far
           12, ['*', ['get', 'size'], 10],
           14, ['*', ['get', 'size'], 8],   // Small when close
           16, ['*', ['get', 'size'], 6]
@@ -734,7 +1000,7 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, ['*', ['get', 'size'], 10],  // Large when far
+          10, ['*', ['get', 'size'], 5],  // Half size when far
           12, ['*', ['get', 'size'], 7],
           14, ['*', ['get', 'size'], 5],   // Small when close
           16, ['*', ['get', 'size'], 4]
@@ -757,7 +1023,7 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, ['*', ['get', 'size'], 5],   // Large when far
+          10, ['*', ['get', 'size'], 2.5],   // Half size when far
           12, ['*', ['get', 'size'], 3],
           14, ['*', ['get', 'size'], 2],   // Small when close
           16, ['*', ['get', 'size'], 1.5]
@@ -893,7 +1159,8 @@ const MapEnhancedFixed = ({
       arcFeatures,
       allDataPoints,
       getCyberColor,
-      getMovementTypeColor
+      getMovementTypeColor,
+      startTime: Date.now()
     };
   };
 
@@ -904,6 +1171,7 @@ const MapEnhancedFixed = ({
     
     let animationTime = 0;
     const particleTrails = new Map(); // Store trail history for each particle
+    const startTime = Date.now();
     
     const animate = () => {
       if (!map.current) {
@@ -918,14 +1186,78 @@ const MapEnhancedFixed = ({
 
       animationTime = (animationTime + 0.002) % 1;  // Slower animation for zoom 14
       
+      // Use filtered data if available, otherwise use original
+      const currentArcs = mobilityAnimationData.current.filteredArcs || arcFeatures;
+      const currentHubs = mobilityAnimationData.current.filteredHubs || allDataPoints;
+      
+      // Update glowing arc opacity based on time - SYNCHRONIZED BY DISTANCE GROUPS
+      const currentTime = Date.now();
+      
+      // Track which arcs are currently showing to ensure they complete their cycle
+      if (!mobilityAnimationData.current.activeArcs) {
+        mobilityAnimationData.current.activeArcs = new Map();
+      }
+      const activeArcs = mobilityAnimationData.current.activeArcs;
+      
+      // Update glowing arcs with smooth, simple animation
+      if (map.current.getSource('mobility-arcs-source')) {
+        // Simple smooth wave animation based on distance groups
+        const cycleTime = 10000; // 10 second full cycle
+        const elapsedTime = currentTime - startTime;
+        
+        // Update features with smooth opacity animation
+        const updatedFeatures = currentArcs.map((arc, index) => {
+          if (arc.properties.showGlowingArc) {
+            const distanceGroup = arc.properties.distanceGroup || 0;
+            
+            // Create a smooth wave that travels through distance groups
+            // Each group has a phase offset to create a flowing effect
+            const phaseOffset = (distanceGroup * Math.PI * 2) / 7; // 7 distance groups
+            const timePhase = (elapsedTime / cycleTime) * Math.PI * 2;
+            
+            // Use sine wave for smooth fade in/out
+            const wave = Math.sin(timePhase + phaseOffset);
+            
+            // Convert sine wave (-1 to 1) to opacity (0 to 0.8)
+            // Using cosine transformation for smoother appearance
+            const opacity = Math.max(0, (wave + 1) * 0.4); // 0 to 0.8 range
+            
+            // Add a subtle pulsing effect for inter-prefecture routes
+            let finalOpacity = opacity;
+            if (arc.properties.isInterPrefecture) {
+              const pulse = Math.sin(elapsedTime / 2000) * 0.1 + 0.1;
+              finalOpacity = Math.min(0.9, opacity + pulse);
+            }
+            
+            return {
+              ...arc,
+              properties: {
+                ...arc.properties,
+                currentOpacity: finalOpacity
+              }
+            };
+          }
+          return arc;
+        });
+        
+        map.current.getSource('mobility-arcs-source').setData({
+          type: 'FeatureCollection',
+          features: updatedFeatures
+        });
+      }
+      
       // Animated particles flowing along arcs
       const particles = [];
       const trails = [];
       
-      arcFeatures.forEach((arc, arcIndex) => {
+      currentArcs.forEach((arc, arcIndex) => {
         const coordinates = arc.geometry.coordinates;
-        const particleCount = Math.ceil(arc.properties.importance * 8) + 3; // Fewer particles for cleaner view
-        const flowSpeed = (1 - arc.properties.congestion) * 0.008 + 0.002; // Much slower for zoom 14
+        const particleCount = arc.properties.particleCount || 5; // Use defined particle count
+        const baseSpeed = arc.properties.speed || 0.5; // Use defined speed
+        
+        // Speed increases with congestion (red = fast, blue = slow)
+        const congestionSpeedMultiplier = 0.5 + arc.properties.congestion * 1.5; // 0.5x to 2x
+        const flowSpeed = baseSpeed * congestionSpeedMultiplier * 0.005; // Scale down for animation
         
         for (let i = 0; i < particleCount; i++) {
           const offset = i / particleCount;
@@ -961,30 +1293,22 @@ const MapEnhancedFixed = ({
             const sizeMultiplier = 0.8 + pulsePhase * 0.2;
             const opacityPulse = 0.7 + pulsePhase * 0.3;
             
-            // Color based on movement type
-            const movementType = arc.properties.movementType;
-            let glowColor, coreColor;
+            // Color based on congestion level
+            const congestion = arc.properties.congestion;
+            let glowColor = getCyberColor(congestion, 0.6);
+            let coreColor;
             
-            // Use movement type colors
-            const baseColor = getMovementTypeColor(movementType, 1);
-            glowColor = getMovementTypeColor(movementType, 0.6);
-            
-            // Brighter core colors
-            switch(movementType) {
-              case 'tourism':
-                coreColor = 'rgba(255, 230, 100, 1)'; // Bright gold
-                break;
-              case 'business':
-                coreColor = 'rgba(100, 200, 255, 1)'; // Bright blue
-                break;
-              case 'shopping':
-                coreColor = 'rgba(255, 150, 255, 1)'; // Bright pink
-                break;
-              case 'event':
-                coreColor = 'rgba(100, 255, 150, 1)'; // Bright green
-                break;
-              default:
-                coreColor = 'rgba(200, 200, 255, 1)'; // Bright white-blue
+            // Brighter core colors based on traffic density
+            if (congestion >= 0.8) {
+              coreColor = 'rgba(255, 100, 100, 1)'; // Bright red
+            } else if (congestion >= 0.6) {
+              coreColor = 'rgba(255, 200, 50, 1)'; // Bright orange
+            } else if (congestion >= 0.4) {
+              coreColor = 'rgba(255, 255, 100, 1)'; // Bright yellow
+            } else if (congestion >= 0.2) {
+              coreColor = 'rgba(150, 255, 150, 1)'; // Bright green
+            } else {
+              coreColor = 'rgba(100, 200, 255, 1)'; // Bright blue
             }
             
             // Create particle with multiple glow layers
@@ -1004,16 +1328,17 @@ const MapEnhancedFixed = ({
               }
             });
             
-            // Create glowing trail - shorter for zoom 14
-            if (trail.length > 1) {
+            // Create glowing trail - shorter for high traffic areas to optimize
+            if (trail.length > 1 && Math.random() < (1 - congestion * 0.5)) { // Less trails for high traffic
+              const trailLength = congestion > 0.6 ? 2 : 3; // Shorter trails for busy areas
               trails.push({
                 type: 'Feature',
                 geometry: {
                   type: 'LineString',
-                  coordinates: trail.slice(-3) // Shorter trail for cleaner view
+                  coordinates: trail.slice(-trailLength)
                 },
                 properties: {
-                  color: glowColor,
+                  color: getCyberColor(congestion, 1),
                   opacity: 0.4 * opacityPulse  // More transparent trails
                 }
               });
@@ -1024,7 +1349,7 @@ const MapEnhancedFixed = ({
       
       // Pulsing hub effects - smaller for zoom 14
       const pulses = [];
-      allDataPoints.forEach((hub, hubIndex) => {
+      currentHubs.forEach((hub, hubIndex) => {
         const pulsePhase = (animationTime + hubIndex * 0.1) % 1;
         
         // Create expanding pulse rings - only 2 rings for cleaner view
@@ -1278,8 +1603,8 @@ const MapEnhancedFixed = ({
           bearing: -17.6,
           antialias: true,
           preserveDrawingBuffer: true,
-          trackResize: true,
-          maxBounds: [[bounds.west - 0.5, bounds.south - 0.5], [bounds.east + 0.5, bounds.north + 0.5]]
+          trackResize: true
+          // maxBounds removed to allow free movement across all of Japan
         });
 
         map.current.on('load', () => {
@@ -1380,6 +1705,40 @@ const MapEnhancedFixed = ({
           console.warn('Map error:', e);
         });
 
+        // Add moveend event listener to update layers when viewport changes
+        map.current.on('moveend', () => {
+          if (!layersInitializedRef.current) return;
+          
+          console.log('Map moveend event - updating viewport filtered data');
+          
+          // Update viewport
+          const center = map.current.getCenter();
+          const zoom = map.current.getZoom();
+          onViewportChange?.({
+            longitude: center.lng,
+            latitude: center.lat,
+            zoom: zoom
+          });
+          
+          // Detect if we've moved to a different prefecture
+          const newPrefecture = detectCurrentPrefecture();
+          if (newPrefecture !== dataCache.current.currentPrefecture) {
+            console.log('Prefecture changed from', dataCache.current.currentPrefecture, 'to', newPrefecture);
+            // Generate new prefecture data
+            dataCache.current.prefectureData = generateAllPrefectureData(newPrefecture);
+            dataCache.current.currentPrefecture = newPrefecture;
+            
+            // Reinitialize all layers with new data
+            if (layersInitializedRef.current) {
+              console.log('Reinitializing layers for new prefecture');
+              initializeAllLayers();
+            }
+          } else {
+            // Just update viewport filtering for existing data
+            updateViewportFilteredData();
+          }
+        });
+
       } catch (error) {
         console.error('Map initialization failed:', error);
         if (isMounted) {
@@ -1459,6 +1818,254 @@ const MapEnhancedFixed = ({
     if (selectedLayers.includes('heatmap')) {
       updateHeatmapData();
     }
+    
+    // Update all visible layers with viewport filtering
+    updateViewportFilteredData();
+  };
+  
+  // Update data based on current viewport
+  const updateViewportFilteredData = () => {
+    if (!map.current || !mapLoaded) return;
+    
+    const viewportBounds = getViewportBounds();
+    if (!viewportBounds) return;
+    
+    // Update each layer type with viewport-filtered data
+    if (selectedLayers.includes('landmarks')) {
+      updateLandmarksInViewport(viewportBounds);
+    }
+    if (selectedLayers.includes('accommodation')) {
+      updateAccommodationInViewport(viewportBounds);
+    }
+    if (selectedLayers.includes('consumption')) {
+      updateConsumptionInViewport(viewportBounds);
+    }
+    if (selectedLayers.includes('events')) {
+      updateEventsInViewport(viewportBounds);
+    }
+    if (selectedLayers.includes('mobility')) {
+      updateMobilityInViewport(viewportBounds);
+    }
+  };
+  
+  // Update landmarks within viewport
+  const updateLandmarksInViewport = (bounds) => {
+    if (!map.current.getSource('landmarks-source')) return;
+    
+    const landmarks = dataCache.current.prefectureData.landmarks;
+    const filteredLandmarks = landmarks.filter(l => 
+      isPointInViewport(l.coordinates, bounds)
+    );
+    
+    // Update point source
+    map.current.getSource('landmarks-source').setData({
+      type: 'FeatureCollection',
+      features: filteredLandmarks.map(l => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: l.coordinates },
+        properties: { name: l.name, height: l.height }
+      }))
+    });
+    
+    // Update 3D buildings source
+    const buildingFeatures = filteredLandmarks.map(l => {
+      const size = 0.0006;
+      const coords = l.coordinates;
+      return {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [coords[0] - size/2, coords[1] - size/2],
+            [coords[0] + size/2, coords[1] - size/2],
+            [coords[0] + size/2, coords[1] + size/2],
+            [coords[0] - size/2, coords[1] + size/2],
+            [coords[0] - size/2, coords[1] - size/2]
+          ]]
+        },
+        properties: {
+          name: l.name,
+          height: l.height * 3,
+          base_height: 0,
+          color: colors.landmarks
+        }
+      };
+    });
+    
+    if (map.current.getSource('landmarks-buildings-source')) {
+      map.current.getSource('landmarks-buildings-source').setData({
+        type: 'FeatureCollection',
+        features: buildingFeatures
+      });
+    }
+  };
+  
+  // Update accommodation within viewport
+  const updateAccommodationInViewport = (bounds) => {
+    if (!map.current.getSource('accommodation-source')) return;
+    
+    const accommodations = dataCache.current.prefectureData.accommodation;
+    const filtered = accommodations.filter(a => 
+      isPointInViewport(a.coordinates, bounds)
+    );
+    
+    const accommodationFeatures = filtered.map(a => {
+      const size = 0.0002;
+      const coords = a.coordinates;
+      return {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [coords[0] - size/2, coords[1] - size/2],
+            [coords[0] + size/2, coords[1] - size/2],
+            [coords[0] + size/2, coords[1] + size/2],
+            [coords[0] - size/2, coords[1] + size/2],
+            [coords[0] - size/2, coords[1] - size/2]
+          ]]
+        },
+        properties: {
+          name: a.name,
+          height: 10 + a.occupancy * 50,
+          base_height: 0,
+          occupancy: a.occupancy,
+          color: colors.accommodation
+        }
+      };
+    });
+    
+    map.current.getSource('accommodation-source').setData({
+      type: 'FeatureCollection',
+      features: accommodationFeatures
+    });
+  };
+  
+  // Update consumption within viewport
+  const updateConsumptionInViewport = (bounds) => {
+    if (!map.current.getSource('consumption-source')) return;
+    
+    const consumptionData = dataCache.current.prefectureData.consumption;
+    const filtered = consumptionData.filter(c => 
+      isPointInViewport(c.coordinates, bounds)
+    );
+    
+    const consumptionFeatures = filtered.map(c => {
+      const size = 0.0003;
+      const coords = c.coordinates;
+      return {
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: [[
+            [coords[0] - size/2, coords[1] - size/2],
+            [coords[0] + size/2, coords[1] - size/2],
+            [coords[0] + size/2, coords[1] + size/2],
+            [coords[0] - size/2, coords[1] + size/2],
+            [coords[0] - size/2, coords[1] - size/2]
+          ]]
+        },
+        properties: {
+          amount: c.amount,
+          category: c.category,
+          height: Math.sqrt(c.amount) / 50,
+          color: colors.consumption,
+          isTouristArea: c.isTouristArea
+        }
+      };
+    });
+    
+    map.current.getSource('consumption-source').setData({
+      type: 'FeatureCollection',
+      features: consumptionFeatures
+    });
+  };
+  
+  // Update events within viewport
+  const updateEventsInViewport = (bounds) => {
+    if (!map.current.getSource('events-source')) return;
+    
+    const events = dataCache.current.prefectureData.events;
+    const filtered = events.filter(e => 
+      isPointInViewport(e.coordinates, bounds)
+    );
+    
+    map.current.getSource('events-source').setData({
+      type: 'FeatureCollection',
+      features: filtered.map(e => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: e.coordinates },
+        properties: { 
+          name: e.name,
+          category: e.category,
+          icon: e.icon
+        }
+      }))
+    });
+    
+    // Update impact source
+    if (map.current.getSource('events-impact-source')) {
+      const impactFeatures = filtered.map(e => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: e.coordinates },
+        properties: { radius: e.impact_radius }
+      }));
+      
+      map.current.getSource('events-impact-source').setData({
+        type: 'FeatureCollection',
+        features: impactFeatures
+      });
+    }
+  };
+  
+  // Update mobility within viewport
+  const updateMobilityInViewport = (bounds) => {
+    if (!mobilityAnimationData.current) return;
+    
+    const { arcFeatures, allDataPoints } = mobilityAnimationData.current;
+    
+    // Filter arcs where at least one endpoint is in viewport
+    const filteredArcs = arcFeatures.filter(arc => {
+      const coords = arc.geometry.coordinates;
+      const startInView = isPointInViewport(coords[0], bounds, 0.2);
+      const endInView = isPointInViewport(coords[coords.length - 1], bounds, 0.2);
+      return startInView || endInView;
+    });
+    
+    // Filter hubs in viewport
+    const filteredHubs = allDataPoints.filter(hub => 
+      isPointInViewport(hub.coordinates, bounds)
+    );
+    
+    // Update sources if they exist
+    if (map.current.getSource('mobility-arcs-source')) {
+      map.current.getSource('mobility-arcs-source').setData({
+        type: 'FeatureCollection',
+        features: filteredArcs
+      });
+    }
+    
+    if (map.current.getSource('mobility-hubs-source')) {
+      const hubFeatures = filteredHubs.map(hub => ({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: hub.coordinates },
+        properties: {
+          name: hub.name,
+          importance: hub.importance,
+          type: hub.type,
+          radius: 8 + hub.importance * 12,
+          glowRadius: 15 + hub.importance * 25
+        }
+      }));
+      
+      map.current.getSource('mobility-hubs-source').setData({
+        type: 'FeatureCollection',
+        features: hubFeatures
+      });
+    }
+    
+    // Update animation data with filtered features
+    mobilityAnimationData.current.filteredArcs = filteredArcs;
+    mobilityAnimationData.current.filteredHubs = filteredHubs;
   };
 
   // SNSデータの更新
@@ -1466,7 +2073,7 @@ const MapEnhancedFixed = ({
     if (!map.current || !map.current.getSource('heatmap-source')) return;
 
     // Make sure we have cached data
-    if (!dataCache.current.heatmapData) {
+    if (!dataCache.current.prefectureData || !dataCache.current.prefectureData.heatmap) {
       console.warn('No cached heatmap data available');
       return;
     }
@@ -1500,7 +2107,9 @@ const MapEnhancedFixed = ({
   useEffect(() => {
     if (!map.current || !mapLoaded) return;
 
-    map.current.on('move', () => {
+    let moveTimeout;
+    
+    const handleMove = () => {
       const center = map.current.getCenter();
       const zoom = map.current.getZoom();
       onViewportChange({
@@ -1508,8 +2117,77 @@ const MapEnhancedFixed = ({
         longitude: center.lng,
         zoom: zoom,
       });
-    });
-  }, [mapLoaded, onViewportChange]);
+    };
+    
+    const handleMoveEnd = () => {
+      // Clear any existing timeout
+      clearTimeout(moveTimeout);
+      
+      // Debounce the viewport update
+      moveTimeout = setTimeout(() => {
+        console.log('Map movement ended, updating viewport-filtered data');
+        updateViewportFilteredData();
+      }, 300); // Wait 300ms after movement stops
+    };
+
+    map.current.on('move', handleMove);
+    map.current.on('moveend', handleMoveEnd);
+    
+    // Initial viewport update
+    updateViewportFilteredData();
+    
+    return () => {
+      if (map.current) {
+        map.current.off('move', handleMove);
+        map.current.off('moveend', handleMoveEnd);
+      }
+      clearTimeout(moveTimeout);
+    };
+  }, [mapLoaded, onViewportChange, selectedLayers]);
+  
+  // Detect prefecture change and reinitialize layers
+  useEffect(() => {
+    if (!map.current || !mapLoaded) return;
+    
+    const newPrefecture = detectCurrentPrefecture();
+    if (dataCache.current.currentPrefecture !== newPrefecture) {
+      console.log('Prefecture changed to:', newPrefecture);
+      // Clear existing layers
+      Object.keys(layerRegistry.current).forEach(layerId => {
+        if (map.current.getLayer(layerId)) {
+          map.current.removeLayer(layerId);
+        }
+      });
+      
+      // Clear sources
+      ['heatmap-source', 'landmarks-source', 'landmarks-buildings-source', 
+       'accommodation-source', 'consumption-source', 'mobility-hubs-source',
+       'mobility-arcs-source', 'mobility-particles-source', 'mobility-trails-source',
+       'mobility-pulse-source', 'mobility-grid-source', 'events-source', 
+       'events-impact-source'].forEach(sourceId => {
+        if (map.current.getSource(sourceId)) {
+          map.current.removeSource(sourceId);
+        }
+      });
+      
+      // Reset layer registry
+      layerRegistry.current = {};
+      layersInitializedRef.current = false;
+      
+      // Force data regeneration
+      dataCache.current.prefectureData = null;
+      dataCache.current.currentPrefecture = null;
+      
+      // Reinitialize with new data
+      setTimeout(() => {
+        if (map.current && map.current.isStyleLoaded()) {
+          initializeAllLayers();
+          layersInitializedRef.current = true;
+          setLayersInitialized(true);
+        }
+      }, 100);
+    }
+  }, [viewport, mapLoaded]);
 
   // マップコンテナのリサイズ処理
   useEffect(() => {
@@ -1577,6 +2255,6 @@ const MapEnhancedFixed = ({
       )}
     </Box>
   );
-};
+});
 
 export default MapEnhancedFixed;
