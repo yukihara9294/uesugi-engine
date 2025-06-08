@@ -77,6 +77,14 @@ const MapEnhancedFixed = ({
     layerRegistry.current[layerId] = { id: layerId, type: layerType };
   };
 
+  // Stop any running animations
+  const stopAnimations = () => {
+    if (animationFrame.current) {
+      cancelAnimationFrame(animationFrame.current);
+      animationFrame.current = null;
+    }
+  };
+
   const toggleLayerVisibility = (layerId, visible) => {
     console.log(`toggleLayerVisibility called for ${layerId}, visible: ${visible}`);
     if (map.current && map.current.getLayer(layerId)) {
@@ -362,144 +370,355 @@ const MapEnhancedFixed = ({
     registerLayer('consumption-3d', 'consumption');
   };
 
-  // 人流データレイヤーの初期化
+  // 人流データレイヤーの初期化 - Cyberpunk 3D Arc Visualization
   const initializeMobilityLayers = () => {
-    // Use prefecture mobility data
     const mobilityData = dataCache.current.prefectureData.mobility;
-    const roadFlows = mobilityData.routes;
+    const routes = mobilityData.routes;
 
-    const getCongestionColor = (congestion) => {
-      if (congestion >= 0.8) return '#FF0000';
-      if (congestion >= 0.5) return '#FFFF00';
-      return '#00FF00';
+    // Cyberpunk color scheme
+    const getCyberColor = (congestion, opacity = 1) => {
+      if (congestion >= 0.8) return `rgba(255, 0, 128, ${opacity})`; // Hot pink for high congestion
+      if (congestion >= 0.5) return `rgba(0, 255, 255, ${opacity})`; // Cyan for medium
+      return `rgba(100, 200, 255, ${opacity})`; // Light blue for low
     };
-    
-    // Add congestion points
-    const congestionFeatures = mobilityData.congestionPoints.map((point, i) => ({
+
+    // Major transportation hubs with glowing orbs
+    const majorHubs = [
+      { name: '広島駅', coordinates: [132.4755, 34.3978], importance: 1.0 },
+      { name: '広島空港', coordinates: [132.9194, 34.4364], importance: 0.9 },
+      { name: '福山駅', coordinates: [133.3627, 34.4858], importance: 0.8 },
+      { name: '尾道駅', coordinates: [133.1950, 34.4090], importance: 0.7 },
+      { name: '三原駅', coordinates: [133.0833, 34.4000], importance: 0.7 },
+      { name: '呉駅', coordinates: [132.5656, 34.2492], importance: 0.6 }
+    ];
+
+    // Create glowing hub orbs
+    const hubFeatures = majorHubs.map(hub => ({
       type: 'Feature',
-      geometry: {
-        type: 'Point',
-        coordinates: point.coordinates
-      },
+      geometry: { type: 'Point', coordinates: hub.coordinates },
       properties: {
-        level: point.level,
-        radius: point.radius * 1000, // Convert to meters for visualization
-        type: point.type,
-        name: point.name,
-        color: getCongestionColor(point.level)
+        name: hub.name,
+        importance: hub.importance,
+        radius: 20 + hub.importance * 30,
+        glowRadius: 40 + hub.importance * 60
       }
     }));
-    
-    map.current.addSource('mobility-congestion-source', {
+
+    map.current.addSource('mobility-hubs-source', {
       type: 'geojson',
-      data: { type: 'FeatureCollection', features: congestionFeatures }
+      data: { type: 'FeatureCollection', features: hubFeatures }
     });
-    
-    // Congestion areas visualization
+
+    // Outer glow for hubs
     map.current.addLayer({
-      id: 'mobility-congestion',
+      id: 'mobility-hubs-glow',
       type: 'circle',
-      source: 'mobility-congestion-source',
-      layout: {
-        visibility: 'none'
-      },
+      source: 'mobility-hubs-source',
+      layout: { visibility: 'none' },
       paint: {
-        'circle-radius': {
-          property: 'radius',
-          type: 'identity'
-        },
+        'circle-radius': ['get', 'glowRadius'],
+        'circle-color': 'rgba(0, 255, 255, 0.3)',
+        'circle-blur': 1,
+        'circle-opacity': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          10, 0.2,
+          15, 0.5
+        ]
+      }
+    });
+    registerLayer('mobility-hubs-glow', 'mobility');
+
+    // Inner core for hubs
+    map.current.addLayer({
+      id: 'mobility-hubs-core',
+      type: 'circle',
+      source: 'mobility-hubs-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': ['get', 'radius'],
+        'circle-color': 'rgba(255, 255, 255, 0.9)',
+        'circle-blur': 0.5,
+        'circle-opacity': 0.9
+      }
+    });
+    registerLayer('mobility-hubs-core', 'mobility');
+
+    // Create 3D arcs between major points
+    const createArc = (start, end, height = 0.1) => {
+      const midpoint = [
+        (start[0] + end[0]) / 2,
+        (start[1] + end[1]) / 2
+      ];
+      
+      const distance = Math.sqrt(
+        Math.pow(end[0] - start[0], 2) + 
+        Math.pow(end[1] - start[1], 2)
+      );
+      
+      // Generate arc points
+      const arcPoints = [];
+      const segments = 50;
+      
+      for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const x = start[0] * (1 - t) * (1 - t) + 2 * midpoint[0] * (1 - t) * t + end[0] * t * t;
+        const y = start[1] * (1 - t) * (1 - t) + 2 * midpoint[1] * (1 - t) * t + end[1] * t * t;
+        
+        // Add height variation for 3D effect (peak at midpoint)
+        const arcHeight = Math.sin(t * Math.PI) * height * distance;
+        
+        arcPoints.push([x, y + arcHeight * 0.5]); // Offset Y for visual 3D effect
+      }
+      
+      return arcPoints;
+    };
+
+    // Generate arcs between major hubs
+    const arcFeatures = [];
+    for (let i = 0; i < majorHubs.length; i++) {
+      for (let j = i + 1; j < majorHubs.length; j++) {
+        const start = majorHubs[i];
+        const end = majorHubs[j];
+        const importance = (start.importance + end.importance) / 2;
+        
+        const arcPoints = createArc(start.coordinates, end.coordinates, 0.15);
+        
+        arcFeatures.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: arcPoints
+          },
+          properties: {
+            startHub: start.name,
+            endHub: end.name,
+            importance: importance,
+            congestion: Math.random() * 0.5 + 0.3, // Simulated congestion
+            flowDirection: i < j ? 'forward' : 'reverse'
+          }
+        });
+      }
+    }
+
+    map.current.addSource('mobility-arcs-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: arcFeatures }
+    });
+
+    // Outer glow for arcs
+    map.current.addLayer({
+      id: 'mobility-arcs-glow',
+      type: 'line',
+      source: 'mobility-arcs-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'line-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'congestion'],
+          0, 'rgba(100, 200, 255, 0.3)',
+          0.5, 'rgba(0, 255, 255, 0.3)',
+          1, 'rgba(255, 0, 128, 0.3)'
+        ],
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['get', 'importance'],
+          0, 15,
+          1, 30
+        ],
+        'line-blur': 15,
+        'line-opacity': 0.4
+      }
+    });
+    registerLayer('mobility-arcs-glow', 'mobility');
+
+    // Main arc lines
+    map.current.addLayer({
+      id: 'mobility-arcs',
+      type: 'line',
+      source: 'mobility-arcs-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'line-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'congestion'],
+          0, 'rgba(150, 220, 255, 0.9)',
+          0.5, 'rgba(0, 255, 255, 0.9)',
+          1, 'rgba(255, 100, 200, 0.9)'
+        ],
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['get', 'importance'],
+          0, 2,
+          1, 4
+        ],
+        'line-opacity': 0.9
+      }
+    });
+    registerLayer('mobility-arcs', 'mobility');
+
+    // Particle flow sources
+    map.current.addSource('mobility-particles-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    });
+
+    // Glowing particles
+    map.current.addLayer({
+      id: 'mobility-particles',
+      type: 'circle',
+      source: 'mobility-particles-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['get', 'size'],
+          0, 2,
+          1, 6
+        ],
         'circle-color': ['get', 'color'],
-        'circle-opacity': 0.3,
+        'circle-opacity': ['get', 'opacity'],
         'circle-blur': 0.8
       }
     });
-    registerLayer('mobility-congestion', 'mobility');
+    registerLayer('mobility-particles', 'mobility');
 
-    const roadFeatures = roadFlows.map((flow, i) => ({
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: flow.points || flow.route
-      },
-      properties: {
-        congestion: flow.congestion,
-        color: getCongestionColor(flow.congestion),
-        name: flow.name,
-        type: flow.type,
-        flow_speed: flow.flow_speed,
-        id: flow.id || i
-      }
-    }));
-
-    map.current.addSource('mobility-roads-source', {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: roadFeatures }
-    });
-
-    // 道路のグロー効果
-    map.current.addLayer({
-      id: 'mobility-roads-glow',
-      type: 'line',
-      source: 'mobility-roads-source',
-      layout: {
-        visibility: 'none'
-      },
-      paint: {
-        'line-color': ['get', 'color'],
-        'line-width': 20,
-        'line-opacity': 0.3,
-        'line-blur': 10
-      }
-    });
-    registerLayer('mobility-roads-glow', 'mobility');
-
-    // 道路のメインライン
-    map.current.addLayer({
-      id: 'mobility-roads',
-      type: 'line',
-      source: 'mobility-roads-source',
-      layout: {
-        visibility: 'none',
-        'line-join': 'round',
-        'line-cap': 'round'
-      },
-      paint: {
-        'line-color': ['get', 'color'],
-        'line-width': 6,
-        'line-opacity': 0.8
-      }
-    });
-    registerLayer('mobility-roads', 'mobility');
-
-    // パーティクル用の空ソース
-    map.current.addSource('mobility-road-particles-source', {
+    // Data stream trails
+    map.current.addSource('mobility-trails-source', {
       type: 'geojson',
       data: { type: 'FeatureCollection', features: [] }
     });
 
     map.current.addLayer({
-      id: 'mobility-road-particles',
-      type: 'circle',
-      source: 'mobility-road-particles-source',
-      layout: {
-        visibility: 'none'
-      },
+      id: 'mobility-trails',
+      type: 'line',
+      source: 'mobility-trails-source',
+      layout: { visibility: 'none' },
       paint: {
-        'circle-radius': 3,
-        'circle-color': ['get', 'color'],
-        'circle-opacity': 0.8,
+        'line-color': ['get', 'color'],
+        'line-width': 2,
+        'line-opacity': ['get', 'opacity'],
+        'line-blur': 1
+      }
+    });
+    registerLayer('mobility-trails', 'mobility');
+
+    // Pulsing effect for hubs
+    map.current.addSource('mobility-pulse-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    });
+
+    map.current.addLayer({
+      id: 'mobility-pulse',
+      type: 'circle',
+      source: 'mobility-pulse-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'circle-radius': ['get', 'radius'],
+        'circle-color': 'rgba(0, 255, 255, 0.5)',
+        'circle-opacity': ['get', 'opacity'],
         'circle-blur': 0.5
       }
     });
-    registerLayer('mobility-road-particles', 'mobility');
+    registerLayer('mobility-pulse', 'mobility');
 
-    // アニメーション開始
-    startMobilityAnimation(roadFlows, getCongestionColor);
+    // Hub labels
+    map.current.addLayer({
+      id: 'mobility-hub-labels',
+      type: 'symbol',
+      source: 'mobility-hubs-source',
+      layout: {
+        visibility: 'none',
+        'text-field': ['get', 'name'],
+        'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+        'text-size': 12,
+        'text-offset': [0, -3],
+        'text-anchor': 'bottom'
+      },
+      paint: {
+        'text-color': 'rgba(0, 255, 255, 0.9)',
+        'text-halo-color': 'rgba(0, 0, 0, 0.8)',
+        'text-halo-width': 2
+      }
+    });
+    registerLayer('mobility-hub-labels', 'mobility');
+
+    // Add holographic grid effect
+    const gridFeatures = [];
+    const gridSize = 0.05; // Grid spacing
+    const bounds = dataCache.current.prefectureData.bounds;
+    
+    // Create vertical grid lines
+    for (let lng = bounds.west; lng <= bounds.east; lng += gridSize) {
+      gridFeatures.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [[lng, bounds.south], [lng, bounds.north]]
+        },
+        properties: {
+          type: 'vertical'
+        }
+      });
+    }
+    
+    // Create horizontal grid lines
+    for (let lat = bounds.south; lat <= bounds.north; lat += gridSize) {
+      gridFeatures.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [[bounds.west, lat], [bounds.east, lat]]
+        },
+        properties: {
+          type: 'horizontal'
+        }
+      });
+    }
+    
+    map.current.addSource('mobility-grid-source', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: gridFeatures }
+    });
+    
+    map.current.addLayer({
+      id: 'mobility-grid',
+      type: 'line',
+      source: 'mobility-grid-source',
+      layout: { visibility: 'none' },
+      paint: {
+        'line-color': 'rgba(0, 255, 255, 0.1)',
+        'line-width': 0.5,
+        'line-opacity': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          10, 0,
+          12, 0.2,
+          15, 0.1
+        ]
+      }
+    }, 'mobility-arcs-glow'); // Add below arcs
+    registerLayer('mobility-grid', 'mobility');
+
+    // Start cyberpunk animation
+    startCyberpunkMobilityAnimation(arcFeatures, majorHubs, getCyberColor);
   };
 
-  // 人流アニメーション
-  const startMobilityAnimation = (roadFlows, getCongestionColor) => {
-    let particleOffset = 0;
+  // Cyberpunk mobility animation with flowing particles and pulsing hubs
+  const startCyberpunkMobilityAnimation = (arcFeatures, majorHubs, getCyberColor) => {
+    // Stop any existing animation
+    stopAnimations();
+    
+    let animationTime = 0;
+    const particleTrails = new Map(); // Store trail history for each particle
     
     const animate = () => {
       if (!map.current || !isLayerVisible('mobility')) {
@@ -507,46 +726,121 @@ const MapEnhancedFixed = ({
         return;
       }
 
-      particleOffset = (particleOffset + 1) % 100;
+      animationTime = (animationTime + 0.005) % 1;
       
-      const roadParticles = [];
-      roadFlows.forEach((flow, flowIndex) => {
-        const route = flow.points || flow.route;
-        const routeLength = route.length;
-        const particleCount = Math.floor(flow.congestion * 10) + 3;
+      // Animated particles flowing along arcs
+      const particles = [];
+      const trails = [];
+      
+      arcFeatures.forEach((arc, arcIndex) => {
+        const coordinates = arc.geometry.coordinates;
+        const particleCount = Math.ceil(arc.properties.importance * 8) + 3;
+        const flowSpeed = (1 - arc.properties.congestion) * 0.02 + 0.005;
         
         for (let i = 0; i < particleCount; i++) {
-          const progress = ((particleOffset + i * (100 / particleCount)) % 100) / 100;
-          const segmentIndex = Math.floor(progress * (routeLength - 1));
-          const segmentProgress = (progress * (routeLength - 1)) % 1;
+          const offset = i / particleCount;
+          let progress = (animationTime * flowSpeed * 50 + offset) % 1;
           
-          if (segmentIndex < routeLength - 1) {
-            const start = route[segmentIndex];
-            const end = route[segmentIndex + 1];
+          // Reverse direction for some arcs
+          if (arc.properties.flowDirection === 'reverse') {
+            progress = 1 - progress;
+          }
+          
+          const pointIndex = Math.floor(progress * (coordinates.length - 1));
+          const segmentProgress = (progress * (coordinates.length - 1)) % 1;
+          
+          if (pointIndex < coordinates.length - 1) {
+            const start = coordinates[pointIndex];
+            const end = coordinates[pointIndex + 1];
             const lng = start[0] + (end[0] - start[0]) * segmentProgress;
             const lat = start[1] + (end[1] - start[1]) * segmentProgress;
             
-            roadParticles.push({
+            const particleId = `${arcIndex}-${i}`;
+            const particleCoord = [lng, lat];
+            
+            // Add to trail history
+            if (!particleTrails.has(particleId)) {
+              particleTrails.set(particleId, []);
+            }
+            const trail = particleTrails.get(particleId);
+            trail.push(particleCoord);
+            if (trail.length > 10) trail.shift(); // Keep last 10 positions
+            
+            // Create particle
+            particles.push({
               type: 'Feature',
               geometry: {
                 type: 'Point',
-                coordinates: [lng, lat]
+                coordinates: particleCoord
               },
               properties: {
-                flowId: flow.id || flowIndex,
-                congestion: flow.congestion,
-                color: getCongestionColor(flow.congestion),
-                type: flow.type
+                size: 0.3 + Math.sin(animationTime * Math.PI * 2 + offset * Math.PI * 2) * 0.2,
+                color: getCyberColor(arc.properties.congestion),
+                opacity: 0.6 + Math.sin(animationTime * Math.PI * 4 + offset * Math.PI) * 0.3
               }
             });
+            
+            // Create trail
+            if (trail.length > 1) {
+              trails.push({
+                type: 'Feature',
+                geometry: {
+                  type: 'LineString',
+                  coordinates: trail.slice(-5) // Use last 5 points for trail
+                },
+                properties: {
+                  color: getCyberColor(arc.properties.congestion, 0.3),
+                  opacity: 0.3
+                }
+              });
+            }
           }
         }
       });
-
-      if (map.current.getSource('mobility-road-particles-source')) {
-        map.current.getSource('mobility-road-particles-source').setData({
+      
+      // Pulsing hub effects
+      const pulses = [];
+      majorHubs.forEach((hub, hubIndex) => {
+        const pulsePhase = (animationTime + hubIndex * 0.15) % 1;
+        
+        // Create expanding pulse rings
+        for (let ring = 0; ring < 3; ring++) {
+          const ringPhase = (pulsePhase + ring * 0.3) % 1;
+          const ringOpacity = 1 - ringPhase;
+          
+          pulses.push({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: hub.coordinates
+            },
+            properties: {
+              radius: 10 + ringPhase * 50 * hub.importance,
+              opacity: ringOpacity * 0.3
+            }
+          });
+        }
+      });
+      
+      // Update sources
+      if (map.current.getSource('mobility-particles-source')) {
+        map.current.getSource('mobility-particles-source').setData({
           type: 'FeatureCollection',
-          features: roadParticles
+          features: particles
+        });
+      }
+      
+      if (map.current.getSource('mobility-trails-source')) {
+        map.current.getSource('mobility-trails-source').setData({
+          type: 'FeatureCollection',
+          features: trails
+        });
+      }
+      
+      if (map.current.getSource('mobility-pulse-source')) {
+        map.current.getSource('mobility-pulse-source').setData({
+          type: 'FeatureCollection',
+          features: pulses
         });
       }
 
@@ -856,15 +1150,13 @@ const MapEnhancedFixed = ({
 
     return () => {
       isMounted = false;
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-        animationFrame.current = null;
-      }
+      stopAnimations(); // Use the helper function
       if (map.current) {
         map.current.remove();
         map.current = null;
         setMapLoaded(false);
         setLayersInitialized(false);
+        layersInitializedRef.current = false;
       }
     };
   }, [loading]); // loading状態が変わったときのみ再実行
