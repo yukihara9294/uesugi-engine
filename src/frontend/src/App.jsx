@@ -413,27 +413,35 @@ function App() {
           position: 'relative'
         }}>
           {/* 左サイドバー - 現実世界データ */}
-          {leftSidebarOpen && (
-            <LeftSidebar
-              selectedLayers={selectedLayers}
-              onLayerChange={setSelectedLayers}
-              viewport={viewport}
-              weatherData={weatherData}
-              onRefresh={() => {
-                loadMobilityData();
-                loadAccommodationData();
-                loadConsumptionData();
-                loadEventData();
-              }}
-              onClose={() => setLeftSidebarOpen(false)}
-            />
-          )}
+          <Box sx={{
+            width: leftSidebarOpen ? 360 : 0,
+            transition: 'width 0.3s ease',
+            overflow: 'hidden',
+            flexShrink: 0
+          }}>
+            {leftSidebarOpen && (
+              <LeftSidebar
+                selectedLayers={selectedLayers}
+                onLayerChange={setSelectedLayers}
+                viewport={viewport}
+                weatherData={weatherData}
+                onRefresh={() => {
+                  loadMobilityData();
+                  loadAccommodationData();
+                  loadConsumptionData();
+                  loadEventData();
+                }}
+                onClose={() => setLeftSidebarOpen(false)}
+              />
+            )}
+          </Box>
           
           {/* 地図エリア */}
           <Box sx={{ 
             flex: 1, 
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            transition: 'all 0.3s ease'
           }}>
             <MapErrorBoundary>
               <MapEnhancedFixed
@@ -505,16 +513,23 @@ function App() {
           </Box>
           
           {/* 右サイドバー - ソーシャルネットワーキングデータ */}
-          {rightSidebarOpen && (
-            <RightSidebar
-              selectedLayers={selectedLayers}
-              onLayerChange={setSelectedLayers}
-              selectedCategories={selectedCategories}
-              onCategoryChange={setSelectedCategories}
-              statistics={statistics}
-              onClose={() => setRightSidebarOpen(false)}
-            />
-          )}
+          <Box sx={{
+            width: rightSidebarOpen ? 360 : 0,
+            transition: 'width 0.3s ease',
+            overflow: 'hidden',
+            flexShrink: 0
+          }}>
+            {rightSidebarOpen && (
+              <RightSidebar
+                selectedLayers={selectedLayers}
+                onLayerChange={setSelectedLayers}
+                selectedCategories={selectedCategories}
+                onCategoryChange={setSelectedCategories}
+                statistics={statistics}
+                onClose={() => setRightSidebarOpen(false)}
+              />
+            )}
+          </Box>
           
           {/* ダッシュボード */}
           {dashboardOpen && (

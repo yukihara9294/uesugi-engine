@@ -783,26 +783,39 @@ const MapEnhancedFixed = ({
           setMapLoaded(true);
           console.log('Map loaded state set to true');
           
-          // 初期レイヤーの追加
-          console.log('Initializing layers on map load...');
-          console.log('Current layersInitialized state:', layersInitialized);
-          setTimeout(() => {
-            console.log('Running layer initialization after timeout');
-            console.log('map.current exists?', !!map.current);
-            console.log('map.current.isStyleLoaded?', map.current ? map.current.isStyleLoaded() : 'no map');
-            console.log('layersInitialized?', layersInitialized);
-            
-            if (map.current && map.current.isStyleLoaded() && !layersInitializedRef.current) {
-              console.log('Calling initializeAllLayers');
-              initializeAllLayers();
-              layersInitializedRef.current = true;
-              setLayersInitialized(true);
-              console.log('Layers initialized successfully');
+          // Wait for style to be fully loaded before initializing layers
+          const initializeLayers = () => {
+            console.log('Checking if style is loaded...');
+            if (map.current && map.current.isStyleLoaded()) {
+              console.log('Style is loaded, initializing layers');
+              if (!layersInitializedRef.current) {
+                console.log('Calling initializeAllLayers');
+                initializeAllLayers();
+                layersInitializedRef.current = true;
+                setLayersInitialized(true);
+                console.log('Layers initialized successfully');
+              } else {
+                console.log('Layers already initialized');
+              }
             } else {
-              console.log('Skipping layer init - already initialized or map not ready');
-              console.log('layersInitializedRef.current:', layersInitializedRef.current);
+              console.log('Style not loaded yet, retrying in 100ms...');
+              setTimeout(initializeLayers, 100);
             }
-          }, 100);
+          };
+          
+          // Start checking for style load
+          initializeLayers();
+        });
+
+        // Also listen for styledata event which fires when style is fully loaded
+        map.current.on('styledata', () => {
+          console.log('Style data loaded event fired');
+          if (!layersInitializedRef.current && map.current && map.current.isStyleLoaded()) {
+            console.log('Initializing layers from styledata event');
+            initializeAllLayers();
+            layersInitializedRef.current = true;
+            setLayersInitialized(true);
+          }
         });
 
         map.current.on('error', (e) => {
@@ -951,8 +964,19 @@ const MapEnhancedFixed = ({
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [mapLoaded]);
+    
+    // Trigger resize after a short delay to handle sidebar transitions
+    const resizeTimer = setTimeout(() => {
+      if (map.current) {
+        map.current.resize();
+      }
+    }, 350); // Slightly longer than transition duration
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      clearTimeout(resizeTimer);
+    };
+  }, [mapLoaded, selectedLayers]); // Also resize when layers change (which happens with sidebar toggle)
 
   return (
     <Box 

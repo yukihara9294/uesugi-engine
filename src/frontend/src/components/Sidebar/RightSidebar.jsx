@@ -81,7 +81,7 @@ const RightSidebar = ({
 
   return (
     <Paper sx={{ 
-      width: 320,
+      width: 360,
       height: '100%',
       background: 'rgba(10, 10, 10, 0.95)',
       backdropFilter: 'blur(30px)',

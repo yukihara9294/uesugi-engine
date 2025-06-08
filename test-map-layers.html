@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uesugi Engine - Map Layers Test</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+        }
+        #map {
+            position: absolute;
+            top: 80px;
+            bottom: 0;
+            width: 100%;
+        }
+        #header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(10, 10, 10, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+        }
+        #controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .layer-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .layer-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .layer-toggle.active {
+            background: rgba(102, 126, 234, 0.3);
+            border-color: #667eea;
+        }
+        .layer-toggle input {
+            cursor: pointer;
+        }
+        #status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(10, 10, 10, 0.95);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 400px;
+        }
+        .status-item {
+            margin: 4px 0;
+            font-size: 14px;
+        }
+        .status-item.success {
+            color: #4CAF50;
+        }
+        .status-item.error {
+            color: #FF6B6B;
+        }
+        .status-item.info {
+            color: #FFD700;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1 style="margin: 0; font-size: 24px; color: #667eea;">Uesugi Engine - Map Layers Test</h1>
+        <div id="controls" style="margin-left: 40px;">
+            <label class="layer-toggle" id="toggle-heatmap">
+                <input type="checkbox" id="heatmap-checkbox" checked>
+                <span>SNS Heatmap</span>
+            </label>
+            <label class="layer-toggle" id="toggle-landmarks">
+                <input type="checkbox" id="landmarks-checkbox" checked>
+                <span>Landmarks</span>
+            </label>
+            <label class="layer-toggle" id="toggle-mobility">
+                <input type="checkbox" id="mobility-checkbox" checked>
+                <span>Mobility</span>
+            </label>
+            <label class="layer-toggle" id="toggle-events">
+                <input type="checkbox" id="events-checkbox" checked>
+                <span>Events</span>
+            </label>
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <div id="status">
+        <h3 style="margin: 0 0 12px 0; font-size: 16px;">Layer Status</h3>
+        <div id="status-content"></div>
+    </div>
+
+    <script>
+        // Mapbox token
+        mapboxgl.accessToken = 'pk.eyJ1IjoieXVraWhhcmE5Mjk0IiwiYSI6ImNtYmh1MG1kbTAxOHYyanBseWMyYzU0bzgifQ.qXWlSlsfZfHWKWJ1JPdvOg';
+        
+        // Status logging
+        const statusDiv = document.getElementById('status-content');
+        function logStatus(message, type = 'info') {
+            const item = document.createElement('div');
+            item.className = `status-item ${type}`;
+            item.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            statusDiv.insertBefore(item, statusDiv.firstChild);
+            if (statusDiv.children.length > 10) {
+                statusDiv.removeChild(statusDiv.lastChild);
+            }
+        }
+        
+        // Initialize map
+        logStatus('Initializing map...', 'info');
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v11',
+            center: [132.4553, 34.3853],
+            zoom: 11,
+            pitch: 45,
+            bearing: -17.6
+        });
+        
+        // Layer registry
+        const layerRegistry = {};
+        
+        // Wait for map to load
+        map.on('load', () => {
+            logStatus('Map loaded successfully', 'success');
+            
+            // Check if style is loaded
+            const checkStyleLoaded = () => {
+                if (map.isStyleLoaded()) {
+                    logStatus('Style loaded, initializing layers...', 'success');
+                    initializeLayers();
+                } else {
+                    logStatus('Waiting for style to load...', 'info');
+                    setTimeout(checkStyleLoaded, 100);
+                }
+            };
+            
+            checkStyleLoaded();
+        });
+        
+        // Also listen for styledata event
+        map.on('styledata', () => {
+            logStatus('Style data event fired', 'info');
+        });
+        
+        // Initialize all layers
+        function initializeLayers() {
+            try {
+                // Initialize heatmap layers
+                initializeHeatmapLayers();
+                logStatus('Heatmap layers initialized', 'success');
+                
+                // Initialize landmark layers
+                initializeLandmarkLayers();
+                logStatus('Landmark layers initialized', 'success');
+                
+                // Initialize mobility layers
+                initializeMobilityLayers();
+                logStatus('Mobility layers initialized', 'success');
+                
+                // Initialize event layers
+                initializeEventLayers();
+                logStatus('Event layers initialized', 'success');
+                
+                // Setup toggle controls
+                setupControls();
+                logStatus('Controls setup complete', 'success');
+                
+            } catch (error) {
+                logStatus(`Error initializing layers: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+        
+        // Initialize heatmap layers
+        function initializeHeatmapLayers() {
+            const heatmapPoints = [];
+            const baseLocations = [
+                [132.4536, 34.3955], [132.4520, 34.3920], [132.3196, 34.2960],
+                [132.4615, 34.3905], [132.4570, 34.3935], [132.4757, 34.3972]
+            ];
+            
+            baseLocations.forEach(loc => {
+                for (let i = 0; i < 20; i++) {
+                    heatmapPoints.push({
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [
+                                loc[0] + (Math.random() - 0.5) * 0.01,
+                                loc[1] + (Math.random() - 0.5) * 0.01
+                            ]
+                        },
+                        properties: {
+                            intensity: Math.random(),
+                            category: ['観光', 'グルメ', 'イベント'][Math.floor(Math.random() * 3)]
+                        }
+                    });
+                }
+            });
+            
+            map.addSource('heatmap-source', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: heatmapPoints }
+            });
+            
+            map.addLayer({
+                id: 'cyber-heatmap',
+                type: 'heatmap',
+                source: 'heatmap-source',
+                paint: {
+                    'heatmap-weight': ['get', 'intensity'],
+                    'heatmap-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['heatmap-density'],
+                        0, 'rgba(0, 0, 0, 0)',
+                        0.2, '#00FFFF',
+                        0.4, '#00FF00',
+                        0.6, '#FFFF00',
+                        0.8, '#FF00FF',
+                        1, '#FF0080'
+                    ],
+                    'heatmap-radius': 30,
+                    'heatmap-opacity': 0.8
+                }
+            });
+            layerRegistry['cyber-heatmap'] = 'heatmap';
+        }
+        
+        // Initialize landmark layers
+        function initializeLandmarkLayers() {
+            const landmarks = [
+                { coordinates: [132.4536, 34.3955], name: '原爆ドーム', height: 25 },
+                { coordinates: [132.4520, 34.3920], name: '平和記念公園', height: 10 },
+                { coordinates: [132.4615, 34.3905], name: '広島城', height: 35 },
+                { coordinates: [132.4757, 34.3972], name: '広島駅', height: 40 }
+            ];
+            
+            // 3D buildings
+            const buildings = landmarks.map(l => {
+                const size = 0.001;
+                return {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            [l.coordinates[0] - size/2, l.coordinates[1] - size/2],
+                            [l.coordinates[0] + size/2, l.coordinates[1] - size/2],
+                            [l.coordinates[0] + size/2, l.coordinates[1] + size/2],
+                            [l.coordinates[0] - size/2, l.coordinates[1] + size/2],
+                            [l.coordinates[0] - size/2, l.coordinates[1] - size/2]
+                        ]]
+                    },
+                    properties: {
+                        name: l.name,
+                        height: l.height * 3
+                    }
+                };
+            });
+            
+            map.addSource('landmarks-buildings', {
+                type: 'geojson',
+                data: { type: 'FeatureCollection', features: buildings }
+            });
+            
+            map.addLayer({
+                id: 'landmarks-3d',
+                type: 'fill-extrusion',
+                source: 'landmarks-buildings',
+                paint: {
+                    'fill-extrusion-color': '#FFD700',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': 0,
+                    'fill-extrusion-opacity': 0.9
+                }
+            });
+            layerRegistry['landmarks-3d'] = 'landmarks';
+            
+            // Labels
+            map.addSource('landmarks-points', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: landmarks.map(l => ({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: l.coordinates },
+                        properties: { name: l.name }
+                    }))
+                }
+            });
+            
+            map.addLayer({
+                id: 'landmarks-labels',
+                type: 'symbol',
+                source: 'landmarks-points',
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+                    'text-size': 14,
+                    'text-offset': [0, -2],
+                    'text-anchor': 'bottom'
+                },
+                paint: {
+                    'text-color': '#FFD700',
+                    'text-halo-color': '#000000',
+                    'text-halo-width': 2
+                }
+            });
+            layerRegistry['landmarks-labels'] = 'landmarks';
+        }
+        
+        // Initialize mobility layers
+        function initializeMobilityLayers() {
+            const roadFlows = [
+                {
+                    route: [[132.4757, 34.3972], [132.4700, 34.3960], [132.4650, 34.3950]],
+                    congestion: 0.8
+                },
+                {
+                    route: [[132.4536, 34.3955], [132.4550, 34.3945], [132.4570, 34.3935]],
+                    congestion: 0.6
+                }
+            ];
+            
+            map.addSource('mobility-roads', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: roadFlows.map(flow => ({
+                        type: 'Feature',
+                        geometry: { type: 'LineString', coordinates: flow.route },
+                        properties: {
+                            congestion: flow.congestion,
+                            color: flow.congestion > 0.7 ? '#FF0000' : '#FFFF00'
+                        }
+                    }))
+                }
+            });
+            
+            map.addLayer({
+                id: 'mobility-roads',
+                type: 'line',
+                source: 'mobility-roads',
+                paint: {
+                    'line-color': ['get', 'color'],
+                    'line-width': 6,
+                    'line-opacity': 0.8
+                }
+            });
+            layerRegistry['mobility-roads'] = 'mobility';
+        }
+        
+        // Initialize event layers
+        function initializeEventLayers() {
+            const events = [
+                { coordinates: [132.4536, 34.3955], name: '平和記念式典', radius: 500 },
+                { coordinates: [132.4757, 34.3972], name: 'カープ観戦', radius: 300 }
+            ];
+            
+            map.addSource('events', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: events.map(e => ({
+                        type: 'Feature',
+                        geometry: { type: 'Point', coordinates: e.coordinates },
+                        properties: { radius: e.radius }
+                    }))
+                }
+            });
+            
+            map.addLayer({
+                id: 'events-impact',
+                type: 'circle',
+                source: 'events',
+                paint: {
+                    'circle-radius': {
+                        property: 'radius',
+                        type: 'identity'
+                    },
+                    'circle-color': '#FF6B6B',
+                    'circle-opacity': 0.2
+                }
+            });
+            layerRegistry['events-impact'] = 'events';
+        }
+        
+        // Setup controls
+        function setupControls() {
+            // Heatmap toggle
+            document.getElementById('heatmap-checkbox').addEventListener('change', (e) => {
+                const visibility = e.target.checked ? 'visible' : 'none';
+                Object.entries(layerRegistry).forEach(([layerId, type]) => {
+                    if (type === 'heatmap') {
+                        map.setLayoutProperty(layerId, 'visibility', visibility);
+                    }
+                });
+                document.getElementById('toggle-heatmap').classList.toggle('active', e.target.checked);
+                logStatus(`Heatmap layers ${e.target.checked ? 'shown' : 'hidden'}`, 'info');
+            });
+            
+            // Landmarks toggle
+            document.getElementById('landmarks-checkbox').addEventListener('change', (e) => {
+                const visibility = e.target.checked ? 'visible' : 'none';
+                Object.entries(layerRegistry).forEach(([layerId, type]) => {
+                    if (type === 'landmarks') {
+                        map.setLayoutProperty(layerId, 'visibility', visibility);
+                    }
+                });
+                document.getElementById('toggle-landmarks').classList.toggle('active', e.target.checked);
+                logStatus(`Landmark layers ${e.target.checked ? 'shown' : 'hidden'}`, 'info');
+            });
+            
+            // Mobility toggle
+            document.getElementById('mobility-checkbox').addEventListener('change', (e) => {
+                const visibility = e.target.checked ? 'visible' : 'none';
+                Object.entries(layerRegistry).forEach(([layerId, type]) => {
+                    if (type === 'mobility') {
+                        map.setLayoutProperty(layerId, 'visibility', visibility);
+                    }
+                });
+                document.getElementById('toggle-mobility').classList.toggle('active', e.target.checked);
+                logStatus(`Mobility layers ${e.target.checked ? 'shown' : 'hidden'}`, 'info');
+            });
+            
+            // Events toggle
+            document.getElementById('events-checkbox').addEventListener('change', (e) => {
+                const visibility = e.target.checked ? 'visible' : 'none';
+                Object.entries(layerRegistry).forEach(([layerId, type]) => {
+                    if (type === 'events') {
+                        map.setLayoutProperty(layerId, 'visibility', visibility);
+                    }
+                });
+                document.getElementById('toggle-events').classList.toggle('active', e.target.checked);
+                logStatus(`Event layers ${e.target.checked ? 'shown' : 'hidden'}`, 'info');
+            });
+            
+            // Set initial active states
+            document.querySelectorAll('.layer-toggle').forEach(toggle => {
+                toggle.classList.add('active');
+            });
+        }
+        
+        // Error handling
+        map.on('error', (e) => {
+            logStatus(`Map error: ${e.error.message}`, 'error');
+            console.error('Map error:', e);
+        });
+    </script>
+</body>
+</html>
