@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Box, Typography, LinearProgress, Chip, Tooltip } from '@mui/material';
+import { Box, Typography, LinearProgress, Chip, Tooltip, IconButton } from '@mui/material';
 import {
   WbSunny,
   Campaign,
@@ -13,6 +13,8 @@ import {
   CalendarMonth,
   TrendingUp,
   TrendingDown,
+  HelpOutline,
+  Info,
 } from '@mui/icons-material';
 
 const FactorDecompositionChart = ({ data }) => {
@@ -50,12 +52,28 @@ const FactorDecompositionChart = ({ data }) => {
       {/* ベースライン */}
       <Box sx={{ mb: 4 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            ベースライン訪問者数
-          </Typography>
-          <Typography variant="h5" fontWeight={700} sx={{ color: '#667eea' }}>
-            {baseline.toLocaleString()}人
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              ベースライン訪問者数
+            </Typography>
+            <Tooltip 
+              title="ベースラインは、イベントや特別な要因がない場合の基準となる訪問者数です。過去のデータからAIが推定した、通常時の期待値を示しています。"
+              placement="top"
+              arrow
+            >
+              <IconButton size="small" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                <HelpOutline fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
+          <Box sx={{ textAlign: 'right' }}>
+            <Typography variant="h5" fontWeight={700} sx={{ color: '#667eea' }}>
+              {baseline.toLocaleString()}人
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              基準値（紫）
+            </Typography>
+          </Box>
         </Box>
         <LinearProgress
           variant="determinate"
@@ -168,39 +186,84 @@ const FactorDecompositionChart = ({ data }) => {
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="subtitle1" fontWeight={600}>
-            最終訪問者数
-          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="subtitle1" fontWeight={600}>
+              最終訪問者数
+            </Typography>
+            <Tooltip
+              title="最終訪問者数は、ベースラインに各要因の効果を加えた実際の訪問者数です。緑色のバーで表示され、各要因がどの程度貢献したかを視覚的に確認できます。"
+              placement="top"
+              arrow
+            >
+              <IconButton size="small" sx={{ color: 'rgba(255, 255, 255, 0.5)' }}>
+                <HelpOutline fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
           <Box sx={{ textAlign: 'right' }}>
-            <Typography variant="h4" fontWeight={700} sx={{ color: '#667eea' }}>
+            <Typography variant="h4" fontWeight={700} sx={{ color: '#4CAF50' }}>
               {finalValue.toLocaleString()}人
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {totalEffect > 0 ? '+' : ''}{totalEffect.toLocaleString()}人 ({((totalEffect / baseline) * 100).toFixed(1)}%)
             </Typography>
+            <Typography variant="caption" color="text.secondary">
+              実際の訪問者数（緑）
+            </Typography>
           </Box>
         </Box>
         
         {/* 効果の内訳バー */}
-        <Box sx={{ display: 'flex', height: 20, borderRadius: 2, overflow: 'hidden' }}>
-          <Box
-            sx={{
-              width: `${(baseline / finalValue) * 100}%`,
-              background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-            }}
-          />
-          {factors
-            .filter(f => f.effect > 0)
-            .map((factor, index) => (
+        <Box sx={{ mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              訪問者数の内訳
+            </Typography>
+            <Tooltip
+              title="このバーは訪問者数の構成を示しています。紫色部分がベースライン、各色の部分が各要因のプラス効果を表しています。"
+              placement="top"
+              arrow
+            >
+              <Info fontSize="small" sx={{ color: 'rgba(255, 255, 255, 0.5)' }} />
+            </Tooltip>
+          </Box>
+          <Box sx={{ display: 'flex', height: 20, borderRadius: 2, overflow: 'hidden' }}>
+            <Tooltip title={`ベースライン: ${baseline.toLocaleString()}人`}>
               <Box
-                key={index}
                 sx={{
-                  width: `${(factor.effect / finalValue) * 100}%`,
-                  backgroundColor: getEffectColor(factor.effect),
-                  opacity: 0.8,
+                  width: `${(baseline / finalValue) * 100}%`,
+                  background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                  cursor: 'pointer',
                 }}
               />
-            ))}
+            </Tooltip>
+            {factors
+              .filter(f => f.effect > 0)
+              .map((factor, index) => (
+                <Tooltip key={index} title={`${factor.name}: +${factor.effect.toLocaleString()}人`}>
+                  <Box
+                    sx={{
+                      width: `${(factor.effect / finalValue) * 100}%`,
+                      backgroundColor: getEffectColor(factor.effect),
+                      opacity: 0.8,
+                      cursor: 'pointer',
+                    }}
+                  />
+                </Tooltip>
+              ))}
+          </Box>
+        </Box>
+        
+        {/* 凡例 */}
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 16, height: 16, borderRadius: 1, background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)' }} />
+            <Typography variant="caption">= ベースライン</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 16, height: 16, borderRadius: 1, backgroundColor: '#4CAF50' }} />
+            <Typography variant="caption">= プラス効果</Typography>
+          </Box>
         </Box>
       </Box>
     </Box>
