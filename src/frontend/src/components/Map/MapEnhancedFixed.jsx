@@ -382,10 +382,14 @@ const MapEnhancedFixed = ({
     registerLayer('consumption-3d', 'consumption');
   };
 
-  // 人流データレイヤーの初期化 - Cyberpunk 3D Arc Visualization
+  // 人流データレイヤーの初期化 - Optimized for Zoom 14
   const initializeMobilityLayers = () => {
     const mobilityData = dataCache.current.prefectureData.mobility;
     const routes = mobilityData.routes;
+    const landmarks = dataCache.current.prefectureData.landmarks;
+    const events = dataCache.current.prefectureData.events;
+    const accommodations = dataCache.current.prefectureData.accommodation;
+    const heatmapData = dataCache.current.prefectureData.heatmap;
 
     // Cyberpunk color scheme - blue particles
     const getCyberColor = (congestion, opacity = 1) => {
@@ -394,25 +398,72 @@ const MapEnhancedFixed = ({
       return `rgba(0, 100, 255, ${opacity})`; // Deep blue for low
     };
 
+    // Get movement type color
+    const getMovementTypeColor = (type, opacity = 1) => {
+      switch(type) {
+        case 'tourism': return `rgba(255, 200, 0, ${opacity})`; // Gold for tourism
+        case 'business': return `rgba(0, 150, 255, ${opacity})`; // Blue for business
+        case 'shopping': return `rgba(255, 0, 200, ${opacity})`; // Pink for shopping
+        case 'event': return `rgba(0, 255, 100, ${opacity})`; // Green for events
+        case 'sns_hotspot': return `rgba(255, 100, 0, ${opacity})`; // Orange for SNS activity
+        default: return `rgba(100, 100, 255, ${opacity})`; // Default blue
+      }
+    };
+
     // Major transportation hubs with glowing orbs
     const majorHubs = [
-      { name: '広島駅', coordinates: [132.4755, 34.3978], importance: 1.0 },
-      { name: '広島空港', coordinates: [132.9194, 34.4364], importance: 0.9 },
-      { name: '福山駅', coordinates: [133.3627, 34.4858], importance: 0.8 },
-      { name: '尾道駅', coordinates: [133.1950, 34.4090], importance: 0.7 },
-      { name: '三原駅', coordinates: [133.0833, 34.4000], importance: 0.7 },
-      { name: '呉駅', coordinates: [132.5656, 34.2492], importance: 0.6 }
+      { name: '広島駅', coordinates: [132.4755, 34.3978], importance: 1.0, type: 'transport' },
+      { name: '広島空港', coordinates: [132.9194, 34.4364], importance: 0.9, type: 'transport' },
+      { name: '福山駅', coordinates: [133.3627, 34.4858], importance: 0.8, type: 'transport' },
+      { name: '尾道駅', coordinates: [133.1950, 34.4090], importance: 0.7, type: 'transport' },
+      { name: '三原駅', coordinates: [133.0833, 34.4000], importance: 0.7, type: 'transport' },
+      { name: '呉駅', coordinates: [132.5656, 34.2492], importance: 0.6, type: 'transport' }
     ];
 
-    // Create glowing hub orbs
-    const hubFeatures = majorHubs.map(hub => ({
+    // Collect all data points for comprehensive connections
+    const allDataPoints = [
+      // Transportation hubs
+      ...majorHubs,
+      // Major landmarks (tourist destinations)
+      ...landmarks.filter(l => l.height > 50).map(l => ({
+        name: l.name,
+        coordinates: l.coordinates,
+        importance: 0.7,
+        type: 'landmark'
+      })),
+      // Popular events
+      ...events.filter(e => e.impact_radius > 30).map(e => ({
+        name: e.name,
+        coordinates: e.coordinates,
+        importance: 0.6,
+        type: 'event'
+      })),
+      // Major accommodations
+      ...accommodations.filter(a => a.occupancy > 0.7).map(a => ({
+        name: a.name,
+        coordinates: a.coordinates,
+        importance: 0.5,
+        type: 'accommodation'
+      })),
+      // SNS hotspots
+      ...heatmapData.filter(h => h.intensity > 0.7).slice(0, 10).map((h, i) => ({
+        name: `SNSホットスポット${i + 1}`,
+        coordinates: h.coordinates,
+        importance: 0.4,
+        type: 'sns_hotspot'
+      }))
+    ];
+
+    // Create glowing hub orbs - smaller for zoom 14
+    const hubFeatures = allDataPoints.map(hub => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: hub.coordinates },
       properties: {
         name: hub.name,
         importance: hub.importance,
-        radius: 20 + hub.importance * 30,
-        glowRadius: 40 + hub.importance * 60
+        type: hub.type,
+        radius: 8 + hub.importance * 12, // Smaller radius for zoom 14
+        glowRadius: 15 + hub.importance * 25 // Smaller glow for zoom 14
       }
     }));
 
@@ -421,7 +472,7 @@ const MapEnhancedFixed = ({
       data: { type: 'FeatureCollection', features: hubFeatures }
     });
 
-    // Outer glow for hubs
+    // Outer glow for hubs - color coded by type
     map.current.addLayer({
       id: 'mobility-hubs-glow',
       type: 'circle',
@@ -429,20 +480,30 @@ const MapEnhancedFixed = ({
       layout: { visibility: 'none' },
       paint: {
         'circle-radius': ['get', 'glowRadius'],
-        'circle-color': 'rgba(0, 255, 255, 0.3)',
+        'circle-color': [
+          'match',
+          ['get', 'type'],
+          'transport', 'rgba(0, 255, 255, 0.3)',
+          'landmark', 'rgba(255, 215, 0, 0.3)',
+          'event', 'rgba(0, 255, 100, 0.3)',
+          'accommodation', 'rgba(76, 175, 80, 0.3)',
+          'sns_hotspot', 'rgba(255, 100, 0, 0.3)',
+          'rgba(100, 100, 255, 0.3)'
+        ],
         'circle-blur': 1,
         'circle-opacity': [
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, 0.2,
-          15, 0.5
+          10, 0.1,
+          14, 0.3,
+          15, 0.4
         ]
       }
     });
     registerLayer('mobility-hubs-glow', 'mobility');
 
-    // Inner core for hubs
+    // Inner core for hubs - brighter colors by type
     map.current.addLayer({
       id: 'mobility-hubs-core',
       type: 'circle',
@@ -450,9 +511,18 @@ const MapEnhancedFixed = ({
       layout: { visibility: 'none' },
       paint: {
         'circle-radius': ['get', 'radius'],
-        'circle-color': 'rgba(255, 255, 255, 0.9)',
-        'circle-blur': 0.5,
-        'circle-opacity': 0.9
+        'circle-color': [
+          'match',
+          ['get', 'type'],
+          'transport', 'rgba(255, 255, 255, 0.9)',
+          'landmark', 'rgba(255, 215, 0, 0.9)',
+          'event', 'rgba(0, 255, 100, 0.9)',
+          'accommodation', 'rgba(76, 175, 80, 0.9)',
+          'sns_hotspot', 'rgba(255, 100, 0, 0.9)',
+          'rgba(150, 150, 255, 0.9)'
+        ],
+        'circle-blur': 0.3,
+        'circle-opacity': 0.8
       }
     });
     registerLayer('mobility-hubs-core', 'mobility');
@@ -487,30 +557,76 @@ const MapEnhancedFixed = ({
       return arcPoints;
     };
 
-    // Generate arcs between major hubs
+    // Generate diverse arcs between all data points
     const arcFeatures = [];
-    for (let i = 0; i < majorHubs.length; i++) {
-      for (let j = i + 1; j < majorHubs.length; j++) {
-        const start = majorHubs[i];
-        const end = majorHubs[j];
-        const importance = (start.importance + end.importance) / 2;
+    const connectionTypes = [
+      // Tourism routes: transport -> landmarks
+      { from: 'transport', to: 'landmark', probability: 0.8, type: 'tourism' },
+      // Event attendance: transport/accommodation -> events
+      { from: 'transport', to: 'event', probability: 0.7, type: 'event' },
+      { from: 'accommodation', to: 'event', probability: 0.6, type: 'event' },
+      // Shopping routes: accommodation -> SNS hotspots
+      { from: 'accommodation', to: 'sns_hotspot', probability: 0.5, type: 'shopping' },
+      // Business travel: transport -> accommodation
+      { from: 'transport', to: 'accommodation', probability: 0.6, type: 'business' },
+      // Tourist movement: landmarks -> SNS hotspots
+      { from: 'landmark', to: 'sns_hotspot', probability: 0.7, type: 'tourism' },
+      // Inter-transport connections
+      { from: 'transport', to: 'transport', probability: 0.9, type: 'business' },
+      // Event to landmark visits
+      { from: 'event', to: 'landmark', probability: 0.5, type: 'tourism' }
+    ];
+
+    // Create connections based on types
+    for (let i = 0; i < allDataPoints.length; i++) {
+      for (let j = i + 1; j < allDataPoints.length; j++) {
+        const start = allDataPoints[i];
+        const end = allDataPoints[j];
         
-        const arcPoints = createArc(start.coordinates, end.coordinates, 0.15);
+        // Find matching connection type
+        const connType = connectionTypes.find(ct => 
+          (ct.from === start.type && ct.to === end.type) ||
+          (ct.from === end.type && ct.to === start.type)
+        );
         
-        arcFeatures.push({
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: arcPoints
-          },
-          properties: {
-            startHub: start.name,
-            endHub: end.name,
-            importance: importance,
-            congestion: Math.random() * 0.5 + 0.3, // Simulated congestion
-            flowDirection: i < j ? 'forward' : 'reverse'
-          }
-        });
+        if (connType && Math.random() < connType.probability) {
+          const importance = (start.importance + end.importance) / 2;
+          const distance = Math.sqrt(
+            Math.pow(end.coordinates[0] - start.coordinates[0], 2) + 
+            Math.pow(end.coordinates[1] - start.coordinates[1], 2)
+          );
+          
+          // Skip very long connections for cleaner visualization
+          if (distance > 0.5) continue;
+          
+          // Vary arc height based on distance and type
+          const arcHeight = 0.08 + Math.min(distance * 0.3, 0.15);
+          const arcPoints = createArc(start.coordinates, end.coordinates, arcHeight);
+          
+          // Calculate congestion based on type and time of day simulation
+          let congestion = 0.3;
+          if (connType.type === 'tourism') congestion = 0.5 + Math.random() * 0.3;
+          if (connType.type === 'business') congestion = 0.4 + Math.random() * 0.4;
+          if (connType.type === 'event') congestion = 0.6 + Math.random() * 0.3;
+          
+          arcFeatures.push({
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: arcPoints
+            },
+            properties: {
+              startHub: start.name,
+              endHub: end.name,
+              startType: start.type,
+              endType: end.type,
+              importance: importance,
+              congestion: congestion,
+              movementType: connType.type,
+              flowDirection: Math.random() > 0.5 ? 'forward' : 'reverse'
+            }
+          });
+        }
       }
     }
 
@@ -547,7 +663,7 @@ const MapEnhancedFixed = ({
       data: { type: 'FeatureCollection', features: [] }
     });
 
-    // Particle outer glow layer
+    // Particle outer glow layer - smaller for zoom 14
     map.current.addLayer({
       id: 'mobility-particles-glow-outer',
       type: 'circle',
@@ -558,8 +674,8 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['get', 'size'],
-          0, 20,
-          1, 30
+          0, 8,   // Reduced from 20
+          1, 12   // Reduced from 30
         ],
         'circle-color': ['get', 'glowColor'],
         'circle-opacity': ['get', 'glowOpacityOuter'],
@@ -568,7 +684,7 @@ const MapEnhancedFixed = ({
     });
     registerLayer('mobility-particles-glow-outer', 'mobility');
 
-    // Particle middle glow layer
+    // Particle middle glow layer - smaller for zoom 14
     map.current.addLayer({
       id: 'mobility-particles-glow-middle',
       type: 'circle',
@@ -579,8 +695,8 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['get', 'size'],
-          0, 12,
-          1, 18
+          0, 5,   // Reduced from 12
+          1, 8    // Reduced from 18
         ],
         'circle-color': ['get', 'glowColor'],
         'circle-opacity': ['get', 'glowOpacityMiddle'],
@@ -589,7 +705,7 @@ const MapEnhancedFixed = ({
     });
     registerLayer('mobility-particles-glow-middle', 'mobility');
 
-    // Particle core (bright center)
+    // Particle core (bright center) - smaller for zoom 14
     map.current.addLayer({
       id: 'mobility-particles-core',
       type: 'circle',
@@ -600,12 +716,12 @@ const MapEnhancedFixed = ({
           'interpolate',
           ['linear'],
           ['get', 'size'],
-          0, 6,
-          1, 10
+          0, 2,   // Reduced from 6
+          1, 4    // Reduced from 10
         ],
         'circle-color': ['get', 'coreColor'],
         'circle-opacity': ['get', 'coreOpacity'],
-        'circle-blur': 0.3
+        'circle-blur': 0.2
       }
     });
     registerLayer('mobility-particles-core', 'mobility');
@@ -623,9 +739,9 @@ const MapEnhancedFixed = ({
       layout: { visibility: 'none' },
       paint: {
         'line-color': ['get', 'color'],
-        'line-width': 3,
+        'line-width': 1.5,  // Reduced from 3 for zoom 14
         'line-opacity': ['get', 'opacity'],
-        'line-blur': 2
+        'line-blur': 1      // Reduced blur for sharper trails
       }
     });
     registerLayer('mobility-trails', 'mobility');
@@ -732,13 +848,14 @@ const MapEnhancedFixed = ({
     // Store animation data for later use
     mobilityAnimationData.current = {
       arcFeatures,
-      majorHubs,
-      getCyberColor
+      allDataPoints,
+      getCyberColor,
+      getMovementTypeColor
     };
   };
 
-  // Cyberpunk mobility animation with flowing particles and pulsing hubs
-  const startCyberpunkMobilityAnimation = (arcFeatures, majorHubs, getCyberColor) => {
+  // Cyberpunk mobility animation with flowing particles and pulsing hubs - optimized for zoom 14
+  const startCyberpunkMobilityAnimation = (arcFeatures, allDataPoints, getCyberColor, getMovementTypeColor) => {
     // Stop any existing animation
     stopAnimations();
     
@@ -756,7 +873,7 @@ const MapEnhancedFixed = ({
         return;
       }
 
-      animationTime = (animationTime + 0.005) % 1;
+      animationTime = (animationTime + 0.002) % 1;  // Slower animation for zoom 14
       
       // Animated particles flowing along arcs
       const particles = [];
@@ -764,12 +881,12 @@ const MapEnhancedFixed = ({
       
       arcFeatures.forEach((arc, arcIndex) => {
         const coordinates = arc.geometry.coordinates;
-        const particleCount = Math.ceil(arc.properties.importance * 12) + 5; // More particles
-        const flowSpeed = (1 - arc.properties.congestion) * 0.015 + 0.003; // Slower for visibility
+        const particleCount = Math.ceil(arc.properties.importance * 8) + 3; // Fewer particles for cleaner view
+        const flowSpeed = (1 - arc.properties.congestion) * 0.008 + 0.002; // Much slower for zoom 14
         
         for (let i = 0; i < particleCount; i++) {
           const offset = i / particleCount;
-          let progress = (animationTime * flowSpeed * 50 + offset) % 1;
+          let progress = (animationTime * flowSpeed * 30 + offset) % 1;  // Slower overall speed
           
           // Reverse direction for some arcs
           if (arc.properties.flowDirection === 'reverse') {
@@ -801,19 +918,30 @@ const MapEnhancedFixed = ({
             const sizeMultiplier = 0.8 + pulsePhase * 0.2;
             const opacityPulse = 0.7 + pulsePhase * 0.3;
             
-            // Color based on congestion with enhanced brightness
-            const congestion = arc.properties.congestion;
+            // Color based on movement type
+            const movementType = arc.properties.movementType;
             let glowColor, coreColor;
             
-            if (congestion >= 0.8) {
-              glowColor = 'rgba(255, 0, 128, 0.8)'; // Hot pink
-              coreColor = 'rgba(255, 100, 200, 1)'; // Bright pink core
-            } else if (congestion >= 0.5) {
-              glowColor = 'rgba(0, 150, 255, 0.8)'; // Medium blue
-              coreColor = 'rgba(100, 200, 255, 1)'; // Bright blue core
-            } else {
-              glowColor = 'rgba(0, 100, 255, 0.8)'; // Deep blue
-              coreColor = 'rgba(0, 150, 255, 1)'; // Bright blue core
+            // Use movement type colors
+            const baseColor = getMovementTypeColor(movementType, 1);
+            glowColor = getMovementTypeColor(movementType, 0.6);
+            
+            // Brighter core colors
+            switch(movementType) {
+              case 'tourism':
+                coreColor = 'rgba(255, 230, 100, 1)'; // Bright gold
+                break;
+              case 'business':
+                coreColor = 'rgba(100, 200, 255, 1)'; // Bright blue
+                break;
+              case 'shopping':
+                coreColor = 'rgba(255, 150, 255, 1)'; // Bright pink
+                break;
+              case 'event':
+                coreColor = 'rgba(100, 255, 150, 1)'; // Bright green
+                break;
+              default:
+                coreColor = 'rgba(200, 200, 255, 1)'; // Bright white-blue
             }
             
             // Create particle with multiple glow layers
@@ -833,17 +961,17 @@ const MapEnhancedFixed = ({
               }
             });
             
-            // Create glowing trail
+            // Create glowing trail - shorter for zoom 14
             if (trail.length > 1) {
               trails.push({
                 type: 'Feature',
                 geometry: {
                   type: 'LineString',
-                  coordinates: trail.slice(-5) // Use last 5 points for trail
+                  coordinates: trail.slice(-3) // Shorter trail for cleaner view
                 },
                 properties: {
                   color: glowColor,
-                  opacity: 0.6 * opacityPulse
+                  opacity: 0.4 * opacityPulse  // More transparent trails
                 }
               });
             }
@@ -851,14 +979,14 @@ const MapEnhancedFixed = ({
         }
       });
       
-      // Pulsing hub effects
+      // Pulsing hub effects - smaller for zoom 14
       const pulses = [];
-      majorHubs.forEach((hub, hubIndex) => {
-        const pulsePhase = (animationTime + hubIndex * 0.15) % 1;
+      allDataPoints.forEach((hub, hubIndex) => {
+        const pulsePhase = (animationTime + hubIndex * 0.1) % 1;
         
-        // Create expanding pulse rings
-        for (let ring = 0; ring < 3; ring++) {
-          const ringPhase = (pulsePhase + ring * 0.3) % 1;
+        // Create expanding pulse rings - only 2 rings for cleaner view
+        for (let ring = 0; ring < 2; ring++) {
+          const ringPhase = (pulsePhase + ring * 0.5) % 1;
           const ringOpacity = 1 - ringPhase;
           
           pulses.push({
@@ -868,8 +996,8 @@ const MapEnhancedFixed = ({
               coordinates: hub.coordinates
             },
             properties: {
-              radius: 10 + ringPhase * 50 * hub.importance,
-              opacity: ringOpacity * 0.3
+              radius: 5 + ringPhase * 20 * hub.importance,  // Smaller pulses
+              opacity: ringOpacity * 0.2  // More transparent
             }
           });
         }
@@ -1247,8 +1375,8 @@ const MapEnhancedFixed = ({
       // Start mobility animation if not already running
       if (!animationFrame.current && mobilityAnimationData.current) {
         console.log('Starting mobility animation');
-        const { arcFeatures, majorHubs, getCyberColor } = mobilityAnimationData.current;
-        startCyberpunkMobilityAnimation(arcFeatures, majorHubs, getCyberColor);
+        const { arcFeatures, allDataPoints, getCyberColor, getMovementTypeColor } = mobilityAnimationData.current;
+        startCyberpunkMobilityAnimation(arcFeatures, allDataPoints, getCyberColor, getMovementTypeColor);
       }
     } else {
       // Stop animation if mobility layer is hidden
