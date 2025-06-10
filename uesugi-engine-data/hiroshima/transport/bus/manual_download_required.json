@@ -1,0 +1,6 @@
+{
+  "download_url": "https://www.bus-kyo.or.jp/gtfs-open-data",
+  "target_path": "uesugi-engine-data/hiroshima/transport/bus/temp/hiroshima_bus_gtfs.zip",
+  "instructions": "\n        ===== 手動ダウンロード手順 =====\n        \n        1. ブラウザで以下のURLにアクセス:\n           https://www.bus-kyo.or.jp/gtfs-open-data\n        \n        2. ページ内のGTFSデータダウンロードリンクをクリック\n        \n        3. ダウンロードしたZIPファイルを以下のパスに配置:\n           ~/projects/uesugi-engine/uesugi-engine-data/hiroshima/transport/bus/temp/hiroshima_bus_gtfs.zip\n        \n        4. 配置後、このスクリプトを再実行してください:\n           python3 scripts/collect_hiroshima_bus_gtfs.py --skip-download\n        \n        ================================\n        ",
+  "timestamp": "2025-06-10T23:18:10.919922"
+}

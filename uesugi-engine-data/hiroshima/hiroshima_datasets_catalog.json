@@ -1,0 +1,94 @@
+{
+  "timestamp": "2025-06-10T22:42:03.556198",
+  "portal": "広島県オープンデータポータル（dataeye.jp）",
+  "datasets": {
+    "人口統計": {
+      "広島市人口": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/hiroshima-shi-suikei-jinko",
+        "description": "広島市推計人口（月次更新）",
+        "format": "CSV",
+        "importance": "high"
+      },
+      "尾道市人口": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/35/onomichi-shi-suikeijinko",
+        "description": "尾道市推計人口データ",
+        "format": "CSV",
+        "importance": "high"
+      },
+      "廿日市市人口": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/137/2020census_01_hatsukaichi",
+        "description": "廿日市市国勢調査人口",
+        "format": "CSV",
+        "importance": "high"
+      }
+    },
+    "施設データ": {
+      "避難所": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/131010_emergency_evacuation_site",
+        "description": "指定緊急避難場所データ",
+        "format": "CSV",
+        "importance": "high"
+      },
+      "公共施設": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/public-facilities",
+        "description": "公共施設一覧",
+        "format": "CSV",
+        "importance": "medium"
+      },
+      "医療機関": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/medical-facilities",
+        "description": "医療機関一覧",
+        "format": "CSV",
+        "importance": "high"
+      }
+    },
+    "交通データ": {
+      "GTFSバス": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/343001_hiroshima_ken_bus_kyokai_gtfs",
+        "description": "広島県バス協会GTFSデータ",
+        "format": "ZIP",
+        "importance": "high",
+        "download_url": "https://hiroshima-opendata.dataeye.jp/dataset/343001_hiroshima_ken_bus_kyokai_gtfs/resource/5bbfc73f-d3d8-4966-ae3e-7bc85e5d8e89/download/gtfs-jp.zip"
+      }
+    },
+    "防災データ": {
+      "ハザードマップ": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/hazard-map",
+        "description": "ハザードマップデータ",
+        "format": "Various",
+        "importance": "high"
+      },
+      "3D点群データ": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/3d-point-cloud",
+        "description": "防災用3D点群データ",
+        "format": "LAZ",
+        "importance": "medium"
+      }
+    },
+    "環境データ": {
+      "大気汚染": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/air-pollution",
+        "description": "大気汚染測定結果",
+        "format": "CSV",
+        "importance": "medium"
+      }
+    },
+    "イベント・観光": {
+      "観光施設": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/tourism-facilities",
+        "description": "観光施設一覧",
+        "format": "CSV",
+        "importance": "high"
+      },
+      "イベント情報": {
+        "url": "https://hiroshima-opendata.dataeye.jp/datasets/event-calendar",
+        "description": "イベントカレンダー",
+        "format": "CSV",
+        "importance": "high"
+      }
+    }
+  },
+  "total_categories": 6,
+  "license": "CC-BY 2.1 Japan",
+  "notes": "APIアクセスについてはData Cradle社へ問い合わせ推奨"
+}

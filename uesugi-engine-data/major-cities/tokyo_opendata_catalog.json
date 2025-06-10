@@ -1,0 +1,81 @@
+{
+  "timestamp": "2025-06-10T22:49:58.212539",
+  "city": "tokyo",
+  "data_sources": {
+    "東京都オープンデータカタログ": {
+      "portal_url": "https://portal.data.metro.tokyo.lg.jp/",
+      "api_available": true,
+      "ckan_api": "https://catalog.data.metro.tokyo.lg.jp/api/3/",
+      "特徴": "日本最大規模、多言語対応",
+      "key_datasets": {
+        "新型コロナ関連": {
+          "description": "感染者数、ワクチン接種率",
+          "format": "CSV/JSON",
+          "update": "日次",
+          "importance": "medium"
+        },
+        "鉄道利用統計": {
+          "description": "都営地下鉄、都営バス利用者数",
+          "format": "CSV",
+          "update": "月次",
+          "importance": "high"
+        },
+        "防災データ": {
+          "description": "避難所、帰宅困難者対策",
+          "format": "CSV/GeoJSON",
+          "update": "随時",
+          "importance": "high"
+        },
+        "環境データ": {
+          "description": "大気質、騒音、緑被率",
+          "format": "CSV",
+          "update": "時間毎/日次",
+          "importance": "medium"
+        }
+      }
+    },
+    "東京都統計": {
+      "portal_url": "https://www.toukei.metro.tokyo.lg.jp/",
+      "key_datasets": {
+        "人口動態": {
+          "description": "区市町村別人口、転出入",
+          "format": "Excel/CSV",
+          "update": "月次",
+          "importance": "high"
+        },
+        "経済統計": {
+          "description": "都内総生産、産業別生産額",
+          "format": "Excel",
+          "update": "年次",
+          "importance": "high"
+        }
+      }
+    },
+    "東京都交通局オープンデータ": {
+      "portal_url": "https://www.kotsu.metro.tokyo.jp/pickup_information/news/subway/2019/sub_p_201912279706_h.html",
+      "api_available": true,
+      "key_datasets": {
+        "リアルタイム運行情報": {
+          "description": "遅延、運休情報",
+          "format": "GTFS-RT",
+          "update": "リアルタイム",
+          "importance": "high"
+        },
+        "駅別乗降客数": {
+          "description": "時間帯別、曜日別統計",
+          "format": "CSV",
+          "update": "年次",
+          "importance": "high"
+        }
+      }
+    },
+    "特別区（23区）データ": {
+      "特徴": "各区独自のオープンデータあり",
+      "examples": {
+        "渋谷区": "スタートアップ支援データ",
+        "港区": "国際化指標データ",
+        "千代田区": "オフィス空室率データ"
+      }
+    }
+  }
+}

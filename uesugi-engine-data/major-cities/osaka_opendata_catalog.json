@@ -1,0 +1,72 @@
+{
+  "timestamp": "2025-06-10T22:49:58.212021",
+  "city": "osaka",
+  "data_sources": {
+    "大阪府オープンデータ": {
+      "portal_url": "https://www.pref.osaka.lg.jp/it-suishin/opendata/",
+      "catalog_url": "https://data.pref.osaka.lg.jp/",
+      "特徴": "商業・経済データが充実",
+      "key_datasets": {
+        "商業統計": {
+          "description": "小売業、卸売業統計",
+          "format": "CSV/Excel",
+          "update": "年次",
+          "importance": "high"
+        },
+        "外国人観光客統計": {
+          "description": "国籍別来阪者数",
+          "format": "Excel",
+          "update": "四半期",
+          "importance": "high"
+        },
+        "宿泊統計": {
+          "description": "宿泊施設稼働率",
+          "format": "CSV",
+          "update": "月次",
+          "importance": "high"
+        },
+        "医療統計": {
+          "description": "医療機関、病床数",
+          "format": "CSV",
+          "update": "年次",
+          "importance": "medium"
+        }
+      }
+    },
+    "大阪市オープンデータ": {
+      "portal_url": "https://www.city.osaka.lg.jp/shisei_top/category/3055-1-0-0-0-0-0-0-0-0.html",
+      "api_available": true,
+      "key_datasets": {
+        "人流データ": {
+          "description": "主要駅・繁華街の人流",
+          "format": "CSV",
+          "update": "日次",
+          "importance": "high"
+        },
+        "イベント情報": {
+          "description": "市主催イベント、祭り",
+          "format": "JSON/CSV",
+          "update": "随時",
+          "importance": "medium"
+        },
+        "ごみ収集データ": {
+          "description": "地域別ごみ排出量",
+          "format": "CSV",
+          "update": "月次",
+          "importance": "low"
+        }
+      }
+    },
+    "大阪観光局データ": {
+      "portal_url": "https://osaka-info.jp/",
+      "key_datasets": {
+        "観光スポット来場者数": {
+          "description": "主要観光地の入場者数",
+          "format": "Excel",
+          "update": "月次",
+          "importance": "high"
+        }
+      }
+    }
+  }
+}

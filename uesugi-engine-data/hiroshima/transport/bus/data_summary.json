@@ -1,0 +1,25 @@
+{
+  "last_updated": "2025-06-10T23:19:18.725793",
+  "data_file": "hiroshima_bus_data_20250610.json",
+  "analytics": {
+    "total_operators": 2,
+    "total_routes": 169,
+    "total_stops": 2416,
+    "coverage_area": {
+      "min_lat": 34.1018691,
+      "max_lat": 34.6703221,
+      "min_lon": 132.1748553,
+      "max_lon": 132.9188033,
+      "center_lat": 34.39752876655907,
+      "center_lon": 132.45688948122176
+    },
+    "route_types": {
+      "3": 169
+    }
+  },
+  "total_data_points": {
+    "operators": 2,
+    "routes": 50,
+    "stops": 200
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "timestamp": "2025-06-10T22:49:58.211467",
+  "city": "fukuoka",
+  "data_sources": {
+    "福岡県オープンデータ": {
+      "portal_url": "https://www.open-governmentdata.org/fukuoka-pref/",
+      "api_available": true,
+      "ckan_api": "https://ckan.open-governmentdata.org/api/3/",
+      "key_datasets": {
+        "人口統計": {
+          "description": "市町村別人口・世帯数",
+          "format": "CSV",
+          "update": "月次",
+          "importance": "high"
+        },
+        "観光統計": {
+          "description": "観光入込客数、宿泊者数",
+          "format": "CSV/Excel",
+          "update": "年次",
+          "importance": "high"
+        },
+        "交通データ": {
+          "description": "福岡市地下鉄利用者数",
+          "format": "CSV",
+          "update": "月次",
+          "importance": "high"
+        },
+        "防災情報": {
+          "description": "避難所、ハザードマップ",
+          "format": "CSV/GeoJSON",
+          "update": "随時",
+          "importance": "high"
+        }
+      }
+    },
+    "福岡市オープンデータ": {
+      "portal_url": "https://www.city.fukuoka.lg.jp/soki/tokeichosa/shisei/toukei/opendata/",
+      "特徴": "スマートシティ推進で先進的",
+      "key_datasets": {
+        "IoTセンサーデータ": {
+          "description": "環境センサー、人流センサー",
+          "format": "JSON/CSV",
+          "update": "リアルタイム",
+          "importance": "high"
+        },
+        "公共施設利用状況": {
+          "description": "図書館、スポーツ施設等",
+          "format": "CSV",
+          "update": "日次",
+          "importance": "medium"
+        }
+      }
+    },
+    "福岡県警察オープンデータ": {
+      "portal_url": "https://www.police.pref.fukuoka.jp/opendata/",
+      "key_datasets": {
+        "交通事故統計": {
+          "description": "事故発生状況、位置情報",
+          "format": "CSV",
+          "update": "月次",
+          "importance": "medium"
+        }
+      }
+    }
+  }
+}
