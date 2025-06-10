@@ -1,6 +1,6 @@
-# 🛠️ データ収集スクリプト実行ガイド
+# データ収集スクリプト実行ガイド
 
-## 📋 収集スクリプト一覧と実行方法
+## 収集スクリプト一覧と実行方法
 
 ### 1. 無料オープンデータ収集（APIキー不要）
 ```bash
@@ -74,7 +74,7 @@ python3 scripts/collect_comprehensive_policy_data.py
 # - 都市計画・経済・環境
 ```
 
-## 🔄 定期実行推奨スクリプト
+## 定期実行推奨スクリプト
 
 ### 毎時実行
 ```bash
@@ -95,7 +95,7 @@ python3 scripts/collect_estat_advanced_data.py
 python3 scripts/collect_yamaguchi_data.py
 ```
 
-## 📊 収集データの確認方法
+## 収集データの確認方法
 
 ### データサマリーの確認
 ```bash
@@ -115,7 +115,7 @@ tree uesugi-engine-data/ -L 2
 ls -la uesugi-engine-data/yamaguchi/
 ```
 
-## ⚠️ 注意事項
+## 注意事項
 
 1. **APIキー管理**
    - e-Stat APIキーは`.env`ファイルに設定済み
@@ -130,14 +130,11 @@ ls -la uesugi-engine-data/yamaguchi/
    - 必要なライブラリ: requests, json, csv, pathlib
    - Dockerコンテナ内での実行も可能
 
-## 🚀 新規データソースの追加方法
+## 新規データソースの追加方法
 
 1. 新しいスクリプトを`scripts/`ディレクトリに作成
 2. 既存スクリプトの構造を参考に実装
 3. `uesugi-engine-data/`配下に適切なディレクトリを作成
 4. このガイドに追加
 
----
-
-**最終更新**: 2025年6月10日
-**作成者**: Uesugi Engine開発チーム
+最終更新: 2025年6月10日

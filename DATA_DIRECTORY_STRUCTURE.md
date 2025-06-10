@@ -1,4 +1,4 @@
-# 📁 Uesugi Engine データディレクトリ構造
+# Uesugi Engine データディレクトリ構造
 
 ## ディレクトリ構成
 ```
@@ -87,7 +87,5 @@ uesugi-engine-data/
 - 書き込み: データ収集スクリプトのみ
 - バックアップ: 日次自動バックアップ（未実装）
 
----
-
-**注**: GTFSの生データ（txtファイル）は`gtfs_extracted/`内に保存されていますが、
-Uesugi Engine用に変換されたJSONファイルを優先的に使用してください。
+注: GTFSの生データ（txtファイル）は`gtfs_extracted/`内に保存されているが、
+Uesugi Engine用に変換されたJSONファイルを使用すること。

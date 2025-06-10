@@ -1,6 +1,6 @@
 # AI因果推論コードガイド
 
-## 📍 コードの場所
+## コードの場所
 
 ### フロントエンド - AI分析コンポーネント
 **パス**: `/src/frontend/src/components/AIAnalysis/`
