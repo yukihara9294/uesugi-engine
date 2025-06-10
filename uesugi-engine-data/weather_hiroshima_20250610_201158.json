@@ -1,0 +1,18 @@
+{
+  "data_layer": "environment",
+  "source": "Open-Meteo",
+  "timestamp": "2025-06-10T20:11:58.277907",
+  "location": {
+    "city": "広島市",
+    "prefecture": "広島県",
+    "lat": 34.3853,
+    "lng": 132.4553
+  },
+  "data": {
+    "type": "current",
+    "temperature": 20.9,
+    "humidity": 98,
+    "precipitation": 0.1,
+    "observation_time": "2025-06-10T20:00"
+  }
+}
