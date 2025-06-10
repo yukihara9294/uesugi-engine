@@ -1,4 +1,4 @@
-# Uesugi Engine - 広島県ソーシャルヒートマップ
+# Uesugi Engine
 
 ## プロダクト概要
 
@@ -70,4 +70,4 @@ docker-compose up -d
 
 ## ライセンス
 
-Copyright (c) 2024 ダッタラ株式会社
+Copyright (c) 2025 ダッタラ株式会社
