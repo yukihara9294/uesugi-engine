@@ -1,14 +1,21 @@
-Uesugi Engine データベースエクスポート
-エクスポート日時: 2025年1月10日 15:50:00
+Uesugi Engine データベースエクスポート（完全版）
+エクスポート日時: 2025年1月10日 16:00:00
 
-エクスポートされたテーブル:
-- sample_data（ヒートマップデータのサンプル）
-- events（イベント情報）
-- landmarks（ランドマーク情報）
+エクスポートされたデータ:
+1. heatmap_data_complete - SNS感情分析データ（4都道府県）
+2. mobility_data_complete - 人流・交通データ
+3. accommodation_data_complete - 宿泊施設稼働率データ
+4. consumption_data_complete - 消費・購買データ
+5. events_data_complete - イベント情報
+6. landmarks（前回作成済み） - ランドマーク情報
+7. weather_data_sample - 気象データサンプル
 
 各ファイルはCSV形式で、ExcelやGoogleスプレッドシートで開くことができます。
 
-データの説明:
-- sample_data: 広島県内各地域のSNS活動量とカテゴリ別データ
-- events: 広島県で開催予定のイベント情報
-- landmarks: 主要観光地とホテルの情報
+データソースについて:
+- 現在のデータは主にダミーデータジェネレーターで生成
+- 気象データはOpenWeatherMap APIと連携可能（APIキー設定時）
+- 実在の施設名・座標を使用してリアリティを確保
+- 将来的にはTwitter API、e-Stat API等との連携を予定
+
+詳細な説明は DATA_SOURCES_COMPLETE.md を参照してください。
