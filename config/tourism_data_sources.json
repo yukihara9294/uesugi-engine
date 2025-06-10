@@ -1,0 +1,181 @@
+{
+  "high_value_datasets": {
+    "tokyo_tourism_catalog": {
+      "name": "東京都観光データカタログ",
+      "url": "https://data.tourism.metro.tokyo.lg.jp/",
+      "description": "東京都の観光統計データをダッシュボード形式で提供",
+      "data_types": [
+        "訪問者数調査",
+        "外国人旅行者行動特性調査",
+        "観光施設入込客数等調査",
+        "モバイルデータ調査",
+        "都民等に対する観光意識調査",
+        "島しょ地域観光関連調査"
+      ],
+      "key_statistics_2023": {
+        "total_japanese_travelers": "474,564,000人",
+        "total_foreign_travelers": "19,538,000人",
+        "total_tourism_spending": "7兆2,000億円",
+        "japanese_spending": "4兆4,800億円",
+        "foreign_spending": "2兆7,600億円"
+      },
+      "download_available": true,
+      "api_available": false,
+      "priority": "HIGH"
+    },
+    
+    "resas_api": {
+      "name": "RESAS（地域経済分析システム）API",
+      "portal_url": "https://resas.go.jp/",
+      "api_url": "https://opendata.resas-portal.go.jp/",
+      "description": "経済産業省・内閣官房提供の地域経済分析データ",
+      "data_categories": [
+        "人口マップ",
+        "地域経済循環マップ",
+        "産業構造マップ",
+        "企業活動マップ",
+        "観光マップ",
+        "まちづくりマップ",
+        "雇用/医療・福祉マップ",
+        "地方財政マップ"
+      ],
+      "api_features": {
+        "authentication": "APIキー必要",
+        "format": "JSON",
+        "rate_limit": "あり",
+        "free": true
+      },
+      "tourism_endpoints": [
+        "/tourism/foreignVisitors",
+        "/tourism/attractions",
+        "/tourism/events",
+        "/tourism/fromTo"
+      ],
+      "priority": "HIGH"
+    },
+    
+    "mobile_spatial_statistics": {
+      "name": "モバイル空間統計（via RESAS）",
+      "provider": "NTTドコモ",
+      "description": "8,900万台の携帯電話ネットワークからの人口統計",
+      "features": [
+        "24時間365日の人口データ",
+        "1時間ごとの人口増減",
+        "性・年齢別分析",
+        "居住エリア別分析"
+      ],
+      "access": "RESASを通じて一部データアクセス可能",
+      "priority": "MEDIUM"
+    },
+    
+    "regional_open_data_portals": {
+      "hiroshima": {
+        "name": "広島広域都市圏・広島県オープンデータポータル",
+        "url": "https://hiroshima-opendata.dataeye.jp/",
+        "tourism_datasets": 10,
+        "categories": ["観光・イベント", "交通", "人口", "経済"]
+      },
+      "fukuoka": {
+        "name": "福岡県・市町村オープンデータポータル",
+        "url": "https://www.open-governmentdata.org/fukuoka-pref/",
+        "special_data": "モバイル空間統計を活用した観光客調査結果",
+        "city_portal": "https://odcs.bodik.jp/401307/"
+      },
+      "osaka": {
+        "name": "大阪府オープンデータサイト",
+        "url": "https://www.pref.osaka.lg.jp/o060020/kikaku_keikaku/opendata/index.html",
+        "tourism_stats_url": "https://www.pref.osaka.lg.jp/o070070/kanko/toukei/index.html",
+        "available_years": ["2017", "2018", "2019"]
+      }
+    },
+    
+    "sns_data_sources": {
+      "x_academic_api": {
+        "name": "X（Twitter）学術研究向けAPI",
+        "url": "https://developer.x.com/ja/products/twitter-api/academic-research",
+        "description": "日本語ポストデータへの無料アクセス",
+        "features": [
+          "X API v2全エンドポイント",
+          "月間収集上限引き上げ",
+          "研究用強化機能"
+        ],
+        "restrictions": "非商用目的のみ",
+        "priority": "HIGH"
+      }
+    },
+    
+    "national_tourism_data": {
+      "jnto": {
+        "name": "日本政府観光局（JNTO）統計データ",
+        "url": "https://statistics.jnto.go.jp/",
+        "languages": ["日本語", "英語"],
+        "data_types": ["訪日外国人統計", "日本人海外旅行統計"]
+      },
+      "jta_open_data": {
+        "name": "日本観光振興協会デジタル観光統計",
+        "url": "https://www.nihon-kankou.or.jp/home/jigyou/research/d-toukei/",
+        "license": "クリエイティブ・コモンズ表示2.1日本",
+        "free": true
+      }
+    }
+  },
+  
+  "implementation_priorities": [
+    {
+      "priority": 1,
+      "action": "東京都観光データカタログからの基本データダウンロード",
+      "datasets": [
+        "2023年訪問者数データ",
+        "観光消費額データ",
+        "宿泊統計データ"
+      ]
+    },
+    {
+      "priority": 2,
+      "action": "RESAS APIキー取得と接続設定",
+      "tasks": [
+        "APIキー申請",
+        "エンドポイントテスト",
+        "定期データ取得スクリプト作成"
+      ]
+    },
+    {
+      "priority": 3,
+      "action": "X Academic API申請と設定",
+      "tasks": [
+        "学術研究アカウント申請",
+        "観光関連キーワードでのデータ収集設定",
+        "感情分析との連携"
+      ]
+    },
+    {
+      "priority": 4,
+      "action": "地域別オープンデータの統合",
+      "regions": ["広島", "福岡", "大阪", "東京"],
+      "data_types": ["観光施設", "イベント", "宿泊統計"]
+    }
+  ],
+  
+  "data_integration_schema": {
+    "visitor_statistics": {
+      "fields": ["date", "region", "visitor_count", "visitor_type", "nationality"],
+      "sources": ["tokyo_catalog", "resas", "regional_portals"]
+    },
+    "accommodation_statistics": {
+      "fields": ["date", "region", "occupancy_rate", "guest_nights", "facility_type"],
+      "sources": ["tokyo_catalog", "regional_portals", "jnto"]
+    },
+    "event_data": {
+      "fields": ["event_name", "date", "location", "attendance", "category"],
+      "sources": ["regional_portals", "resas"]
+    },
+    "sns_trends": {
+      "fields": ["date", "keyword", "mention_count", "sentiment", "location"],
+      "sources": ["x_api", "manual_collection"]
+    },
+    "people_flow": {
+      "fields": ["date", "time", "location", "population", "demographics"],
+      "sources": ["resas", "mobile_spatial_stats"]
+    }
+  }
+}

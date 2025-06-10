@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-06-10T22:12:58.591949",
+  "region": "広島県",
+  "portal_url": "https://hiroshima-opendata.dataeye.jp/",
+  "datasets": {
+    "観光客数統計": {
+      "description": "広島県内の観光客数統計データ",
+      "format": "CSV",
+      "url": "https://hiroshima-opendata.dataeye.jp/dataset/tourism-statistics",
+      "importance": "high"
+    },
+    "宿泊施設統計": {
+      "description": "宿泊施設の稼働率・宿泊者数",
+      "format": "CSV",
+      "url": "https://hiroshima-opendata.dataeye.jp/dataset/accommodation-stats",
+      "importance": "high"
+    },
+    "イベント情報": {
+      "description": "県内イベント・祭り情報",
+      "format": "JSON",
+      "url": "https://hiroshima-opendata.dataeye.jp/dataset/events",
+      "importance": "medium"
+    },
+    "交通機関利用統計": {
+      "description": "JR・バス・船舶の利用者数",
+      "format": "CSV",
+      "url": "https://hiroshima-opendata.dataeye.jp/dataset/transport-usage",
+      "importance": "high"
+    }
+  },
+  "notes": "実際のダウンロードにはポータルサイトへのアクセスが必要"
+}

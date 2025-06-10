@@ -1,0 +1,19 @@
+{
+  "weather": {
+    "open_meteo": {
+      "url": "https://api.open-meteo.com/v1/forecast",
+      "interval": 3600,
+      "description": "気象予報データ"
+    }
+  },
+  "earthquake": {
+    "jma": {
+      "url": "https://www.jma.go.jp/bosai/quake/data/list.json",
+      "interval": 300,
+      "description": "地震情報"
+    }
+  },
+  "transport": {
+    "description": "交通情報（各事業者のAPIキーが必要）"
+  }
+}
