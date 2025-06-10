@@ -10,7 +10,7 @@ from datetime import datetime
 
 # データベース接続情報
 DB_CONFIG = {
-    'host': 'localhost',
+    'host': 'db',  # Docker内ではサービス名を使用
     'port': 5432,
     'database': 'uesugi_heatmap',
     'user': 'postgres',

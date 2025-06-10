@@ -54,3 +54,9 @@ flake8==6.1.0
 
 # API仕様書
 Markdown==3.5.1
+
+# オープンデータ収集
+beautifulsoup4==4.12.2
+lxml==4.9.3
+schedule==1.2.0
+requests==2.31.0
