@@ -1,6 +1,16 @@
 # 開発履歴
 
-PROJECT_GUIDE.mdを参照すること。
+## 重要：他のMDファイルとの関係
+- 作業手順 → PROJECT_GUIDE.md
+- 技術詳細 → TECHNICAL_DETAILS.md
+- プロジェクト概要 → README.md
+- 作業ルール → .claude_instruction
+
+## 作業開始時のチェックリスト
+1. [ ] PROJECT_GUIDE.md を読んだ
+2. [ ] TECHNICAL_DETAILS.md を読んだ
+3. [ ] .claude_instruction を確認した
+4. [ ] 現在の問題点を把握した
 
 ## プロジェクトコアコンセプト
 全国の行政・民間施策効果検証プラットフォーム

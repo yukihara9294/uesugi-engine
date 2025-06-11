@@ -2,8 +2,16 @@
 
 ## 必ず最初に読むこと
 
-このファイルがプロジェクトの唯一の作業指示書です。
-他のMDファイルは参照しないでください。
+1. このファイル（PROJECT_GUIDE.md）で作業概要を把握
+2. TECHNICAL_DETAILS.md で技術詳細を確認
+3. 不明点は CLAUDE.md の履歴を参照
+4. .claude_instruction に従って作業
+
+## MDファイル構成
+- PROJECT_GUIDE.md: 作業指示・現状・手順
+- TECHNICAL_DETAILS.md: 技術仕様・実装詳細
+- CLAUDE.md: 作業履歴
+- README.md: 外部向け概要
 
 ## プロジェクトのコアコンセプト
 
