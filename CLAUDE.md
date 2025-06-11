@@ -104,6 +104,48 @@ npm start
    - ビューポートベースの動的データ読み込み
    - AI分析モーダルのUI調整（角丸、スクロール、小数点処理）
 
+### 作業内容 (2025-06-11)
+1. **GTFS/ODPT統合とフロントエンドエラー修正**
+   - 広島電鉄GTFSデータをPostgreSQLに統合（169路線、2,416停留所）
+   - ODPT APIキー設定完了（Kanto地域のみと判明）
+   - フロントエンドAPI接続エラー修正（backend:8000→localhost:8000）
+   - Mapboxトークン環境変数の正しい読み込み設定
+
+2. **新機能コンポーネント作成**
+   - VisualizationShowcase: 6つの新機能プレビュー
+   - IntegratedDashboard: 統合ダッシュボード
+   - BuildingAnalysis: PLATEAU建物分析
+   - 統合ダッシュボードボタンを左下に追加
+
+3. **データ収集スクリプト追加**
+   - collect_plateau_data.py: PLATEAU 3D都市モデル収集
+   - integrate_gbizinfo_api.py: gBizINFO企業情報統合
+   - integrate_egov_ckan.py: e-Govデータポータル統合
+   - import_manual_data.py: 非エンジニア向け手動データ取込
+
+4. **ドキュメント整理**
+   - 28個の不要なMDファイル削除
+   - DEVELOPMENT_ROADMAP.md作成（開発ロードマップ）
+   - REGIONAL_DATA_COLLECTION_PLAN.md作成（地域別データ収集計画）
+   - MANUAL_DATA_DOWNLOAD_GUIDE.md作成（手動ダウンロードガイド）
+
+### 次回優先タスク
+1. **統合データベース設計・実装の継続**
+   - 各データソースを統一スキーマに統合
+   - PostGISでの空間検索最適化
+
+2. **山口県オープンデータ収集スクリプト作成**
+   - 93件のデータセット自動収集
+   - CSVからPostgreSQLへの自動インポート
+
+3. **福岡・大阪・東京のデータソース調査**
+   - 各自治体のオープンデータカタログ確認
+   - APIアクセス方法の調査
+
+4. **新機能の既存ページへの統合**
+   - 統合ダッシュボードをマップビューに組み込み
+   - 建物分析パネルの追加
+
 ### 作業内容 (2025-06-08)
 1. イベントデータ可視化機能の実装
    - APIエンドポイント作成 (/api/v1/events)
