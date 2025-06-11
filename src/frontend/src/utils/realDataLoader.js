@@ -3,14 +3,33 @@
  * 広島GTFS、山口県オープンデータなどの実データを読み込み、マップ表示用に変換
  */
 
-import { apiClient } from '../services/api';
+import { apiClient, realDataService } from '../services/api';
 
 // 広島電鉄GTFSデータの読み込み
 export async function loadHiroshimaGTFSData() {
   try {
     console.log('Loading Hiroshima GTFS data...');
     
-    // 今はサンプルデータを使用
+    const response = await realDataService.getTransportGTFS();
+    console.log('GTFS data loaded:', response);
+    
+    // GeoJSON形式に変換
+    if (response && response.data) {
+      return {
+        type: 'FeatureCollection',
+        features: response.data.map(stop => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [stop.stop_lon, stop.stop_lat]
+          },
+          properties: {
+            ...stop,
+            category: 'transport'
+          }
+        }))
+      };
+    }
     return generateSampleGTFSData();
     
   } catch (error) {
@@ -24,7 +43,25 @@ export async function loadYamaguchiTourismData() {
   try {
     console.log('Loading Yamaguchi tourism data...');
     
-    // 今はnullを返す
+    const response = await realDataService.getTourismFacilities();
+    console.log('Tourism data loaded:', response);
+    
+    if (response && response.data) {
+      return {
+        type: 'FeatureCollection',
+        features: response.data.map(facility => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [facility.longitude || 131.4705, facility.latitude || 34.1858]
+          },
+          properties: {
+            ...facility,
+            category: 'tourism'
+          }
+        }))
+      };
+    }
     return null;
     
   } catch (error) {
@@ -38,7 +75,26 @@ export async function loadRealAccommodationData(prefecture) {
   try {
     console.log(`Loading real accommodation data for ${prefecture}...`);
     
-    // 今はnullを返す（ダミーデータを使用）
+    const response = await realDataService.getAccommodation(prefecture);
+    console.log('Accommodation data loaded:', response);
+    
+    if (response && response.data) {
+      return {
+        type: 'FeatureCollection',
+        features: response.data.map(hotel => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [hotel.longitude, hotel.latitude]
+          },
+          properties: {
+            ...hotel,
+            category: 'hotel',
+            height: hotel.capacity ? hotel.capacity * 2 : 50
+          }
+        }))
+      };
+    }
     return null;
     
   } catch (error) {
@@ -52,7 +108,26 @@ export async function loadRealMobilityData(prefecture) {
   try {
     console.log(`Loading real mobility data for ${prefecture}...`);
     
-    // 今はnullを返す（ダミーデータを使用）
+    const response = await realDataService.getMobility(prefecture);
+    console.log('Mobility data loaded:', response);
+    
+    if (response && response.data) {
+      return {
+        type: 'FeatureCollection',
+        features: response.data.map(flow => ({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: flow.coordinates || [[132.4597, 34.3966], [132.4751, 34.3978]]
+          },
+          properties: {
+            ...flow,
+            intensity: flow.intensity || Math.random() * 100,
+            category: 'mobility'
+          }
+        }))
+      };
+    }
     return null;
     
   } catch (error) {
@@ -66,7 +141,26 @@ export async function loadRealEventData(prefecture) {
   try {
     console.log(`Loading real event data for ${prefecture}...`);
     
-    // 今はnullを返す（ダミーデータを使用）
+    const response = await realDataService.getEvents(prefecture);
+    console.log('Event data loaded:', response);
+    
+    if (response && response.data) {
+      return {
+        type: 'FeatureCollection',
+        features: response.data.map(event => ({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [event.longitude || 132.4597, event.latitude || 34.3966]
+          },
+          properties: {
+            ...event,
+            category: event.category || 'event',
+            impact: event.impact || 'medium'
+          }
+        }))
+      };
+    }
     return null;
     
   } catch (error) {

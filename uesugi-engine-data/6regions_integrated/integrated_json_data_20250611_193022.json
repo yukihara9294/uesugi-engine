@@ -1,0 +1,158 @@
+{
+  "metadata": {
+    "created_at": "2025-06-11T19:30:22.584839",
+    "version": "1.0",
+    "regions": [
+      "hiroshima",
+      "yamaguchi",
+      "fukuoka",
+      "osaka",
+      "tokyo",
+      "okayama"
+    ]
+  },
+  "data": {
+    "hiroshima": [
+      {
+        "file": "hiroshima/hiroshima_datasets_catalog.json",
+        "type": "other",
+        "record_count": 1,
+        "sample": [
+          "timestamp",
+          "portal",
+          "datasets",
+          "total_categories",
+          "license",
+          "notes"
+        ]
+      },
+      {
+        "file": "hiroshima/hiroshima_data_analysis.json",
+        "type": "other",
+        "record_count": 4,
+        "sample": [
+          "timestamp",
+          "analysis",
+          "recommendations"
+        ]
+      },
+      {
+        "file": "hiroshima/transport/bus/manual_download_required.json",
+        "type": "transport",
+        "record_count": 1,
+        "sample": [
+          "download_url",
+          "target_path",
+          "instructions",
+          "timestamp"
+        ]
+      },
+      {
+        "file": "hiroshima/transport/bus/data_summary.json",
+        "type": "transport",
+        "record_count": 1,
+        "sample": [
+          "last_updated",
+          "data_file",
+          "analytics",
+          "total_data_points"
+        ]
+      },
+      {
+        "file": "hiroshima/transport/bus/hiroshima_bus_data_20250611.json",
+        "type": "transport",
+        "record_count": 200,
+        "sample": [
+          "data_type",
+          "region",
+          "transport_mode",
+          "timestamp",
+          "source",
+          "operators",
+          "routes",
+          "stops",
+          "analytics"
+        ]
+      },
+      {
+        "file": "hiroshima/transport/bus/hiroshima_bus_data_20250610.json",
+        "type": "transport",
+        "record_count": 200,
+        "sample": [
+          "data_type",
+          "region",
+          "transport_mode",
+          "timestamp",
+          "source",
+          "operators",
+          "routes",
+          "stops",
+          "analytics"
+        ]
+      }
+    ],
+    "yamaguchi": [
+      {
+        "file": "yamaguchi/yamaguchi_summary_20250610_215328.json",
+        "type": "other",
+        "record_count": 45,
+        "sample": [
+          "timestamp",
+          "tourism",
+          "population",
+          "events"
+        ]
+      }
+    ],
+    "fukuoka": [
+      {
+        "file": "fukuoka/bodik_collection_summary_20250611_125101.json",
+        "type": "other",
+        "record_count": 1,
+        "sample": [
+          "timestamp",
+          "source",
+          "prefecture",
+          "data",
+          "stats"
+        ]
+      },
+      {
+        "file": "fukuoka/bodik_collection_summary_20250611_191942.json",
+        "type": "other",
+        "record_count": 1,
+        "sample": [
+          "timestamp",
+          "source",
+          "prefecture",
+          "data",
+          "stats"
+        ]
+      }
+    ],
+    "okayama": [
+      {
+        "file": "okayama/alternative_data_sources.json",
+        "type": "other",
+        "record_count": 2,
+        "sample": {
+          "source": "国土数値情報",
+          "type": "public_facilities",
+          "url": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P02-v2_0.html",
+          "note": "手動ダウンロードが必要"
+        }
+      },
+      {
+        "file": "okayama/okayama_summary_20250611_192648.json",
+        "type": "other",
+        "record_count": 1,
+        "sample": [
+          "timestamp",
+          "prefecture",
+          "stats",
+          "datasets"
+        ]
+      }
+    ]
+  }
+}

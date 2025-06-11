@@ -17,6 +17,7 @@ import {
   generateEventData,
   generateConsumptionData
 } from '../../utils/dataGenerator';
+import { realDataService } from '../../services/api';
 
 // Mapbox token
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;

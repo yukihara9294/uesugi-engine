@@ -1,11 +1,22 @@
 # Uesugi Engine プロジェクトガイド
 
+最終更新: 2025-06-11  
+更新者: Claude Code  
+更新内容: MDファイル更新管理ルール追加
+
 ## 必ず最初に読むこと
 
 1. このファイル（PROJECT_GUIDE.md）で作業概要を把握
 2. TECHNICAL_DETAILS.md で技術詳細を確認
 3. 不明点は CLAUDE.md の履歴を参照
 4. .claude_instruction に従って作業
+
+## 重要：このファイルの更新ルール
+
+**作業終了時に必ず以下を更新：**
+- 「現在の状況」セクション
+- 「次の作業」セクション
+- 冠頭の更新情報（日付・内容）
 
 ## MDファイル構成
 - PROJECT_GUIDE.md: 作業指示・現状・手順
@@ -39,6 +50,8 @@
 4. 同じ機能の重複実装はしない
 
 ## 現在の状況（2025年6月11日）
+
+**※このセクションは毎回更新必須**
 
 ### 環境
 - Docker環境で動作中
@@ -115,9 +128,17 @@ src/frontend/src/services/api.js に realDataService として定義済み。
 
 ## 次の作業
 
+**※このセクションは毎回更新必須**
+
 1. フロントエンドコンポーネントで realDataService を使用
 2. 地図上にデータを表示
 3. エラーがあれば修正
+
+## 未完了タスク
+
+- [ ] 広島・山口データの地図表示
+- [ ] 福岡・東京・大阪データ収集
+- [ ] AI因果推論機能の実装
 
 ## 過去の要望事項
 
@@ -134,3 +155,10 @@ src/frontend/src/services/api.js に realDataService として定義済み。
 - Mapboxトークン: .envでREACT_APP_MAPBOX_ACCESS_TOKEN設定
 - TypeScript: npm install --legacy-peer-deps使用
 - API接続: backend:8000→localhost:8000変更済み
+
+## 変更履歴
+
+### 2025-06-11
+- MDファイル更新管理ルールを追加
+- 実データAPI呼び出し機能を実装
+- .claude_instructionにチェックリスト追加

@@ -1,5 +1,9 @@
 # 技術詳細
 
+最終更新: 2025-06-11  
+更新者: Claude Code  
+更新内容: 実データAPI呼び出し機能追加
+
 ## このファイルの役割
 技術的な実装詳細、バグ情報、ワークアラウンドを記載。
 作業手順はPROJECT_GUIDE.mdを参照。
@@ -112,3 +116,10 @@
 - TypeScript: `npm install --legacy-peer-deps`
 - ESLintエラー: `.env`で無効化
 - Recharts: webpackキャッシュ問題対処済み
+
+## 2025-06-11 追加情報
+
+### 実データAPI呼び出し
+- realDataLoader.jsを修正し、realDataServiceを使用
+- GeoJSON形式への変換処理を実装
+- エラーハンドリングでフォールバック対応

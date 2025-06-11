@@ -1,0 +1,135 @@
+{
+  "title": "Uesugi Engine 6地域統合データカタログ",
+  "description": "広島県、山口県、福岡県、大阪府、東京都、岡山県の統合データカタログ",
+  "created_at": "2025-06-11T19:30:22.593338",
+  "regions": [
+    {
+      "id": "hiroshima",
+      "name": "広島県",
+      "code": "34",
+      "has_data": true,
+      "data_categories": [
+        "transport"
+      ],
+      "file_count": 2
+    },
+    {
+      "id": "yamaguchi",
+      "name": "山口県",
+      "code": "35",
+      "has_data": true,
+      "data_categories": [
+        "population",
+        "events",
+        "tourism",
+        "transport"
+      ],
+      "file_count": 312
+    },
+    {
+      "id": "fukuoka",
+      "name": "福岡県",
+      "code": "40",
+      "has_data": false,
+      "data_categories": [],
+      "file_count": 0
+    },
+    {
+      "id": "osaka",
+      "name": "大阪府",
+      "code": "27",
+      "has_data": false,
+      "data_categories": [],
+      "file_count": 0
+    },
+    {
+      "id": "tokyo",
+      "name": "東京都",
+      "code": "13",
+      "has_data": false,
+      "data_categories": [],
+      "file_count": 0
+    },
+    {
+      "id": "okayama",
+      "name": "岡山県",
+      "code": "33",
+      "has_data": false,
+      "data_categories": [],
+      "file_count": 0
+    }
+  ],
+  "datasets": [
+    {
+      "region": "hiroshima",
+      "region_name": "広島県",
+      "category": "transport",
+      "file_count": 2,
+      "total_size": 8192,
+      "sample_files": [
+        "bus",
+        "railway"
+      ]
+    },
+    {
+      "region": "yamaguchi",
+      "region_name": "山口県",
+      "category": "population",
+      "file_count": 258,
+      "total_size": 18284089,
+      "sample_files": [
+        "11__353418_population_20221130.csv",
+        "352080_population_20210401.csv",
+        "352161_population_20240831.csv"
+      ]
+    },
+    {
+      "region": "yamaguchi",
+      "region_name": "山口県",
+      "category": "events",
+      "file_count": 3,
+      "total_size": 244776,
+      "sample_files": [
+        "352071_event.csv",
+        "3101.xlsx",
+        "ube_event.csv"
+      ]
+    },
+    {
+      "region": "yamaguchi",
+      "region_name": "山口県",
+      "category": "tourism",
+      "file_count": 49,
+      "total_size": 2359779,
+      "sample_files": [
+        ".xlsx",
+        "352152_public_toilet.xlsx",
+        "ube_cultural_property.xls"
+      ]
+    },
+    {
+      "region": "yamaguchi",
+      "region_name": "山口県",
+      "category": "transport",
+      "file_count": 2,
+      "total_size": 8192,
+      "sample_files": [
+        "bus",
+        "railway"
+      ]
+    }
+  ],
+  "statistics": {
+    "total_files": 314,
+    "by_region": {
+      "hiroshima": 2,
+      "yamaguchi": 312
+    },
+    "by_type": {
+      "transport": 4,
+      "population": 258,
+      "events": 3,
+      "tourism": 49
+    }
+  }
+}

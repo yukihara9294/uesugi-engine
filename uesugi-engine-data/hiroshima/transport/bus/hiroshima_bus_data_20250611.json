@@ -1,0 +1,2446 @@
+{
+  "data_type": "public_transport",
+  "region": "広島県",
+  "transport_mode": "bus",
+  "timestamp": "2025-06-11T19:19:41.003254",
+  "source": {
+    "source": "広島県バス協会",
+    "data_type": "GTFS",
+    "collected_at": "2025-06-11T19:19:40.877093",
+    "url": "https://www.bus-kyo.or.jp/gtfs-open-data"
+  },
+  "operators": [
+    {
+      "id": "9240001009470",
+      "name": "広島電鉄",
+      "url": "https://www.hiroden.co.jp/bus/",
+      "timezone": "Asia/Tokyo"
+    },
+    {
+      "id": "2000020343021",
+      "name": "府中町",
+      "url": "https://www.town.fuchu.hiroshima.jp/life/1/19/96/",
+      "timezone": "Asia/Tokyo"
+    }
+  ],
+  "routes": [
+    {
+      "id": "3121747758",
+      "short_name": "61-4",
+      "long_name": "五月が丘団地・免許センター・ジ アウトレット広島・そらの線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1239935042",
+      "short_name": "10",
+      "long_name": "10号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1703362944",
+      "short_name": "7",
+      "long_name": "7号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3182592615",
+      "short_name": "12-3",
+      "long_name": "12号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "257575594",
+      "short_name": "6",
+      "long_name": "6号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1354275950",
+      "short_name": "21",
+      "long_name": "焼山熊野苗代線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1250738100",
+      "short_name": "40-11",
+      "long_name": "広島～熊野方面",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "4094897076",
+      "short_name": "28-2",
+      "long_name": "アルパーク・新井口駅発着",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2136956995",
+      "short_name": "2",
+      "long_name": "2号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "392768293",
+      "short_name": "70H",
+      "long_name": "あさひが丘線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3704685485",
+      "short_name": "7-1",
+      "long_name": "7号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1835444037",
+      "short_name": "61",
+      "long_name": "五月が丘団地・免許センター・ジ アウトレット広島・そらの線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "657539703",
+      "short_name": "55-1",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1342502491",
+      "short_name": "3",
+      "long_name": "矢野～熊野・焼山方面",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "940910428",
+      "short_name": "40",
+      "long_name": "広島～熊野方面",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3417915761",
+      "short_name": "55",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "4127997482",
+      "short_name": "11-N",
+      "long_name": "広仁方線/郷原黒瀬線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "825937545",
+      "short_name": "12",
+      "long_name": "宮内串戸駅・廿日市市役所前駅発着（四季が丘線）",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3511826458",
+      "short_name": "1-9",
+      "long_name": "五日市駅北口発着",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3221861026",
+      "short_name": "52-2",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2030540930",
+      "short_name": "55-4",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3241461082",
+      "short_name": "5-2",
+      "long_name": "5号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3915497183",
+      "short_name": "55-6",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "774036820",
+      "short_name": "31-1",
+      "long_name": "辰川線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2865337892",
+      "short_name": "12-2",
+      "long_name": "12号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "491687221",
+      "short_name": "11-7",
+      "long_name": "広仁方線/郷原黒瀬線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2956810196",
+      "short_name": "5",
+      "long_name": "5号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1806136352",
+      "short_name": "",
+      "long_name": "高速：クレアライン",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "221411867",
+      "short_name": "1-1",
+      "long_name": "呉倉橋島線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2641382163",
+      "short_name": "73-9",
+      "long_name": "豊平・琴谷線/今吉田線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1471981638",
+      "short_name": "70-3",
+      "long_name": "あさひが丘線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "694313209",
+      "short_name": "61-9",
+      "long_name": "五月が丘団地・免許センター・ジ アウトレット広島・そらの線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3515152410",
+      "short_name": "62",
+      "long_name": "西風新都線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "488396710",
+      "short_name": "11",
+      "long_name": "広仁方線/郷原黒瀬線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3294773486",
+      "short_name": "21-1",
+      "long_name": "焼山熊野苗代線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3884591149",
+      "short_name": "331・332",
+      "long_name": "広島駅～旭町～広島駅",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1848824191",
+      "short_name": "54",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1832881648",
+      "short_name": "1-3",
+      "long_name": "五日市駅北口発着",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "3863994541",
+      "short_name": "2-2",
+      "long_name": "2号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "316470308",
+      "short_name": "55-2",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "170965342",
+      "short_name": "4",
+      "long_name": "五日市駅南口発着",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "578834183",
+      "short_name": "",
+      "long_name": "Jリーグシャトル",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2414589742",
+      "short_name": "21-4",
+      "long_name": "焼山熊野苗代線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2470750945",
+      "short_name": "12-1",
+      "long_name": "12号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2146199947",
+      "short_name": "63",
+      "long_name": "西風新都線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "360868713",
+      "short_name": "3",
+      "long_name": "3号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2021255729",
+      "short_name": "65-3",
+      "long_name": "くすのき台線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2085678949",
+      "short_name": "54-2",
+      "long_name": "西広島バイパス線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "1644555863",
+      "short_name": "2-6",
+      "long_name": "2号線",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    },
+    {
+      "id": "2568649309",
+      "short_name": "28",
+      "long_name": "アルパーク・新井口駅発着",
+      "type": "バス",
+      "color": "",
+      "operator_id": "9240001009470"
+    }
+  ],
+  "stops": [
+    {
+      "id": "10 50",
+      "name": "広島バスセンター",
+      "coordinates": {
+        "lat": 34.3962116,
+        "lon": 132.4563394
+      },
+      "type": "bus_stop",
+      "zone_id": "10 50"
+    },
+    {
+      "id": "19300 1",
+      "name": "広島高等技術専門校前",
+      "coordinates": {
+        "lat": 34.3900307,
+        "lon": 132.3976919
+      },
+      "type": "bus_stop",
+      "zone_id": "19300 1"
+    },
+    {
+      "id": "19310 1",
+      "name": "美鈴モール前",
+      "coordinates": {
+        "lat": 34.39191921,
+        "lon": 132.3865628
+      },
+      "type": "bus_stop",
+      "zone_id": "19310 1"
+    },
+    {
+      "id": "24960 7",
+      "name": "立町",
+      "coordinates": {
+        "lat": 34.39473686280101,
+        "lon": 132.460456559002
+      },
+      "type": "bus_stop",
+      "zone_id": "24960 7"
+    },
+    {
+      "id": "50040 2",
+      "name": "銀山町",
+      "coordinates": {
+        "lat": 34.3930911,
+        "lon": 132.4665658
+      },
+      "type": "bus_stop",
+      "zone_id": "50040 2"
+    },
+    {
+      "id": "50050 2",
+      "name": "稲荷町",
+      "coordinates": {
+        "lat": 34.3925583,
+        "lon": 132.4707552
+      },
+      "type": "bus_stop",
+      "zone_id": "50050 2"
+    },
+    {
+      "id": "50080 1",
+      "name": "広電曙営業所前",
+      "coordinates": {
+        "lat": 34.3955378,
+        "lon": 132.487047
+      },
+      "type": "bus_stop",
+      "zone_id": "50080 1"
+    },
+    {
+      "id": "50350 2",
+      "name": "市役所前",
+      "coordinates": {
+        "lat": 34.385568,
+        "lon": 132.4541401
+      },
+      "type": "bus_stop",
+      "zone_id": "50350 2"
+    },
+    {
+      "id": "14960 1",
+      "name": "大塚駅",
+      "coordinates": {
+        "lat": 34.4424763,
+        "lon": 132.4042591
+      },
+      "type": "bus_stop",
+      "zone_id": "14960 1"
+    },
+    {
+      "id": "22540 1",
+      "name": "西区役所前",
+      "coordinates": {
+        "lat": 34.394674,
+        "lon": 132.434828
+      },
+      "type": "bus_stop",
+      "zone_id": "22540 1"
+    },
+    {
+      "id": "23550 1",
+      "name": "矢野駅前",
+      "coordinates": {
+        "lat": 34.352206,
+        "lon": 132.5323502
+      },
+      "type": "bus_stop",
+      "zone_id": "23550 1"
+    },
+    {
+      "id": "23730 1",
+      "name": "Ａシティ中央",
+      "coordinates": {
+        "lat": 34.4465712,
+        "lon": 132.3954277
+      },
+      "type": "bus_stop",
+      "zone_id": "23730 1"
+    },
+    {
+      "id": "23740 1",
+      "name": "広域公園テニスコート",
+      "coordinates": {
+        "lat": 34.44698,
+        "lon": 132.3908849
+      },
+      "type": "bus_stop",
+      "zone_id": "23740 1"
+    },
+    {
+      "id": "24140 1",
+      "name": "沼田料金所前",
+      "coordinates": {
+        "lat": 34.4363861,
+        "lon": 132.4101824
+      },
+      "type": "bus_stop",
+      "zone_id": "24140 1"
+    },
+    {
+      "id": "4390 1",
+      "name": "古江",
+      "coordinates": {
+        "lat": 34.39231959,
+        "lon": 132.4111608
+      },
+      "type": "bus_stop",
+      "zone_id": "4390 1"
+    },
+    {
+      "id": "50010 1",
+      "name": "県庁前",
+      "coordinates": {
+        "lat": 34.3973354,
+        "lon": 132.4591395
+      },
+      "type": "bus_stop",
+      "zone_id": "50010 1"
+    },
+    {
+      "id": "50010 24",
+      "name": "県庁前",
+      "coordinates": {
+        "lat": 34.39612,
+        "lon": 132.4581621
+      },
+      "type": "bus_stop",
+      "zone_id": "50010 24"
+    },
+    {
+      "id": "50030 14",
+      "name": "八丁堀",
+      "coordinates": {
+        "lat": 34.39408696,
+        "lon": 132.4617731
+      },
+      "type": "bus_stop",
+      "zone_id": "50030 14"
+    },
+    {
+      "id": "50030 2",
+      "name": "八丁堀",
+      "coordinates": {
+        "lat": 34.3937914,
+        "lon": 132.4640812
+      },
+      "type": "bus_stop",
+      "zone_id": "50030 2"
+    },
+    {
+      "id": "50040 1",
+      "name": "銀山町",
+      "coordinates": {
+        "lat": 34.393366,
+        "lon": 132.4668637
+      },
+      "type": "bus_stop",
+      "zone_id": "50040 1"
+    },
+    {
+      "id": "50050 1",
+      "name": "稲荷町",
+      "coordinates": {
+        "lat": 34.3928229,
+        "lon": 132.4707788
+      },
+      "type": "bus_stop",
+      "zone_id": "50050 1"
+    },
+    {
+      "id": "50060 16",
+      "name": "広島駅",
+      "coordinates": {
+        "lat": 34.3956805,
+        "lon": 132.4762608
+      },
+      "type": "bus_stop",
+      "zone_id": "50060 16"
+    },
+    {
+      "id": "50070 1",
+      "name": "東区役所前",
+      "coordinates": {
+        "lat": 34.3962204,
+        "lon": 132.4838429
+      },
+      "type": "bus_stop",
+      "zone_id": "50070 1"
+    },
+    {
+      "id": "50090 1",
+      "name": "曙町",
+      "coordinates": {
+        "lat": 34.3949007,
+        "lon": 132.4903444
+      },
+      "type": "bus_stop",
+      "zone_id": "50090 1"
+    },
+    {
+      "id": "50100 1",
+      "name": "矢賀入口",
+      "coordinates": {
+        "lat": 34.3946629,
+        "lon": 132.4915748
+      },
+      "type": "bus_stop",
+      "zone_id": "50100 1"
+    },
+    {
+      "id": "50320 31",
+      "name": "本通り",
+      "coordinates": {
+        "lat": 34.3940086,
+        "lon": 132.457404
+      },
+      "type": "bus_stop",
+      "zone_id": "50320 31"
+    },
+    {
+      "id": "50320 32",
+      "name": "本通り",
+      "coordinates": {
+        "lat": 34.3929937,
+        "lon": 132.4566812
+      },
+      "type": "bus_stop",
+      "zone_id": "50320 32"
+    },
+    {
+      "id": "50340 1",
+      "name": "中電前",
+      "coordinates": {
+        "lat": 34.3880239,
+        "lon": 132.4553583
+      },
+      "type": "bus_stop",
+      "zone_id": "50340 1"
+    },
+    {
+      "id": "50340 2",
+      "name": "中電前",
+      "coordinates": {
+        "lat": 34.3890309,
+        "lon": 132.4553389
+      },
+      "type": "bus_stop",
+      "zone_id": "50340 2"
+    },
+    {
+      "id": "50350 1",
+      "name": "市役所前",
+      "coordinates": {
+        "lat": 34.3864713,
+        "lon": 132.454824
+      },
+      "type": "bus_stop",
+      "zone_id": "50350 1"
+    },
+    {
+      "id": "51300 1",
+      "name": "上天満町",
+      "coordinates": {
+        "lat": 34.398659,
+        "lon": 132.4410198
+      },
+      "type": "bus_stop",
+      "zone_id": "51300 1"
+    },
+    {
+      "id": "51320 5",
+      "name": "十日市",
+      "coordinates": {
+        "lat": 34.398219,
+        "lon": 132.4471463
+      },
+      "type": "bus_stop",
+      "zone_id": "51320 5"
+    },
+    {
+      "id": "51540 6",
+      "name": "西広島駅・己斐",
+      "coordinates": {
+        "lat": 34.3965156,
+        "lon": 132.4277035
+      },
+      "type": "bus_stop",
+      "zone_id": "51540 6"
+    },
+    {
+      "id": "51550 1",
+      "name": "己斐本町２丁目",
+      "coordinates": {
+        "lat": 34.394177,
+        "lon": 132.4256125
+      },
+      "type": "bus_stop",
+      "zone_id": "51550 1"
+    },
+    {
+      "id": "19320 1",
+      "name": "美鈴が丘東三丁目",
+      "coordinates": {
+        "lat": 34.39495218,
+        "lon": 132.3847295
+      },
+      "type": "bus_stop",
+      "zone_id": "19320 1"
+    },
+    {
+      "id": "19330 1",
+      "name": "山田団地下",
+      "coordinates": {
+        "lat": 34.39941843,
+        "lon": 132.3877957
+      },
+      "type": "bus_stop",
+      "zone_id": "19330 1"
+    },
+    {
+      "id": "19340 1",
+      "name": "山田団地",
+      "coordinates": {
+        "lat": 34.39866853,
+        "lon": 132.3892456
+      },
+      "type": "bus_stop",
+      "zone_id": "19340 1"
+    },
+    {
+      "id": "19350 1",
+      "name": "山田団地車庫前",
+      "coordinates": {
+        "lat": 34.3973479,
+        "lon": 132.391655
+      },
+      "type": "bus_stop",
+      "zone_id": "19350 1"
+    },
+    {
+      "id": "20870 2",
+      "name": "鈴が峰住宅中",
+      "coordinates": {
+        "lat": 34.37982058,
+        "lon": 132.3911963
+      },
+      "type": "bus_stop",
+      "zone_id": "20870 2"
+    },
+    {
+      "id": "21370 2",
+      "name": "鈴が峰住宅東",
+      "coordinates": {
+        "lat": 34.383417,
+        "lon": 132.3946321
+      },
+      "type": "bus_stop",
+      "zone_id": "21370 2"
+    },
+    {
+      "id": "22030 2",
+      "name": "市立大学前",
+      "coordinates": {
+        "lat": 34.4379392,
+        "lon": 132.4133342
+      },
+      "type": "bus_stop",
+      "zone_id": "22030 2"
+    },
+    {
+      "id": "22520 1",
+      "name": "美鈴が丘西五丁目",
+      "coordinates": {
+        "lat": 34.3981312,
+        "lon": 132.3854293
+      },
+      "type": "bus_stop",
+      "zone_id": "22520 1"
+    },
+    {
+      "id": "22800 2",
+      "name": "鈴が峰住宅",
+      "coordinates": {
+        "lat": 34.38078718,
+        "lon": 132.3933628
+      },
+      "type": "bus_stop",
+      "zone_id": "22800 2"
+    },
+    {
+      "id": "22810 2",
+      "name": "鈴が峰住宅西",
+      "coordinates": {
+        "lat": 34.378602,
+        "lon": 132.3885395
+      },
+      "type": "bus_stop",
+      "zone_id": "22810 2"
+    },
+    {
+      "id": "23750 1",
+      "name": "せせらぎ公園前",
+      "coordinates": {
+        "lat": 34.4493586,
+        "lon": 132.3907728
+      },
+      "type": "bus_stop",
+      "zone_id": "23750 1"
+    },
+    {
+      "id": "24770 1",
+      "name": "もみじ通り",
+      "coordinates": {
+        "lat": 34.456177,
+        "lon": 132.3928486
+      },
+      "type": "bus_stop",
+      "zone_id": "24770 1"
+    },
+    {
+      "id": "24780 1",
+      "name": "花の季台中央公園",
+      "coordinates": {
+        "lat": 34.45368,
+        "lon": 132.3922854
+      },
+      "type": "bus_stop",
+      "zone_id": "24780 1"
+    },
+    {
+      "id": "24790 1",
+      "name": "けやき通り",
+      "coordinates": {
+        "lat": 34.4516136,
+        "lon": 132.3910946
+      },
+      "type": "bus_stop",
+      "zone_id": "24790 1"
+    },
+    {
+      "id": "24800 1",
+      "name": "花の季台",
+      "coordinates": {
+        "lat": 34.4554173,
+        "lon": 132.3900132
+      },
+      "type": "bus_stop",
+      "zone_id": "24800 1"
+    },
+    {
+      "id": "25140 2",
+      "name": "中広二丁目",
+      "coordinates": {
+        "lat": 34.4028974,
+        "lon": 132.442081
+      },
+      "type": "bus_stop",
+      "zone_id": "25140 2"
+    },
+    {
+      "id": "3230 2",
+      "name": "地毛",
+      "coordinates": {
+        "lat": 34.3836475,
+        "lon": 132.3554997
+      },
+      "type": "bus_stop",
+      "zone_id": "3230 2"
+    },
+    {
+      "id": "3240 2",
+      "name": "城山",
+      "coordinates": {
+        "lat": 34.3864013,
+        "lon": 132.3561052
+      },
+      "type": "bus_stop",
+      "zone_id": "3240 2"
+    },
+    {
+      "id": "4400 1",
+      "name": "田方",
+      "coordinates": {
+        "lat": 34.3882166,
+        "lon": 132.4015192
+      },
+      "type": "bus_stop",
+      "zone_id": "4400 1"
+    },
+    {
+      "id": "50060 17",
+      "name": "広島駅",
+      "coordinates": {
+        "lat": 34.39603698,
+        "lon": 132.4752053
+      },
+      "type": "bus_stop",
+      "zone_id": "50060 17"
+    },
+    {
+      "id": "50070 2",
+      "name": "東区役所前",
+      "coordinates": {
+        "lat": 34.39588714,
+        "lon": 132.4833546
+      },
+      "type": "bus_stop",
+      "zone_id": "50070 2"
+    },
+    {
+      "id": "50080 2",
+      "name": "広電曙営業所前",
+      "coordinates": {
+        "lat": 34.39545391,
+        "lon": 132.4863544
+      },
+      "type": "bus_stop",
+      "zone_id": "50080 2"
+    },
+    {
+      "id": "50090 2",
+      "name": "曙町",
+      "coordinates": {
+        "lat": 34.3948736,
+        "lon": 132.4894917
+      },
+      "type": "bus_stop",
+      "zone_id": "50090 2"
+    },
+    {
+      "id": "50100 2",
+      "name": "矢賀入口",
+      "coordinates": {
+        "lat": 34.3944181,
+        "lon": 132.4917568
+      },
+      "type": "bus_stop",
+      "zone_id": "50100 2"
+    },
+    {
+      "id": "50330 1",
+      "name": "袋町",
+      "coordinates": {
+        "lat": 34.3908974,
+        "lon": 132.456327
+      },
+      "type": "bus_stop",
+      "zone_id": "50330 1"
+    },
+    {
+      "id": "50370 2",
+      "name": "加古町",
+      "coordinates": {
+        "lat": 34.3850509,
+        "lon": 132.4479686
+      },
+      "type": "bus_stop",
+      "zone_id": "50370 2"
+    },
+    {
+      "id": "50380 2",
+      "name": "舟入本町",
+      "coordinates": {
+        "lat": 34.3857739,
+        "lon": 132.4440017
+      },
+      "type": "bus_stop",
+      "zone_id": "50380 2"
+    },
+    {
+      "id": "50790 2",
+      "name": "牛田本町",
+      "coordinates": {
+        "lat": 34.4114272,
+        "lon": 132.4698091
+      },
+      "type": "bus_stop",
+      "zone_id": "50790 2"
+    },
+    {
+      "id": "50800 1",
+      "name": "牛田大橋",
+      "coordinates": {
+        "lat": 34.4104693,
+        "lon": 132.4686226
+      },
+      "type": "bus_stop",
+      "zone_id": "50800 1"
+    },
+    {
+      "id": "51240 5",
+      "name": "横川駅前",
+      "coordinates": {
+        "lat": 34.40925179,
+        "lon": 132.4496068
+      },
+      "type": "bus_stop",
+      "zone_id": "51240 5"
+    },
+    {
+      "id": "51250 2",
+      "name": "横川新町",
+      "coordinates": {
+        "lat": 34.4085212,
+        "lon": 132.4469387
+      },
+      "type": "bus_stop",
+      "zone_id": "51250 2"
+    },
+    {
+      "id": "51260 2",
+      "name": "中広中学校前",
+      "coordinates": {
+        "lat": 34.4063478,
+        "lon": 132.4448988
+      },
+      "type": "bus_stop",
+      "zone_id": "51260 2"
+    },
+    {
+      "id": "51270 2",
+      "name": "中広三丁目",
+      "coordinates": {
+        "lat": 34.4045285,
+        "lon": 132.4433431
+      },
+      "type": "bus_stop",
+      "zone_id": "51270 2"
+    },
+    {
+      "id": "5650 1",
+      "name": "熊野西防災交流センター前",
+      "coordinates": {
+        "lat": 34.32514621,
+        "lon": 132.5692007
+      },
+      "type": "bus_stop",
+      "zone_id": "5650 1"
+    },
+    {
+      "id": "5660 1",
+      "name": "熊野第三小学校",
+      "coordinates": {
+        "lat": 34.32854583,
+        "lon": 132.5687006
+      },
+      "type": "bus_stop",
+      "zone_id": "5660 1"
+    },
+    {
+      "id": "5670 1",
+      "name": "北県営住宅前",
+      "coordinates": {
+        "lat": 34.3308155,
+        "lon": 132.5671327
+      },
+      "type": "bus_stop",
+      "zone_id": "5670 1"
+    },
+    {
+      "id": "80455 1",
+      "name": "辰川",
+      "coordinates": {
+        "lat": 34.26023654,
+        "lon": 132.5727534
+      },
+      "type": "bus_stop",
+      "zone_id": "80455 1"
+    },
+    {
+      "id": "20439 2",
+      "name": "野登呂橋",
+      "coordinates": {
+        "lat": 34.4192067,
+        "lon": 132.3585951
+      },
+      "type": "bus_stop",
+      "zone_id": "20439 2"
+    },
+    {
+      "id": "20440 2",
+      "name": "藤の木団地入口",
+      "coordinates": {
+        "lat": 34.4195493,
+        "lon": 132.3603191
+      },
+      "type": "bus_stop",
+      "zone_id": "20440 2"
+    },
+    {
+      "id": "20450 2",
+      "name": "藤の木一丁目集会所前",
+      "coordinates": {
+        "lat": 34.4177318,
+        "lon": 132.3622732
+      },
+      "type": "bus_stop",
+      "zone_id": "20450 2"
+    },
+    {
+      "id": "20460 2",
+      "name": "近隣公園前",
+      "coordinates": {
+        "lat": 34.4202245,
+        "lon": 132.3634612
+      },
+      "type": "bus_stop",
+      "zone_id": "20460 2"
+    },
+    {
+      "id": "20470 2",
+      "name": "児童公園前",
+      "coordinates": {
+        "lat": 34.4237377,
+        "lon": 132.363497
+      },
+      "type": "bus_stop",
+      "zone_id": "20470 2"
+    },
+    {
+      "id": "20480 2",
+      "name": "藤の木団地",
+      "coordinates": {
+        "lat": 34.4253163,
+        "lon": 132.3635067
+      },
+      "type": "bus_stop",
+      "zone_id": "20480 2"
+    },
+    {
+      "id": "20980 1",
+      "name": "美鈴が丘高校",
+      "coordinates": {
+        "lat": 34.3920811,
+        "lon": 132.3786037
+      },
+      "type": "bus_stop",
+      "zone_id": "20980 1"
+    },
+    {
+      "id": "21270 2",
+      "name": "体育館前",
+      "coordinates": {
+        "lat": 34.2506786,
+        "lon": 132.5632952
+      },
+      "type": "bus_stop",
+      "zone_id": "21270 2"
+    },
+    {
+      "id": "21420 1",
+      "name": "五日市駅北口",
+      "coordinates": {
+        "lat": 34.3671948,
+        "lon": 132.3673811
+      },
+      "type": "bus_stop",
+      "zone_id": "21420 1"
+    },
+    {
+      "id": "21640 2",
+      "name": "新宮苑",
+      "coordinates": {
+        "lat": 34.3704489,
+        "lon": 132.3613242
+      },
+      "type": "bus_stop",
+      "zone_id": "21640 2"
+    },
+    {
+      "id": "23350 1",
+      "name": "美鈴が丘小学校",
+      "coordinates": {
+        "lat": 34.3909893,
+        "lon": 132.3804544
+      },
+      "type": "bus_stop",
+      "zone_id": "23350 1"
+    },
+    {
+      "id": "23560 1",
+      "name": "矢野西四丁目",
+      "coordinates": {
+        "lat": 34.3476087,
+        "lon": 132.5296848
+      },
+      "type": "bus_stop",
+      "zone_id": "23560 1"
+    },
+    {
+      "id": "23570 1",
+      "name": "矢野ニュータウン入口",
+      "coordinates": {
+        "lat": 34.3433332,
+        "lon": 132.5288242
+      },
+      "type": "bus_stop",
+      "zone_id": "23570 1"
+    },
+    {
+      "id": "23580 1",
+      "name": "矢野ニュータウン下",
+      "coordinates": {
+        "lat": 34.3415199,
+        "lon": 132.5291244
+      },
+      "type": "bus_stop",
+      "zone_id": "23580 1"
+    },
+    {
+      "id": "23590 1",
+      "name": "矢野ニュータウン公園",
+      "coordinates": {
+        "lat": 34.3395516,
+        "lon": 132.53025
+      },
+      "type": "bus_stop",
+      "zone_id": "23590 1"
+    },
+    {
+      "id": "23600 1",
+      "name": "矢野ニュータウン中",
+      "coordinates": {
+        "lat": 34.3377716,
+        "lon": 132.5325354
+      },
+      "type": "bus_stop",
+      "zone_id": "23600 1"
+    },
+    {
+      "id": "23610 1",
+      "name": "矢野ニュータウン上",
+      "coordinates": {
+        "lat": 34.337661,
+        "lon": 132.5359118
+      },
+      "type": "bus_stop",
+      "zone_id": "23610 1"
+    },
+    {
+      "id": "23920 2",
+      "name": "五日市中央二丁目",
+      "coordinates": {
+        "lat": 34.3707452,
+        "lon": 132.355349
+      },
+      "type": "bus_stop",
+      "zone_id": "23920 2"
+    },
+    {
+      "id": "23930 2",
+      "name": "五日市中央公民館",
+      "coordinates": {
+        "lat": 34.3715429,
+        "lon": 132.3522793
+      },
+      "type": "bus_stop",
+      "zone_id": "23930 2"
+    },
+    {
+      "id": "24030 2",
+      "name": "五日市五丁目口",
+      "coordinates": {
+        "lat": 34.3701788,
+        "lon": 132.3584863
+      },
+      "type": "bus_stop",
+      "zone_id": "24030 2"
+    },
+    {
+      "id": "3200 2",
+      "name": "坪井公民館",
+      "coordinates": {
+        "lat": 34.3736976,
+        "lon": 132.3518947
+      },
+      "type": "bus_stop",
+      "zone_id": "3200 2"
+    },
+    {
+      "id": "3210 2",
+      "name": "千同橋",
+      "coordinates": {
+        "lat": 34.3767911,
+        "lon": 132.3531565
+      },
+      "type": "bus_stop",
+      "zone_id": "3210 2"
+    },
+    {
+      "id": "3220 2",
+      "name": "岡の下橋",
+      "coordinates": {
+        "lat": 34.3797985,
+        "lon": 132.3543795
+      },
+      "type": "bus_stop",
+      "zone_id": "3220 2"
+    },
+    {
+      "id": "3250 2",
+      "name": "保井田",
+      "coordinates": {
+        "lat": 34.3905164,
+        "lon": 132.3559257
+      },
+      "type": "bus_stop",
+      "zone_id": "3250 2"
+    },
+    {
+      "id": "3260 2",
+      "name": "八幡学校",
+      "coordinates": {
+        "lat": 34.3924932,
+        "lon": 132.3570676
+      },
+      "type": "bus_stop",
+      "zone_id": "3260 2"
+    },
+    {
+      "id": "3270 2",
+      "name": "寺地",
+      "coordinates": {
+        "lat": 34.3954628,
+        "lon": 132.3584952
+      },
+      "type": "bus_stop",
+      "zone_id": "3270 2"
+    },
+    {
+      "id": "3280 2",
+      "name": "八幡",
+      "coordinates": {
+        "lat": 34.3982526,
+        "lon": 132.3593124
+      },
+      "type": "bus_stop",
+      "zone_id": "3280 2"
+    },
+    {
+      "id": "3290 2",
+      "name": "三和中学入口",
+      "coordinates": {
+        "lat": 34.40088444,
+        "lon": 132.359598
+      },
+      "type": "bus_stop",
+      "zone_id": "3290 2"
+    },
+    {
+      "id": "3400 2",
+      "name": "川坂",
+      "coordinates": {
+        "lat": 34.4036931,
+        "lon": 132.3545607
+      },
+      "type": "bus_stop",
+      "zone_id": "3400 2"
+    },
+    {
+      "id": "3410 2",
+      "name": "河内下城",
+      "coordinates": {
+        "lat": 34.40973342,
+        "lon": 132.3549313
+      },
+      "type": "bus_stop",
+      "zone_id": "3410 2"
+    },
+    {
+      "id": "3420 2",
+      "name": "河内農協",
+      "coordinates": {
+        "lat": 34.41326638,
+        "lon": 132.3553144
+      },
+      "type": "bus_stop",
+      "zone_id": "3420 2"
+    },
+    {
+      "id": "3430 2",
+      "name": "原田橋",
+      "coordinates": {
+        "lat": 34.4165593,
+        "lon": 132.3563285
+      },
+      "type": "bus_stop",
+      "zone_id": "3430 2"
+    },
+    {
+      "id": "4390 3",
+      "name": "古江",
+      "coordinates": {
+        "lat": 34.3919396,
+        "lon": 132.4112249
+      },
+      "type": "bus_stop",
+      "zone_id": "4390 3"
+    },
+    {
+      "id": "50020 22",
+      "name": "紙屋町",
+      "coordinates": {
+        "lat": 34.39515346,
+        "lon": 132.45879
+      },
+      "type": "bus_stop",
+      "zone_id": "50020 22"
+    },
+    {
+      "id": "50101 1",
+      "name": "矢賀新町二丁目",
+      "coordinates": {
+        "lat": 34.39403756,
+        "lon": 132.496037
+      },
+      "type": "bus_stop",
+      "zone_id": "50101 1"
+    },
+    {
+      "id": "50102 1",
+      "name": "大須三丁目",
+      "coordinates": {
+        "lat": 34.397335,
+        "lon": 132.5003348
+      },
+      "type": "bus_stop",
+      "zone_id": "50102 1"
+    },
+    {
+      "id": "50103 1",
+      "name": "本町五丁目",
+      "coordinates": {
+        "lat": 34.39855387,
+        "lon": 132.5032195
+      },
+      "type": "bus_stop",
+      "zone_id": "50103 1"
+    },
+    {
+      "id": "50104 1",
+      "name": "本町四丁目",
+      "coordinates": {
+        "lat": 34.3997443,
+        "lon": 132.5061219
+      },
+      "type": "bus_stop",
+      "zone_id": "50104 1"
+    },
+    {
+      "id": "50105 1",
+      "name": "矢賀駅入口",
+      "coordinates": {
+        "lat": 34.3969868,
+        "lon": 132.498043
+      },
+      "type": "bus_stop",
+      "zone_id": "50105 1"
+    },
+    {
+      "id": "50110 1",
+      "name": "矢賀新町",
+      "coordinates": {
+        "lat": 34.3928631,
+        "lon": 132.4966062
+      },
+      "type": "bus_stop",
+      "zone_id": "50110 1"
+    },
+    {
+      "id": "50110 2",
+      "name": "矢賀新町",
+      "coordinates": {
+        "lat": 34.3928542,
+        "lon": 132.4962025
+      },
+      "type": "bus_stop",
+      "zone_id": "50110 2"
+    },
+    {
+      "id": "50120 1",
+      "name": "天神川駅北",
+      "coordinates": {
+        "lat": 34.3919207,
+        "lon": 132.4990399
+      },
+      "type": "bus_stop",
+      "zone_id": "50120 1"
+    },
+    {
+      "id": "50120 2",
+      "name": "天神川駅北",
+      "coordinates": {
+        "lat": 34.3917072,
+        "lon": 132.4991556
+      },
+      "type": "bus_stop",
+      "zone_id": "50120 2"
+    },
+    {
+      "id": "50123 1",
+      "name": "大須一丁目",
+      "coordinates": {
+        "lat": 34.391334,
+        "lon": 132.5005501
+      },
+      "type": "bus_stop",
+      "zone_id": "50123 1"
+    },
+    {
+      "id": "50130 1",
+      "name": "府中大橋",
+      "coordinates": {
+        "lat": 34.39043805,
+        "lon": 132.5018533
+      },
+      "type": "bus_stop",
+      "zone_id": "50130 1"
+    },
+    {
+      "id": "50130 2",
+      "name": "府中大橋",
+      "coordinates": {
+        "lat": 34.3901257,
+        "lon": 132.501975
+      },
+      "type": "bus_stop",
+      "zone_id": "50130 2"
+    },
+    {
+      "id": "50131 1",
+      "name": "大通一丁目",
+      "coordinates": {
+        "lat": 34.38940487,
+        "lon": 132.5046365
+      },
+      "type": "bus_stop",
+      "zone_id": "50131 1"
+    },
+    {
+      "id": "50140 1",
+      "name": "浜田一丁目",
+      "coordinates": {
+        "lat": 34.3884961,
+        "lon": 132.5078445
+      },
+      "type": "bus_stop",
+      "zone_id": "50140 1"
+    },
+    {
+      "id": "50140 2",
+      "name": "浜田一丁目",
+      "coordinates": {
+        "lat": 34.38872163,
+        "lon": 132.5059697
+      },
+      "type": "bus_stop",
+      "zone_id": "50140 2"
+    },
+    {
+      "id": "50150 2",
+      "name": "浜田二丁目",
+      "coordinates": {
+        "lat": 34.3878506,
+        "lon": 132.509374
+      },
+      "type": "bus_stop",
+      "zone_id": "50150 2"
+    },
+    {
+      "id": "50151 2",
+      "name": "浜田三丁目",
+      "coordinates": {
+        "lat": 34.3859766,
+        "lon": 132.5144475
+      },
+      "type": "bus_stop",
+      "zone_id": "50151 2"
+    },
+    {
+      "id": "50160 2",
+      "name": "府中永田",
+      "coordinates": {
+        "lat": 34.3848374,
+        "lon": 132.5166305
+      },
+      "type": "bus_stop",
+      "zone_id": "50160 2"
+    },
+    {
+      "id": "50260 2",
+      "name": "城ヶ丘入口",
+      "coordinates": {
+        "lat": 34.4023546,
+        "lon": 132.5068172
+      },
+      "type": "bus_stop",
+      "zone_id": "50260 2"
+    },
+    {
+      "id": "50270 2",
+      "name": "府中変電所",
+      "coordinates": {
+        "lat": 34.4033317,
+        "lon": 132.5059792
+      },
+      "type": "bus_stop",
+      "zone_id": "50270 2"
+    },
+    {
+      "id": "50271 2",
+      "name": "温品四丁目",
+      "coordinates": {
+        "lat": 34.40833626,
+        "lon": 132.5090519
+      },
+      "type": "bus_stop",
+      "zone_id": "50271 2"
+    },
+    {
+      "id": "50360 1",
+      "name": "大手町四丁目",
+      "coordinates": {
+        "lat": 34.3849678,
+        "lon": 132.4530812
+      },
+      "type": "bus_stop",
+      "zone_id": "50360 1"
+    },
+    {
+      "id": "50360 3",
+      "name": "大手町四丁目",
+      "coordinates": {
+        "lat": 34.3846614,
+        "lon": 132.4530554
+      },
+      "type": "bus_stop",
+      "zone_id": "50360 3"
+    },
+    {
+      "id": "50370 1",
+      "name": "加古町",
+      "coordinates": {
+        "lat": 34.3853567,
+        "lon": 132.4478984
+      },
+      "type": "bus_stop",
+      "zone_id": "50370 1"
+    },
+    {
+      "id": "50380 1",
+      "name": "舟入本町",
+      "coordinates": {
+        "lat": 34.3857965,
+        "lon": 132.4449532
+      },
+      "type": "bus_stop",
+      "zone_id": "50380 1"
+    },
+    {
+      "id": "50390 2",
+      "name": "新観音橋東",
+      "coordinates": {
+        "lat": 34.386521,
+        "lon": 132.4417345
+      },
+      "type": "bus_stop",
+      "zone_id": "50390 2"
+    },
+    {
+      "id": "50400 2",
+      "name": "新観音橋西",
+      "coordinates": {
+        "lat": 34.3875085,
+        "lon": 132.4388378
+      },
+      "type": "bus_stop",
+      "zone_id": "50400 2"
+    },
+    {
+      "id": "50410 2",
+      "name": "観音本町",
+      "coordinates": {
+        "lat": 34.3881366,
+        "lon": 132.4368755
+      },
+      "type": "bus_stop",
+      "zone_id": "50410 2"
+    },
+    {
+      "id": "50660 1",
+      "name": "柞木",
+      "coordinates": {
+        "lat": 34.3671744,
+        "lon": 132.4993861
+      },
+      "type": "bus_stop",
+      "zone_id": "50660 1"
+    },
+    {
+      "id": "50780 1",
+      "name": "牛田旭",
+      "coordinates": {
+        "lat": 34.4124317,
+        "lon": 132.4737261
+      },
+      "type": "bus_stop",
+      "zone_id": "50780 1"
+    },
+    {
+      "id": "50960 1",
+      "name": "牛田南",
+      "coordinates": {
+        "lat": 34.4085173,
+        "lon": 132.4734375
+      },
+      "type": "bus_stop",
+      "zone_id": "50960 1"
+    },
+    {
+      "id": "50970 1",
+      "name": "牛田東一丁目",
+      "coordinates": {
+        "lat": 34.41033,
+        "lon": 132.4783897
+      },
+      "type": "bus_stop",
+      "zone_id": "50970 1"
+    },
+    {
+      "id": "50971 1",
+      "name": "牛田東二丁目",
+      "coordinates": {
+        "lat": 34.4108085,
+        "lon": 132.4808706
+      },
+      "type": "bus_stop",
+      "zone_id": "50971 1"
+    },
+    {
+      "id": "50972 1",
+      "name": "女学院大学前",
+      "coordinates": {
+        "lat": 34.4118149,
+        "lon": 132.4833924
+      },
+      "type": "bus_stop",
+      "zone_id": "50972 1"
+    },
+    {
+      "id": "50973 1",
+      "name": "早稲田団地郵便局前",
+      "coordinates": {
+        "lat": 34.4145661,
+        "lon": 132.4821838
+      },
+      "type": "bus_stop",
+      "zone_id": "50973 1"
+    },
+    {
+      "id": "50974 1",
+      "name": "牛田早稲田団地",
+      "coordinates": {
+        "lat": 34.4164495,
+        "lon": 132.4834071
+      },
+      "type": "bus_stop",
+      "zone_id": "50974 1"
+    },
+    {
+      "id": "50980 1",
+      "name": "白島九軒町",
+      "coordinates": {
+        "lat": 34.4080621,
+        "lon": 132.4664536
+      },
+      "type": "bus_stop",
+      "zone_id": "50980 1"
+    },
+    {
+      "id": "50990 1",
+      "name": "白島町",
+      "coordinates": {
+        "lat": 34.4049942,
+        "lon": 132.4656965
+      },
+      "type": "bus_stop",
+      "zone_id": "50990 1"
+    },
+    {
+      "id": "51111 2",
+      "name": "江波南二丁目",
+      "coordinates": {
+        "lat": 34.3633154,
+        "lon": 132.4314544
+      },
+      "type": "bus_stop",
+      "zone_id": "51111 2"
+    },
+    {
+      "id": "51120 1",
+      "name": "江波三菱前",
+      "coordinates": {
+        "lat": 34.3614292,
+        "lon": 132.4307924
+      },
+      "type": "bus_stop",
+      "zone_id": "51120 1"
+    },
+    {
+      "id": "51130 1",
+      "name": "江波栄町",
+      "coordinates": {
+        "lat": 34.3659728,
+        "lon": 132.4306857
+      },
+      "type": "bus_stop",
+      "zone_id": "51130 1"
+    },
+    {
+      "id": "51140 1",
+      "name": "江波西二丁目",
+      "coordinates": {
+        "lat": 34.3677952,
+        "lon": 132.4301652
+      },
+      "type": "bus_stop",
+      "zone_id": "51140 1"
+    },
+    {
+      "id": "51150 1",
+      "name": "二本松一丁目",
+      "coordinates": {
+        "lat": 34.3697755,
+        "lon": 132.4300861
+      },
+      "type": "bus_stop",
+      "zone_id": "51150 1"
+    },
+    {
+      "id": "51160 1",
+      "name": "皿山公園下",
+      "coordinates": {
+        "lat": 34.3697739,
+        "lon": 132.4330559
+      },
+      "type": "bus_stop",
+      "zone_id": "51160 1"
+    },
+    {
+      "id": "51170 1",
+      "name": "江波西一丁目",
+      "coordinates": {
+        "lat": 34.3698166,
+        "lon": 132.4350847
+      },
+      "type": "bus_stop",
+      "zone_id": "51170 1"
+    },
+    {
+      "id": "51180 2",
+      "name": "江波営業所",
+      "coordinates": {
+        "lat": 34.3720073,
+        "lon": 132.4358676
+      },
+      "type": "bus_stop",
+      "zone_id": "51180 2"
+    },
+    {
+      "id": "51370 2",
+      "name": "大学病院南門",
+      "coordinates": {
+        "lat": 34.3775518,
+        "lon": 132.4796361
+      },
+      "type": "bus_stop",
+      "zone_id": "51370 2"
+    },
+    {
+      "id": "51401 2",
+      "name": "向洋本町",
+      "coordinates": {
+        "lat": 34.3692944,
+        "lon": 132.5063464
+      },
+      "type": "bus_stop",
+      "zone_id": "51401 2"
+    },
+    {
+      "id": "51402 2",
+      "name": "堀越三丁目",
+      "coordinates": {
+        "lat": 34.3690674,
+        "lon": 132.5106387
+      },
+      "type": "bus_stop",
+      "zone_id": "51402 2"
+    },
+    {
+      "id": "51403 2",
+      "name": "向洋新町一丁目",
+      "coordinates": {
+        "lat": 34.366466,
+        "lon": 132.5110781
+      },
+      "type": "bus_stop",
+      "zone_id": "51403 2"
+    },
+    {
+      "id": "51404 2",
+      "name": "向洋新町二丁目",
+      "coordinates": {
+        "lat": 34.3644416,
+        "lon": 132.5093599
+      },
+      "type": "bus_stop",
+      "zone_id": "51404 2"
+    },
+    {
+      "id": "51405 2",
+      "name": "向洋新町三丁目",
+      "coordinates": {
+        "lat": 34.3636065,
+        "lon": 132.507612
+      },
+      "type": "bus_stop",
+      "zone_id": "51405 2"
+    },
+    {
+      "id": "51406 2",
+      "name": "向洋新町",
+      "coordinates": {
+        "lat": 34.3620453,
+        "lon": 132.504841
+      },
+      "type": "bus_stop",
+      "zone_id": "51406 2"
+    },
+    {
+      "id": "51407 1",
+      "name": "向洋新町車庫",
+      "coordinates": {
+        "lat": 34.3611026,
+        "lon": 132.5036479
+      },
+      "type": "bus_stop",
+      "zone_id": "51407 1"
+    },
+    {
+      "id": "52360 2",
+      "name": "牛田本町一丁目",
+      "coordinates": {
+        "lat": 34.4093289,
+        "lon": 132.4715689
+      },
+      "type": "bus_stop",
+      "zone_id": "52360 2"
+    },
+    {
+      "id": "52400 1",
+      "name": "牛田早稲田三丁目",
+      "coordinates": {
+        "lat": 34.4163717,
+        "lon": 132.482281
+      },
+      "type": "bus_stop",
+      "zone_id": "52400 1"
+    },
+    {
+      "id": "5310 2",
+      "name": "南海田",
+      "coordinates": {
+        "lat": 34.3639853,
+        "lon": 132.5339534
+      },
+      "type": "bus_stop",
+      "zone_id": "5310 2"
+    },
+    {
+      "id": "5320 2",
+      "name": "自衛隊前",
+      "coordinates": {
+        "lat": 34.3606915,
+        "lon": 132.53437
+      },
+      "type": "bus_stop",
+      "zone_id": "5320 2"
+    },
+    {
+      "id": "5440 12",
+      "name": "呉駅前",
+      "coordinates": {
+        "lat": 34.24558786,
+        "lon": 132.5586553
+      },
+      "type": "bus_stop",
+      "zone_id": "5440 12"
+    },
+    {
+      "id": "5440 9",
+      "name": "呉駅前",
+      "coordinates": {
+        "lat": 34.2453818,
+        "lon": 132.5581786
+      },
+      "type": "bus_stop",
+      "zone_id": "5440 9"
+    },
+    {
+      "id": "5500 1",
+      "name": "神崎",
+      "coordinates": {
+        "lat": 34.3545804,
+        "lon": 132.535939
+      },
+      "type": "bus_stop",
+      "zone_id": "5500 1"
+    },
+    {
+      "id": "5630 1",
+      "name": "団地西入口",
+      "coordinates": {
+        "lat": 34.3291186,
+        "lon": 132.5634732
+      },
+      "type": "bus_stop",
+      "zone_id": "5630 1"
+    },
+    {
+      "id": "5640 2",
+      "name": "境橋",
+      "coordinates": {
+        "lat": 34.3252845,
+        "lon": 132.5660172
+      },
+      "type": "bus_stop",
+      "zone_id": "5640 2"
+    },
+    {
+      "id": "5680 1",
+      "name": "熊野営業所",
+      "coordinates": {
+        "lat": 34.3314478,
+        "lon": 132.5646919
+      },
+      "type": "bus_stop",
+      "zone_id": "5680 1"
+    },
+    {
+      "id": "5680 3",
+      "name": "熊野営業所",
+      "coordinates": {
+        "lat": 34.3316906,
+        "lon": 132.5647939
+      },
+      "type": "bus_stop",
+      "zone_id": "5680 3"
+    },
+    {
+      "id": "80008 2",
+      "name": "総監部前",
+      "coordinates": {
+        "lat": 34.2358343,
+        "lon": 132.5613135
+      },
+      "type": "bus_stop",
+      "zone_id": "80008 2"
+    },
+    {
+      "id": "80009 2",
+      "name": "子規句碑前",
+      "coordinates": {
+        "lat": 34.2324439,
+        "lon": 132.5607346
+      },
+      "type": "bus_stop",
+      "zone_id": "80009 2"
+    },
+    {
+      "id": "80442 2",
+      "name": "中央１丁目",
+      "coordinates": {
+        "lat": 34.2462493,
+        "lon": 132.5597642
+      },
+      "type": "bus_stop",
+      "zone_id": "80442 2"
+    },
+    {
+      "id": "80444 3",
+      "name": "中央２丁目",
+      "coordinates": {
+        "lat": 34.2452459,
+        "lon": 132.5619113
+      },
+      "type": "bus_stop",
+      "zone_id": "80444 3"
+    },
+    {
+      "id": "80446 3",
+      "name": "中央３丁目",
+      "coordinates": {
+        "lat": 34.2465469,
+        "lon": 132.5632249
+      },
+      "type": "bus_stop",
+      "zone_id": "80446 3"
+    },
+    {
+      "id": "80450 1",
+      "name": "呉市役所前",
+      "coordinates": {
+        "lat": 34.2481901,
+        "lon": 132.5657872
+      },
+      "type": "bus_stop",
+      "zone_id": "80450 1"
+    },
+    {
+      "id": "80451 1",
+      "name": "中央６丁目",
+      "coordinates": {
+        "lat": 34.2504864,
+        "lon": 132.5673758
+      },
+      "type": "bus_stop",
+      "zone_id": "80451 1"
+    },
+    {
+      "id": "80452 3",
+      "name": "明神橋",
+      "coordinates": {
+        "lat": 34.2514641,
+        "lon": 132.5683657
+      },
+      "type": "bus_stop",
+      "zone_id": "80452 3"
+    },
+    {
+      "id": "80453 1",
+      "name": "植木屋筋",
+      "coordinates": {
+        "lat": 34.2560381,
+        "lon": 132.5721813
+      },
+      "type": "bus_stop",
+      "zone_id": "80453 1"
+    },
+    {
+      "id": "80454 1",
+      "name": "鉄管道路",
+      "coordinates": {
+        "lat": 34.2573191,
+        "lon": 132.572789
+      },
+      "type": "bus_stop",
+      "zone_id": "80454 1"
+    },
+    {
+      "id": "80460 1",
+      "name": "東中央３丁目",
+      "coordinates": {
+        "lat": 34.2545844,
+        "lon": 132.5702961
+      },
+      "type": "bus_stop",
+      "zone_id": "80460 1"
+    },
+    {
+      "id": "80461 1",
+      "name": "郷町",
+      "coordinates": {
+        "lat": 34.2537849,
+        "lon": 132.5688303
+      },
+      "type": "bus_stop",
+      "zone_id": "80461 1"
+    },
+    {
+      "id": "10 2",
+      "name": "広島バスセンター",
+      "coordinates": {
+        "lat": 34.3963108,
+        "lon": 132.455932
+      },
+      "type": "bus_stop",
+      "zone_id": "10 2"
+    },
+    {
+      "id": "10 3",
+      "name": "広島バスセンター",
+      "coordinates": {
+        "lat": 34.3962905,
+        "lon": 132.4560001
+      },
+      "type": "bus_stop",
+      "zone_id": "10 3"
+    },
+    {
+      "id": "10 4",
+      "name": "広島バスセンター",
+      "coordinates": {
+        "lat": 34.3962673,
+        "lon": 132.4561076
+      },
+      "type": "bus_stop",
+      "zone_id": "10 4"
+    },
+    {
+      "id": "10 5",
+      "name": "広島バスセンター",
+      "coordinates": {
+        "lat": 34.3962396,
+        "lon": 132.4562271
+      },
+      "type": "bus_stop",
+      "zone_id": "10 5"
+    },
+    {
+      "id": "10 6",
+      "name": "広島バスセンター",
+      "coordinates": {
+        "lat": 34.3962149,
+        "lon": 132.456321
+      },
+      "type": "bus_stop",
+      "zone_id": "10 6"
+    },
+    {
+      "id": "1000 2",
+      "name": "玖波分れ",
+      "coordinates": {
+        "lat": 34.3571531,
+        "lon": 132.2104708
+      },
+      "type": "bus_stop",
+      "zone_id": "1000 2"
+    },
+    {
+      "id": "1010 2",
+      "name": "河津",
+      "coordinates": {
+        "lat": 34.358715,
+        "lon": 132.2050509
+      },
+      "type": "bus_stop",
+      "zone_id": "1010 2"
+    },
+    {
+      "id": "1020 2",
+      "name": "中山",
+      "coordinates": {
+        "lat": 34.3617229,
+        "lon": 132.1995971
+      },
+      "type": "bus_stop",
+      "zone_id": "1020 2"
+    },
+    {
+      "id": "1030 2",
+      "name": "浜本工芸前",
+      "coordinates": {
+        "lat": 34.3644453,
+        "lon": 132.1923034
+      },
+      "type": "bus_stop",
+      "zone_id": "1030 2"
+    },
+    {
+      "id": "1040 2",
+      "name": "佐伯中学校前",
+      "coordinates": {
+        "lat": 34.3659685,
+        "lon": 132.1904116
+      },
+      "type": "bus_stop",
+      "zone_id": "1040 2"
+    },
+    {
+      "id": "105 1",
+      "name": "アルパーク",
+      "coordinates": {
+        "lat": 34.37393792,
+        "lon": 132.3938797
+      },
+      "type": "bus_stop",
+      "zone_id": "105 1"
+    },
+    {
+      "id": "105 6",
+      "name": "アルパーク",
+      "coordinates": {
+        "lat": 34.37365463,
+        "lon": 132.3945797
+      },
+      "type": "bus_stop",
+      "zone_id": "105 6"
+    },
+    {
+      "id": "1050 2",
+      "name": "佐伯高校前",
+      "coordinates": {
+        "lat": 34.3661094,
+        "lon": 132.1870532
+      },
+      "type": "bus_stop",
+      "zone_id": "1050 2"
+    },
+    {
+      "id": "1060 2",
+      "name": "津田神社",
+      "coordinates": {
+        "lat": 34.3659295,
+        "lon": 132.1826476
+      },
+      "type": "bus_stop",
+      "zone_id": "1060 2"
+    },
+    {
+      "id": "1070 2",
+      "name": "十王堂",
+      "coordinates": {
+        "lat": 34.3660493,
+        "lon": 132.1788884
+      },
+      "type": "bus_stop",
+      "zone_id": "1070 2"
+    },
+    {
+      "id": "1075 1",
+      "name": "さいき文化センター",
+      "coordinates": {
+        "lat": 34.3663406,
+        "lon": 132.1776747
+      },
+      "type": "bus_stop",
+      "zone_id": "1075 1"
+    },
+    {
+      "id": "1080 2",
+      "name": "佐伯支所",
+      "coordinates": {
+        "lat": 34.3671761,
+        "lon": 132.1777091
+      },
+      "type": "bus_stop",
+      "zone_id": "1080 2"
+    },
+    {
+      "id": "1090 1",
+      "name": "津田",
+      "coordinates": {
+        "lat": 34.3679368,
+        "lon": 132.1748553
+      },
+      "type": "bus_stop",
+      "zone_id": "1090 1"
+    }
+  ],
+  "analytics": {
+    "total_operators": 2,
+    "total_routes": 169,
+    "total_stops": 2416,
+    "coverage_area": {
+      "min_lat": 34.1018691,
+      "max_lat": 34.6703221,
+      "min_lon": 132.1748553,
+      "max_lon": 132.9188033,
+      "center_lat": 34.39752876655907,
+      "center_lon": 132.45688948122176
+    },
+    "route_types": {
+      "3": 169
+    }
+  }
+}

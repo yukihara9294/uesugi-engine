@@ -1,0 +1,14 @@
+[
+  {
+    "source": "国土数値情報",
+    "type": "public_facilities",
+    "url": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P02-v2_0.html",
+    "note": "手動ダウンロードが必要"
+  },
+  {
+    "source": "国土数値情報",
+    "type": "tourist_resources",
+    "url": "https://nlftp.mlit.go.jp/ksj/gml/datalist/KsjTmplt-P12-v2_0.html",
+    "note": "手動ダウンロードが必要"
+  }
+]

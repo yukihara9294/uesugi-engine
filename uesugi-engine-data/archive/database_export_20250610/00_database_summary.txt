@@ -1,0 +1,10 @@
+     table_name     | record_count 
+--------------------+--------------
+ テーブル名         | レコード数
+ landmark_data      | 125
+ accommodation_data | 3549
+ heatmap_points     | 24850
+ mobility_flows     | 87500
+ consumption_data   | 227500
+(6 rows)
+
