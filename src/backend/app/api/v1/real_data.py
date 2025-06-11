@@ -8,7 +8,7 @@ import json
 import os
 from pathlib import Path
 from sqlalchemy.orm import Session
-from ...database import get_db
+from app.core.database import get_db
 
 router = APIRouter()
 

@@ -79,4 +79,13 @@ export const eventService = {
   getImpactZones: () => apiService.get('/api/v1/events/impact-zones'),
 };
 
+// 実データサービス
+export const realDataService = {
+  getAccommodation: (prefecture) => apiService.get(`/api/v1/real/accommodation/real/${prefecture}`),
+  getMobility: (prefecture) => apiService.get(`/api/v1/real/mobility/real/${prefecture}`),
+  getEvents: (prefecture) => apiService.get(`/api/v1/real/events/real/${prefecture}`),
+  getTransportGTFS: () => apiService.get('/api/v1/real/transport/gtfs/hiroshima'),
+  getTourismFacilities: () => apiService.get('/api/v1/real/tourism/facilities/yamaguchi'),
+};
+
 export default apiService;
