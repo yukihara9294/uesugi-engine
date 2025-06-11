@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import { Box, Container, Alert, Snackbar, IconButton, Fab, Tooltip, Dialog, DialogContent } from '@mui/material';
-import { ChevronRight, ChevronLeft, Science as ScienceIcon } from '@mui/icons-material';
+import { ChevronRight, ChevronLeft, Science as ScienceIcon, LocationCity as CityIcon } from '@mui/icons-material';
 
 // コンポーネント
 import Header from './components/Header/Header';
@@ -619,17 +619,33 @@ function App() {
           currentPrefecture={currentPrefecture}
         />
         
-        {/* 新機能デモボタン */}
-        <Box sx={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1200 }}>
-          <Tooltip title="新機能デモ" placement="right">
+        {/* 新機能ボタン群 */}
+        <Box sx={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1200, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Tooltip title="統合ダッシュボード" placement="right">
             <Fab 
-              color="secondary" 
-              onClick={() => setShowcaseOpen(true)}
+              color="primary" 
+              onClick={() => setIntegratedDashboardOpen(true)}
               sx={{
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 boxShadow: '0 4px 20px rgba(102, 126, 234, 0.4)',
                 '&:hover': {
                   background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                }
+              }}
+            >
+              <CityIcon />
+            </Fab>
+          </Tooltip>
+          <Tooltip title="新機能デモ" placement="right">
+            <Fab 
+              color="secondary" 
+              onClick={() => setShowcaseOpen(true)}
+              size="small"
+              sx={{
+                background: 'linear-gradient(135deg, #764ba2 0%, #f953c6 100%)',
+                boxShadow: '0 4px 20px rgba(118, 75, 162, 0.4)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #f953c6 0%, #764ba2 100%)',
                 }
               }}
             >
