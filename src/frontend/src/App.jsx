@@ -6,8 +6,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Box, Container, Alert, Snackbar, IconButton } from '@mui/material';
-import { ChevronRight, ChevronLeft } from '@mui/icons-material';
+import { Box, Container, Alert, Snackbar, IconButton, Fab, Tooltip, Dialog, DialogContent } from '@mui/material';
+import { ChevronRight, ChevronLeft, Science as ScienceIcon } from '@mui/icons-material';
 
 // コンポーネント
 import Header from './components/Header/Header';
@@ -17,6 +17,11 @@ import LeftSidebar from './components/Sidebar/LeftSidebar';
 import RightSidebar from './components/Sidebar/RightSidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 import AIAnalysisModal from './components/AIAnalysis/AIAnalysisModal';
+
+// 新機能コンポーネント
+import VisualizationShowcase from './components/VisualizationShowcase';
+import IntegratedDashboard from './components/IntegratedDashboard';
+import BuildingAnalysis from './components/BuildingAnalysis';
 
 // サービス
 import { weatherService, heatmapService, mobilityService, eventService } from './services/api';
@@ -156,6 +161,10 @@ function App() {
   const [dashboardOpen, setDashboardOpen] = useState(false);
   const [currentPrefecture, setCurrentPrefecture] = useState('広島県');
   const [aiAnalysisOpen, setAIAnalysisOpen] = useState(false);
+  
+  // 新機能デモ表示状態
+  const [showcaseOpen, setShowcaseOpen] = useState(false);
+  const [integratedDashboardOpen, setIntegratedDashboardOpen] = useState(false);
 
   // 初期データ読み込み
   useEffect(() => {
@@ -609,6 +618,126 @@ function App() {
           timeRange={timeRange}
           currentPrefecture={currentPrefecture}
         />
+        
+        {/* 新機能デモボタン */}
+        <Box sx={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1200 }}>
+          <Tooltip title="新機能デモ" placement="right">
+            <Fab 
+              color="secondary" 
+              onClick={() => setShowcaseOpen(true)}
+              sx={{
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                boxShadow: '0 4px 20px rgba(102, 126, 234, 0.4)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                }
+              }}
+            >
+              <ScienceIcon />
+            </Fab>
+          </Tooltip>
+        </Box>
+        
+        {/* 可視化ショーケースダイアログ */}
+        <Dialog
+          fullScreen
+          open={showcaseOpen}
+          onClose={() => setShowcaseOpen(false)}
+          TransitionProps={{ unmountOnExit: true }}
+        >
+          <DialogContent sx={{ p: 0, bgcolor: 'background.default' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              height: '100vh',
+              overflow: 'auto'
+            }}>
+              {/* ヘッダー */}
+              <Box sx={{ 
+                p: 2, 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                borderBottom: 1,
+                borderColor: 'divider'
+              }}>
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <IconButton onClick={() => setShowcaseOpen(false)}>
+                    <ChevronLeft />
+                  </IconButton>
+                  <IconButton 
+                    color="primary"
+                    onClick={() => {
+                      setShowcaseOpen(false);
+                      setIntegratedDashboardOpen(true);
+                    }}
+                  >
+                    統合ダッシュボードを開く
+                  </IconButton>
+                </Box>
+              </Box>
+              
+              {/* ショーケースコンテンツ */}
+              <VisualizationShowcase />
+            </Box>
+          </DialogContent>
+        </Dialog>
+        
+        {/* 統合ダッシュボードダイアログ */}
+        <Dialog
+          fullScreen
+          open={integratedDashboardOpen}
+          onClose={() => setIntegratedDashboardOpen(false)}
+          TransitionProps={{ unmountOnExit: true }}
+        >
+          <DialogContent sx={{ p: 0, bgcolor: 'background.default' }}>
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column',
+              height: '100vh'
+            }}>
+              {/* ヘッダー */}
+              <Box sx={{ 
+                p: 2, 
+                display: 'flex', 
+                alignItems: 'center',
+                borderBottom: 1,
+                borderColor: 'divider'
+              }}>
+                <IconButton onClick={() => setIntegratedDashboardOpen(false)}>
+                  <ChevronLeft />
+                </IconButton>
+                <Box sx={{ ml: 2 }}>
+                  統合ダッシュボード - {currentPrefecture}
+                </Box>
+              </Box>
+              
+              {/* ダッシュボードコンテンツ */}
+              <Box sx={{ flex: 1, position: 'relative' }}>
+                <IntegratedDashboard 
+                  mapRef={mapRef}
+                  currentData={{
+                    heatmapData,
+                    weatherData,
+                    mobilityData,
+                    eventData,
+                    statistics,
+                  }}
+                />
+              </Box>
+              
+              {/* 建物分析パネル（サンプル） */}
+              {currentPrefecture && (
+                <Box sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
+                  <BuildingAnalysis 
+                    prefecture={currentPrefecture}
+                    plateauData={null} // TODO: 実際のPLATEAUデータを渡す
+                  />
+                </Box>
+              )}
+            </Box>
+          </DialogContent>
+        </Dialog>
         
         {/* エラー通知 */}
         <Snackbar
