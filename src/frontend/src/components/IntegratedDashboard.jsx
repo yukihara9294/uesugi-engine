@@ -13,7 +13,9 @@ import {
   IconButton,
   Fab,
   Tooltip,
-  LinearProgress
+  LinearProgress,
+  Tab,
+  Tabs
 } from '@mui/material';
 import {
   Layers as LayersIcon,
@@ -23,13 +25,15 @@ import {
   PlayArrow as PlayIcon,
   Pause as PauseIcon,
   Speed as SpeedIcon,
-  CameraAlt as SnapshotIcon
+  CameraAlt as SnapshotIcon,
+  Assessment as AssessmentIcon
 } from '@mui/icons-material';
+import StatisticsPanel from './Statistics/StatisticsPanel';
 
 /**
  * 統合ダッシュボード - 拡張された可視化機能
  */
-const IntegratedDashboard = ({ mapRef, currentData }) => {
+const IntegratedDashboard = ({ mapRef, currentData, dataCache, selectedPrefecture }) => {
   // レイヤー管理
   const [activeLayers, setActiveLayers] = useState({
     buildings: true,
@@ -56,6 +60,9 @@ const IntegratedDashboard = ({ mapRef, currentData }) => {
   
   // 分析結果
   const [insights, setInsights] = useState([]);
+  
+  // タブ状態
+  const [activeTab, setActiveTab] = useState(0);
 
   // レイヤー切り替え
   const toggleLayer = (layerName) => {
@@ -286,10 +293,19 @@ const IntegratedDashboard = ({ mapRef, currentData }) => {
           </Paper>
         </Grid>
 
-        {/* KPIパネル */}
+        {/* メインパネル with Tabs */}
         <Grid item xs={12} md={9}>
-          <Grid container spacing={2}>
-            {/* 主要指標 */}
+          <Paper elevation={2} sx={{ height: '100%' }}>
+            <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ borderBottom: 1, borderColor: 'divider' }}>
+              <Tab label="KPI" icon={<LayersIcon />} iconPosition="start" />
+              <Tab label="統計分析" icon={<AssessmentIcon />} iconPosition="start" />
+            </Tabs>
+            
+            {/* Tab Panels */}
+            {activeTab === 0 && (
+              <Box sx={{ p: 2 }}>
+                <Grid container spacing={2}>
+                  {/* 主要指標 */}
             <Grid item xs={6} md={3}>
               <Card>
                 <CardContent>
@@ -392,6 +408,19 @@ const IntegratedDashboard = ({ mapRef, currentData }) => {
               </Paper>
             </Grid>
           </Grid>
+                </Box>
+              )}
+              
+              {/* Statistics Tab */}
+              {activeTab === 1 && (
+                <Box sx={{ height: 'calc(100% - 48px)', overflow: 'auto' }}>
+                  <StatisticsPanel 
+                    prefectureData={dataCache?.current?.prefectureData?.[selectedPrefecture]}
+                    selectedPrefecture={selectedPrefecture}
+                  />
+                </Box>
+              )}
+            </Paper>
         </Grid>
       </Grid>
 

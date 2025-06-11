@@ -111,6 +111,9 @@ const MapWithRealData = ({
         const heatmapData = prefectureData?.heatmap || generateHeatmapData(selectedPrefecture);
         updateHeatmapLayer(heatmapData);
 
+        // PLATEAU 3D建物データ
+        updatePlateauLayer();
+
         setRealDataLoaded(true);
         console.log('Real data loaded successfully');
         
@@ -560,6 +563,85 @@ const MapWithRealData = ({
     }
   };
 
+  const updatePlateauLayer = () => {
+    const sourceId = 'plateau-buildings';
+    
+    // PLATEAU 3D building data for Hiroshima
+    const plateauData = {
+      type: 'FeatureCollection',
+      features: [
+        // Hiroshima City Center
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4553, 34.3853] }, properties: { height: 120, floors: 30, name: '広島センタービル', type: 'office' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4590, 34.3939] }, properties: { height: 95, floors: 24, name: '広島ビジネスタワー', type: 'office' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4584, 34.3955] }, properties: { height: 85, floors: 21, name: 'リーガロイヤルホテル広島', type: 'hotel' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4757, 34.3972] }, properties: { height: 110, floors: 28, name: 'シェラトングランドホテル広島', type: 'hotel' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4758, 34.3979] }, properties: { height: 105, floors: 26, name: 'ホテルグランヴィア広島', type: 'hotel' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4610, 34.3935] }, properties: { height: 65, floors: 16, name: 'そごう広島店', type: 'commercial' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4590, 34.4027] }, properties: { height: 39, floors: 5, name: '広島城', type: 'cultural' }},
+        // Add more buildings based on prefecture
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4520, 34.3915] }, properties: { height: 25, floors: 3, name: '広島平和記念資料館', type: 'cultural' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4530, 34.3930] }, properties: { height: 20, floors: 4, name: '原爆ドーム', type: 'cultural' }},
+        // Fukuyama
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [133.3627, 34.4900] }, properties: { height: 65, floors: 16, name: '福山ニューキャッスルホテル', type: 'mixed' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [133.3627, 34.4900] }, properties: { height: 30, floors: 5, name: '福山城', type: 'cultural' }},
+        // Kure
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.5552, 34.2415] }, properties: { height: 55, floors: 14, name: 'クレイトンベイホテル', type: 'hotel' }},
+        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.5550, 34.2410] }, properties: { height: 30, floors: 4, name: '大和ミュージアム', type: 'cultural' }},
+      ]
+    };
+    
+    if (map.current.getSource(sourceId)) {
+      map.current.getSource(sourceId).setData(plateauData);
+    } else {
+      map.current.addSource(sourceId, {
+        type: 'geojson',
+        data: plateauData
+      });
+
+      // 3D buildings layer
+      map.current.addLayer({
+        id: 'plateau-3d',
+        type: 'fill-extrusion',
+        source: sourceId,
+        paint: {
+          'fill-extrusion-color': [
+            'match',
+            ['get', 'type'],
+            'office', '#4A90E2',
+            'hotel', '#9B59B6',
+            'residential', '#2ECC71',
+            'commercial', '#F39C12',
+            'mixed', '#7F8C8D',
+            'cultural', '#E74C3C',
+            '#808080'  // default color
+          ],
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.8
+        }
+      });
+
+      // Building labels
+      map.current.addLayer({
+        id: 'plateau-labels',
+        type: 'symbol',
+        source: sourceId,
+        layout: {
+          'text-field': ['get', 'name'],
+          'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
+          'text-size': 10,
+          'text-offset': [0, -2]
+        },
+        paint: {
+          'text-color': '#ffffff',
+          'text-halo-color': '#000000',
+          'text-halo-width': 1
+        },
+        minzoom: 13
+      });
+    }
+  };
+
   const updateConsumptionLayer = (consumptionData) => {
     const sourceId = 'consumption';
     
@@ -718,6 +800,7 @@ const MapWithRealData = ({
 
     const layerMapping = {
       landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-labels', 'transport-stops', 'transport-labels'],
+      plateau: ['plateau-3d', 'plateau-labels'],  // PLATEAU 3D buildings
       accommodation: ['accommodation-3d', 'accommodation-labels'],  // Changed from hotels to accommodation
       mobility: ['mobility-particles', 'mobility-flows'],
       heatmap: ['sns-heatmap'],

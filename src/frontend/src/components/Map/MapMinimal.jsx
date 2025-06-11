@@ -4,6 +4,8 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import { Box, CircularProgress } from '@mui/material';
+import MapLegend from './MapLegend';
+import LoadingOverlay from '../common/LoadingOverlay';
 
 const MapMinimal = ({ 
   viewport, 
@@ -474,19 +476,7 @@ const MapMinimal = ({
     } // updateLayers関数の終了
   }, [mapLoaded, heatmapData, accommodationData, mobilityData, weatherData, consumptionData, landmarkData, selectedLayers]);
 
-  if (loading) {
-    return (
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        height: '100%',
-        backgroundColor: '#0a0a0a'
-      }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
+  // Loading state is now handled by LoadingOverlay component
 
   return (
     <Box 
@@ -507,26 +497,45 @@ const MapMinimal = ({
           left: 0
         }} 
       />
-      {/* データ状態表示 */}
-      <Box sx={{
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        color: 'white',
-        padding: 1,
-        borderRadius: 1,
-        fontSize: 12,
-        zIndex: 1000
-      }}>
-        <div style={{ fontWeight: 'bold', marginBottom: 4 }}>データ状態</div>
-        <div>ヒートマップ: {selectedLayers.includes('heatmap') ? (heatmapData?.features?.length || 'ダミー') : 'OFF'}</div>
-        <div>宿泊施設: {selectedLayers.includes('accommodation') ? (accommodationData?.facilities?.length || '222') : 'OFF'}件</div>
-        <div>気象: {selectedLayers.includes('weather') ? (weatherData?.current_weather?.length || '5') : 'OFF'}地点</div>
-        <div>人流: {selectedLayers.includes('mobility') ? '8地点' : 'OFF'}</div>
-        <div>消費: {selectedLayers.includes('consumption') ? '7地点' : 'OFF'}</div>
-        <div>ランドマーク: {selectedLayers.includes('landmarks') ? '6箇所' : 'OFF'}</div>
-      </Box>
+      
+      {/* Loading Overlay */}
+      <LoadingOverlay 
+        loading={loading}
+        message="地図データを読み込んでいます..."
+        subMessage="高精度な分析のためにデータを準備しています"
+      />
+      
+      {/* Map Legend */}
+      {!loading && mapLoaded && (
+        <MapLegend 
+          selectedLayers={selectedLayers}
+          position="bottom-left"
+        />
+      )}
+      
+      {/* データ状態表示 (デバッグ用) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Box sx={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          color: 'white',
+          padding: 1,
+          borderRadius: 1,
+          fontSize: 12,
+          zIndex: 1000,
+          display: 'none' // Hidden by default, can be enabled for debugging
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: 4 }}>データ状態</div>
+          <div>ヒートマップ: {selectedLayers.includes('heatmap') ? (heatmapData?.features?.length || 'ダミー') : 'OFF'}</div>
+          <div>宿泊施設: {selectedLayers.includes('accommodation') ? (accommodationData?.facilities?.length || '222') : 'OFF'}件</div>
+          <div>気象: {selectedLayers.includes('weather') ? (weatherData?.current_weather?.length || '5') : 'OFF'}地点</div>
+          <div>人流: {selectedLayers.includes('mobility') ? '8地点' : 'OFF'}</div>
+          <div>消費: {selectedLayers.includes('consumption') ? '7地点' : 'OFF'}</div>
+          <div>ランドマーク: {selectedLayers.includes('landmarks') ? '6箇所' : 'OFF'}</div>
+        </Box>
+      )}
     </Box>
   );
 };

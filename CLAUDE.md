@@ -129,6 +129,20 @@ npm start
    - REGIONAL_DATA_COLLECTION_PLAN.md作成（地域別データ収集計画）
    - MANUAL_DATA_DOWNLOAD_GUIDE.md作成（手動ダウンロードガイド）
 
+### 作業内容 (2025-06-11 続き)
+5. **統合ダッシュボード実装と修正**
+   - 統計パネル（StatisticsPanel）の実装
+   - Rechartsライブラリを使用したデータビジュアライゼーション
+   - 通知システム（NotificationSystem）の実装
+   - モバイル対応ドロワー（MobileDrawer）の追加
+   - マップコントロール（MapControls）の実装
+   - PLATEAUレイヤー対応準備
+
+6. **rechartsエラーの解決**
+   - 「Cannot find module 'recharts'」エラー発生
+   - npm install recharts --legacy-peer-deps で解決
+   - webpackキャッシュ問題への対処
+
 ### 次回優先タスク
 1. **統合データベース設計・実装の継続**
    - 各データソースを統一スキーマに統合
@@ -145,6 +159,7 @@ npm start
 4. **新機能の既存ページへの統合**
    - 統合ダッシュボードをマップビューに組み込み
    - 建物分析パネルの追加
+   - 統計パネルのデータ連携実装
 
 ### 作業内容 (2025-06-08)
 1. イベントデータ可視化機能の実装

@@ -10,7 +10,7 @@ import { Box, Container, Alert, Snackbar, IconButton, Fab, Tooltip, Dialog, Dial
 import { ChevronRight, ChevronLeft, Science as ScienceIcon, LocationCity as CityIcon } from '@mui/icons-material';
 
 // コンポーネント（実データ版を使用）
-import Header from './components/Header/Header';
+import HeaderEnhanced from './components/Header/HeaderEnhanced';
 import MapWithRealData from './components/Map/MapWithRealData';
 import MapErrorBoundary from './components/Map/MapErrorBoundary';
 import LeftSidebar from './components/Sidebar/LeftSidebar';
@@ -20,6 +20,9 @@ import AIAnalysisModal from './components/AIAnalysis/AIAnalysisModal';
 
 // 新機能コンポーネント
 import IntegratedDashboard from './components/IntegratedDashboard';
+
+// Import global styles
+import './styles/global.css';
 
 // サービス
 import { weatherService, heatmapService, mobilityService, eventService } from './services/api';
@@ -35,7 +38,8 @@ import {
 } from './utils/dataGenerator';
 import { 
   generateAllPrefectureData,
-  detectCurrentPrefecture 
+  detectCurrentPrefecture,
+  generateStatisticsFromHeatmap 
 } from './utils/multiPrefectureDataGenerator';
 
 // テーマ設定（既存のものを使用）
@@ -140,13 +144,14 @@ function App() {
   const [selectedArea, setSelectedArea] = useState('全域');
   const [layers, setLayers] = useState({
     landmarks: true,
+    plateau: false,  // PLATEAU 3D buildings layer
     accommodation: true,  // Changed from hotels to accommodation to match MapWithRealData
     mobility: true,
     consumption: false,
     heatmap: true,
     events: true,
   });
-  const [categoryFilter, setCategoryFilter] = useState(null);
+  const [categoryFilter, setCategoryFilter] = useState([]);
   const [timeRange, setTimeRange] = useState({
     start: new Date(Date.now() - 24 * 60 * 60 * 1000),
     end: new Date()
@@ -289,13 +294,15 @@ function App() {
       <CssBaseline />
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         {/* ヘッダー */}
-        <Header 
+        <HeaderEnhanced 
           onAIAnalysisClick={() => setAiAnalysisOpen(true)}
+          onRefresh={initializeData}
           dataCache={dataCache}
           timeRange={timeRange}
           onTimeRangeChange={setTimeRange}
           currentPrefecture={selectedPrefecture}
           onPrefectureSelect={setSelectedPrefecture}
+          dataUpdateTime={dataCache.current.lastUpdate}
         />
 
         {/* メインコンテンツ */}
@@ -305,7 +312,7 @@ function App() {
           <Box
             sx={{
               width: leftSidebarOpen ? 360 : 0,
-              transition: 'width 0.3s ease',
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               overflow: 'hidden',
               position: 'relative',
               zIndex: 2,
@@ -397,7 +404,7 @@ function App() {
           <Box
             sx={{
               width: rightSidebarOpen ? 360 : 0,
-              transition: 'width 0.3s ease',
+              transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               overflow: 'hidden',
               position: 'relative',
               zIndex: 2,
@@ -414,11 +421,18 @@ function App() {
                 });
                 setLayers(updatedLayers);
               }}
-              selectedCategories={categoryFilter ? [categoryFilter] : []}
-              onCategoryChange={(category) => {
-                setCategoryFilter(categoryFilter === category ? null : category);
+              selectedCategories={categoryFilter}
+              onCategoryChange={(categories) => {
+                setCategoryFilter(categories);
               }}
-              statistics={dataCache.current.prefectureData[selectedPrefecture]?.statistics || {}}
+              statistics={
+                dataCache.current.prefectureData[selectedPrefecture]?.heatmap
+                  ? generateStatisticsFromHeatmap(
+                      dataCache.current.prefectureData[selectedPrefecture].heatmap,
+                      categoryFilter
+                    )
+                  : {}
+              }
               onClose={() => setRightSidebarOpen(false)}
             />
           </Box>

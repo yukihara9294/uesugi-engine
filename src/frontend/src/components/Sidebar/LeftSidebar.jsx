@@ -1,5 +1,5 @@
 /**
- * 左サイドバー - 現実世界のデータ
+ * 左サイドバー - 現実世界のデータ (Enhanced with animations)
  */
 
 import React from 'react';
@@ -15,6 +15,10 @@ import {
   ListItem,
   ListItemText,
   Chip,
+  Grow,
+  Fade,
+  Collapse,
+  Tooltip,
 } from '@mui/material';
 import { 
   Layers,
@@ -29,6 +33,7 @@ import {
   Thermostat,
   Water,
   ChevronLeft,
+  LocationCity,
 } from '@mui/icons-material';
 
 const LeftSidebar = ({
@@ -42,6 +47,7 @@ const LeftSidebar = ({
   // 現実世界のデータレイヤー
   const realWorldLayers = [
     { id: 'landmarks', label: 'ランドマーク', icon: <Place />, color: '#FFD700', description: '主要観光地・施設' },
+    { id: 'plateau', label: 'PLATEAU 3D建物', icon: <LocationCity />, color: '#9C27B0', description: '3D建物データ' },
     { id: 'mobility', label: '人流データ', icon: <DirectionsCar />, color: '#00FFFF', description: 'リアルタイム移動情報' },
     { id: 'consumption', label: '消費データ', icon: <ShoppingCart />, color: '#FF69B4', description: '購買・消費動向' },
     { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#4CAF50', description: '稼働率・空室状況' },
@@ -65,7 +71,19 @@ const LeftSidebar = ({
       borderRight: '1px solid rgba(255, 255, 255, 0.05)',
       display: 'flex',
       flexDirection: 'column',
-      boxShadow: '4px 0 24px rgba(0, 0, 0, 0.3)'
+      boxShadow: '4px 0 24px rgba(0, 0, 0, 0.3)',
+      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      animation: 'slideInLeft 0.4s ease-out',
+      '@keyframes slideInLeft': {
+        from: {
+          transform: 'translateX(-100%)',
+          opacity: 0,
+        },
+        to: {
+          transform: 'translateX(0)',
+          opacity: 1,
+        },
+      },
     }}>
       {/* ヘッダー */}
       <Box sx={{ 
@@ -80,20 +98,23 @@ const LeftSidebar = ({
               リアルワールドデータ
             </Typography>
           </Box>
-          <IconButton
-            size="small"
-            onClick={onClose}
-            sx={{
-              color: '#667eea',
-              background: 'rgba(102, 126, 234, 0.1)',
-              '&:hover': {
-                background: 'rgba(102, 126, 234, 0.2)',
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <ChevronLeft />
-          </IconButton>
+          <Tooltip title="サイドバーを閉じる" arrow>
+            <IconButton
+              size="small"
+              onClick={onClose}
+              sx={{
+                color: '#667eea',
+                background: 'rgba(102, 126, 234, 0.1)',
+                '&:hover': {
+                  background: 'rgba(102, 126, 234, 0.2)',
+                  transform: 'translateX(-2px)',
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <ChevronLeft />
+            </IconButton>
+          </Tooltip>
         </Box>
       </Box>
 
@@ -127,10 +148,15 @@ const LeftSidebar = ({
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {realWorldLayers.map(layer => (
-              <Box
+            {realWorldLayers.map((layer, index) => (
+              <Grow 
                 key={layer.id}
-                sx={{
+                in
+                timeout={300 + index * 50}
+                style={{ transformOrigin: '0 0 0' }}
+              >
+                <Box
+                  sx={{
                   p: 1.5,
                   borderRadius: 2,
                   background: selectedLayers.includes(layer.id) 
@@ -175,8 +201,9 @@ const LeftSidebar = ({
                       },
                     }}
                   />
+                  </Box>
                 </Box>
-              </Box>
+              </Grow>
             ))}
           </Box>
         </Box>
@@ -184,9 +211,10 @@ const LeftSidebar = ({
         <Divider sx={{ my: 3, bgcolor: 'rgba(255, 255, 255, 0.05)' }} />
 
         {/* 天気情報 */}
-        <Box sx={{ mb: 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <WbSunny sx={{ fontSize: 20, color: '#FFA500' }} />
+        <Fade in timeout={800}>
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <WbSunny sx={{ fontSize: 20, color: '#FFA500' }} />
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
               天気情報
             </Typography>
@@ -273,7 +301,8 @@ const LeftSidebar = ({
               天気データを読み込み中...
             </Typography>
           )}
-        </Box>
+          </Box>
+        </Fade>
       </Box>
     </Paper>
   );

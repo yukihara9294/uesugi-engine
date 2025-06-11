@@ -324,9 +324,9 @@ export function generateAccommodationData() {
     const cityKey = Object.keys(HIROSHIMA_CITIES).find(key => HIROSHIMA_CITIES[key] === city);
     const realHotelCount = REAL_HOTELS[cityKey]?.length || 0;
     
-    // Only add generated hotels if there are fewer than 10 real hotels
-    if (realHotelCount < 10) {
-      const additionalHotels = 10 - realHotelCount;
+    // Add more generated hotels to increase data density
+    if (realHotelCount < 20) {
+      const additionalHotels = 20 - realHotelCount;
       
       city.districts.forEach(district => {
         const districtHotels = Math.floor(additionalHotels * (district.population / city.population));
@@ -376,12 +376,18 @@ export function generateAccommodationData() {
 export function generateConsumptionData() {
   const consumptionData = [];
   
-  // Define major tourist areas with exact locations
+  // Define major tourist areas with exact locations - expanded list
   const touristAreas = [
     { name: '宮島', coordinates: [132.3196, 34.2960], cityName: '廿日市市' }, // Miyajima
     { name: '平和記念公園', coordinates: [132.4500, 34.3920], cityName: '広島市' }, // Peace Memorial Park
     { name: '原爆ドーム', coordinates: [132.4530, 34.3930], cityName: '広島市' }, // Atomic Bomb Dome
     { name: '厳島神社', coordinates: [132.3185, 34.2908], cityName: '廿日市市' }, // Itsukushima Shrine
+    { name: '広島城', coordinates: [132.4590, 34.4027], cityName: '広島市' }, // Hiroshima Castle
+    { name: '鞆の浦', coordinates: [133.3833, 34.3833], cityName: '福山市' }, // Tomonoura
+    { name: '千光寺', coordinates: [133.2050, 34.4100], cityName: '尾道市' }, // Senkoji Temple
+    { name: '大和ミュージアム', coordinates: [132.5550, 34.2410], cityName: '呉市' }, // Yamato Museum
+    { name: 'しまなみ海道', coordinates: [133.2100, 34.3900], cityName: '尾道市' }, // Shimanami Kaido
+    { name: '西条酒蔵通り', coordinates: [132.7426, 34.4286], cityName: '東広島市' }, // Saijo Sake District
   ];
   
   // Helper function to check if a point is near a tourist area
@@ -414,8 +420,8 @@ export function generateConsumptionData() {
   
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     city.commercialAreas.forEach(area => {
-      // Generate initial points - reduced from 25 to 5 base points
-      const pointCount = Math.floor(5 + (city.population / 100000) * 3);
+      // Generate initial points - increased for more data density
+      const pointCount = Math.floor(15 + (city.population / 50000) * 5);
       const centerOffset = [
         city.center[0] + (Math.random() - 0.5) * 0.01,
         city.center[1] + (Math.random() - 0.5) * 0.01
@@ -472,8 +478,8 @@ export function generateConsumptionData() {
     // Add extra consumption points specifically at tourist areas
     touristAreas.forEach((touristArea, idx) => {
       if (touristArea.cityName === city.name) {
-        // Generate clustered points around tourist area - reduced from 15 to 5
-        const touristPointCount = 5; // Will be clustered to 1
+        // Generate clustered points around tourist area - increased density
+        const touristPointCount = 20; // Will be clustered to 4
         const touristRawPoints = generatePointsAroundCenter(touristArea.coordinates, touristPointCount, 0.003);
         const touristClusteredPoints = clusterPoints(touristRawPoints, 5);
         
@@ -1094,8 +1100,8 @@ export function generateSNSHeatmapData() {
   
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     city.districts.forEach(district => {
-      // More SNS activity in populated areas
-      const pointCount = Math.floor((district.population / 10000) * 2);
+      // More SNS activity in populated areas - increased density
+      const pointCount = Math.floor((district.population / 5000) * 3);
       const points = generatePointsAroundCenter(district.center, pointCount, 0.008);
       
       points.forEach(coord => {
@@ -1120,9 +1126,9 @@ export function generateSNSHeatmapData() {
       });
     });
     
-    // Extra activity around tourist spots
+    // Extra activity around tourist spots - increased points
     city.touristSpots.forEach(spot => {
-      const touristPoints = generatePointsAroundCenter(city.center, 5, 0.005);
+      const touristPoints = generatePointsAroundCenter(city.center, 15, 0.005);
       touristPoints.forEach(coord => {
         heatmapPoints.push({
           coordinates: coord,

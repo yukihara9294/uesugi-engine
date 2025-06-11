@@ -1624,11 +1624,78 @@ function generateSNSHeatmapForPrefecture(prefectureData) {
   return heatmapPoints;
 }
 
+// Generate statistics from SNS heatmap data
+export function generateStatisticsFromHeatmap(heatmapData, selectedCategories = []) {
+  const statistics = {
+    total_points: 0,
+    sentiment_distribution: {
+      positive: 0,
+      neutral: 0,
+      negative: 0
+    },
+    category_breakdown: []
+  };
+
+  // If heatmapData is a GeoJSON FeatureCollection, extract features
+  const dataPoints = heatmapData.features ? heatmapData.features : heatmapData;
+  
+  // Filter by selected categories
+  const filteredPoints = selectedCategories.length > 0 
+    ? dataPoints.filter(point => {
+        const category = point.properties?.category || point.category;
+        return selectedCategories.includes(category);
+      })
+    : dataPoints;
+
+  statistics.total_points = filteredPoints.length;
+
+  // Calculate sentiment distribution
+  const categoryStats = {};
+  
+  filteredPoints.forEach(point => {
+    const sentiment = point.properties?.sentiment || point.sentiment || 0.5;
+    const category = point.properties?.category || point.category || '不明';
+    
+    // Sentiment distribution
+    if (sentiment >= 0.7) {
+      statistics.sentiment_distribution.positive++;
+    } else if (sentiment >= 0.4) {
+      statistics.sentiment_distribution.neutral++;
+    } else {
+      statistics.sentiment_distribution.negative++;
+    }
+    
+    // Category breakdown
+    if (!categoryStats[category]) {
+      categoryStats[category] = {
+        category: category,
+        point_count: 0,
+        total_sentiment: 0,
+        avg_sentiment: 0
+      };
+    }
+    categoryStats[category].point_count++;
+    categoryStats[category].total_sentiment += sentiment;
+  });
+
+  // Calculate averages and percentages
+  Object.values(categoryStats).forEach(catStat => {
+    catStat.avg_sentiment = catStat.total_sentiment / catStat.point_count;
+    catStat.percentage = (catStat.point_count / statistics.total_points) * 100;
+  });
+
+  statistics.category_breakdown = Object.values(categoryStats)
+    .sort((a, b) => b.point_count - a.point_count);
+
+  return statistics;
+}
+
 // Main function to generate data for all prefectures
 export function generateAllPrefectureData(prefectureName = '広島県') {
   switch (prefectureName) {
     case '広島県': {
       const hiroshimaData = generateHiroshimaData();
+      const heatmapGeoJSON = toGeoJSON(hiroshimaData.heatmap, 'Point', ['intensity', 'category', 'sentiment']);
       return {
         accommodation: toGeoJSON(hiroshimaData.accommodation, 'Point', ['height', 'occupancy_rate', 'avg_price']),
         hotels: toGeoJSON(hiroshimaData.accommodation, 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
@@ -1637,8 +1704,9 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         landmarks: toGeoJSON(hiroshimaData.landmarks, 'Point', ['height', 'color', 'name']),
         events: toGeoJSON(hiroshimaData.events, 'Point', ['radius', 'color']),
         eventData: toGeoJSON(hiroshimaData.events, 'Point', ['radius', 'color']), // Alias for compatibility
-        heatmap: toGeoJSON(hiroshimaData.heatmap, 'Point', ['intensity', 'category', 'sentiment']),
-        bounds: hiroshimaData.bounds
+        heatmap: heatmapGeoJSON,
+        bounds: hiroshimaData.bounds,
+        statistics: generateStatisticsFromHeatmap(heatmapGeoJSON)
       };
     }
       
@@ -1651,6 +1719,7 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         category: l.height > 300 ? '超高層建築' : l.height > 100 ? '高層建築' : '建築物'
       }));
       
+      const heatmapGeoJSON = toGeoJSON(generateSNSHeatmapForPrefecture(TOKYO_DATA), 'Point', ['intensity', 'category', 'sentiment']);
       return {
         accommodation: toGeoJSON(generateAccommodationForPrefecture(TOKYO_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']),
         hotels: toGeoJSON(generateAccommodationForPrefecture(TOKYO_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
@@ -1659,8 +1728,9 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         landmarks: toGeoJSON(tokyoLandmarks, 'Point', ['height', 'color', 'name']),
         events: toGeoJSON(generateEventForPrefecture(TOKYO_DATA), 'Point', ['radius', 'color']),
         eventData: toGeoJSON(generateEventForPrefecture(TOKYO_DATA), 'Point', ['radius', 'color']), // Alias for compatibility
-        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(TOKYO_DATA), 'Point', ['intensity', 'category', 'sentiment']),
-        bounds: TOKYO_DATA.bounds
+        heatmap: heatmapGeoJSON,
+        bounds: TOKYO_DATA.bounds,
+        statistics: generateStatisticsFromHeatmap(heatmapGeoJSON)
       };
     }
     
@@ -1673,6 +1743,7 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         category: l.height > 200 ? '超高層建築' : l.height > 100 ? '高層建築' : '建築物'
       }));
       
+      const heatmapGeoJSON = toGeoJSON(generateSNSHeatmapForPrefecture(OSAKA_DATA), 'Point', ['intensity', 'category', 'sentiment']);
       return {
         accommodation: toGeoJSON(generateAccommodationForPrefecture(OSAKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']),
         hotels: toGeoJSON(generateAccommodationForPrefecture(OSAKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
@@ -1681,8 +1752,9 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         landmarks: toGeoJSON(osakaLandmarks, 'Point', ['height', 'color', 'name']),
         events: toGeoJSON(generateEventForPrefecture(OSAKA_DATA), 'Point', ['radius', 'color']),
         eventData: toGeoJSON(generateEventForPrefecture(OSAKA_DATA), 'Point', ['radius', 'color']), // Alias for compatibility
-        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(OSAKA_DATA), 'Point', ['intensity', 'category', 'sentiment']),
-        bounds: OSAKA_DATA.bounds
+        heatmap: heatmapGeoJSON,
+        bounds: OSAKA_DATA.bounds,
+        statistics: generateStatisticsFromHeatmap(heatmapGeoJSON)
       };
     }
     
@@ -1695,6 +1767,7 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         category: l.height > 200 ? '超高層建築' : l.height > 100 ? '高層建築' : '建築物'
       }));
       
+      const heatmapGeoJSON = toGeoJSON(generateSNSHeatmapForPrefecture(FUKUOKA_DATA), 'Point', ['intensity', 'category', 'sentiment']);
       return {
         accommodation: toGeoJSON(generateAccommodationForPrefecture(FUKUOKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']),
         hotels: toGeoJSON(generateAccommodationForPrefecture(FUKUOKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
@@ -1703,8 +1776,9 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         landmarks: toGeoJSON(fukuokaLandmarks, 'Point', ['height', 'color', 'name']),
         events: toGeoJSON(generateEventForPrefecture(FUKUOKA_DATA), 'Point', ['radius', 'color']),
         eventData: toGeoJSON(generateEventForPrefecture(FUKUOKA_DATA), 'Point', ['radius', 'color']), // Alias for compatibility
-        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(FUKUOKA_DATA), 'Point', ['intensity', 'category', 'sentiment']),
-        bounds: FUKUOKA_DATA.bounds
+        heatmap: heatmapGeoJSON,
+        bounds: FUKUOKA_DATA.bounds,
+        statistics: generateStatisticsFromHeatmap(heatmapGeoJSON)
       };
     }
     
@@ -1756,6 +1830,7 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         ]
       };
       
+      const heatmapGeoJSON = toGeoJSON(generateSNSHeatmapForPrefecture(yamaguchiData), 'Point', ['intensity', 'category', 'sentiment']);
       return {
         accommodation: toGeoJSON(generateAccommodationForPrefecture(yamaguchiData), 'Point', ['height', 'occupancy_rate', 'avg_price']),
         hotels: toGeoJSON(generateAccommodationForPrefecture(yamaguchiData), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
@@ -1769,8 +1844,9 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         })), 'Point', ['height', 'color', 'name']),
         events: toGeoJSON(generateEventForPrefecture(yamaguchiData), 'Point', ['radius', 'color']),
         eventData: toGeoJSON(generateEventForPrefecture(yamaguchiData), 'Point', ['radius', 'color']), // Alias for compatibility
-        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(yamaguchiData), 'Point', ['intensity', 'category', 'sentiment']),
-        bounds: yamaguchiData.bounds
+        heatmap: heatmapGeoJSON,
+        bounds: yamaguchiData.bounds,
+        statistics: generateStatisticsFromHeatmap(heatmapGeoJSON)
       };
     }
     
