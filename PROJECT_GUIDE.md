@@ -120,11 +120,9 @@ src/frontend/src/services/api.js に realDataService として定義済み。
 
 ## 技術詳細
 
-### Mapboxトークン
-.envファイルで REACT_APP_MAPBOX_ACCESS_TOKEN を設定
+詳細はTECHNICAL_DETAILS.mdを参照。
 
-### TypeScriptエラー
-npm install --legacy-peer-deps を使用
-
-### API接続エラー
-backend:8000 → localhost:8000 に変更済み
+### クイックリファレンス
+- Mapboxトークン: .envでREACT_APP_MAPBOX_ACCESS_TOKEN設定
+- TypeScript: npm install --legacy-peer-deps使用
+- API接続: backend:8000→localhost:8000変更済み
