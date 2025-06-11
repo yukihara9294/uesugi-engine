@@ -1,0 +1,53 @@
+{
+  "fukuoka": {
+    "city": "福岡県",
+    "timestamp": "2025-06-11T12:47:49.508558",
+    "portal_url": "https://ckan.open-governmentdata.org/",
+    "api_status": {
+      "available": false,
+      "error": "Status code: 403"
+    },
+    "sample_datasets": [],
+    "recommendations": [
+      "CKAN APIが利用できない場合は、手動ダウンロード用スクリプトを検討"
+    ],
+    "alternative_sources": [
+      "https://www.open-governmentdata.org/fukuoka-pref/",
+      "https://data.bodik.jp/"
+    ],
+    "notes": "福岡県はBODIK（九州オープンデータ推進会議）も活用"
+  },
+  "osaka": {
+    "city": "大阪府",
+    "timestamp": "2025-06-11T12:47:49.779692",
+    "portal_url": "https://www.pref.osaka.lg.jp/kikaku_keikaku/opendata/",
+    "api_status": null,
+    "sample_datasets": [],
+    "recommendations": [
+      "APIエンドポイントの調査が必要。ポータルサイトでAPI documentationを確認"
+    ],
+    "alternative_sources": [
+      "https://data.city.osaka.lg.jp/",
+      "https://www.city.sakai.lg.jp/shisei/tokei/opendata/"
+    ],
+    "notes": "大阪府・大阪市・堺市など複数のポータルが存在"
+  },
+  "tokyo": {
+    "city": "東京都",
+    "timestamp": "2025-06-11T12:47:49.779905",
+    "portal_url": "https://portal.data.metro.tokyo.lg.jp/",
+    "api_status": {
+      "available": false,
+      "error": "Status code: 404"
+    },
+    "sample_datasets": [],
+    "recommendations": [
+      "CKAN APIが利用できない場合は、手動ダウンロード用スクリプトを検討"
+    ],
+    "alternative_sources": [
+      "https://catalog.data.metro.tokyo.lg.jp/",
+      "https://www.opendata.metro.tokyo.lg.jp/"
+    ],
+    "notes": "東京都オープンデータカタログサイト（CKAN）"
+  }
+}

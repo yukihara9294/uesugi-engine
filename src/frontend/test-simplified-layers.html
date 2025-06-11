@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Test Simplified Layers</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #info { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            background: white; 
+            padding: 10px; 
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+<div id='map'></div>
+<div id='info'>
+    <h3>Testing Simplified Layers</h3>
+    <p>All arithmetic expressions have been replaced with static values</p>
+    <p>Layers should load without "Cannot read properties of undefined" errors</p>
+</div>
+
+<script>
+mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw';
+
+const map = new mapboxgl.Map({
+    container: 'map',
+    style: 'mapbox://styles/mapbox/dark-v11',
+    center: [132.45, 34.39],
+    zoom: 11
+});
+
+map.on('load', () => {
+    console.log('Map loaded, adding test layers...');
+    
+    // Test accommodation layer with simplified paint properties
+    const accommodationData = {
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [132.45, 34.39]
+            },
+            properties: {
+                name: 'Test Hotel',
+                occupancy_rate: 0.8,
+                height: 80
+            }
+        }]
+    };
+    
+    map.addSource('test-accommodation', {
+        type: 'geojson',
+        data: accommodationData
+    });
+    
+    // Simplified 3D extrusion layer
+    map.addLayer({
+        id: 'test-accommodation-3d',
+        type: 'fill-extrusion',
+        source: 'test-accommodation',
+        paint: {
+            'fill-extrusion-color': '#FFC107', // Fixed color instead of interpolation
+            'fill-extrusion-height': 100, // Fixed height instead of expression
+            'fill-extrusion-base': 0,
+            'fill-extrusion-opacity': 0.9
+        }
+    });
+    
+    // Simplified circle layer
+    map.addLayer({
+        id: 'test-accommodation-circle',
+        type: 'circle',
+        source: 'test-accommodation',
+        paint: {
+            'circle-radius': 50, // Fixed size instead of interpolation
+            'circle-color': 'rgba(255, 193, 7, 0.5)', // Fixed color
+            'circle-blur': 1.5,
+            'circle-opacity': 0.5
+        }
+    });
+    
+    // Test event layer with simplified properties
+    const eventData = {
+        type: 'FeatureCollection',
+        features: [{
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: [132.46, 34.40]
+            },
+            properties: {
+                name: 'Test Event',
+                radius: 100,
+                color: '#FF6B6B'
+            }
+        }]
+    };
+    
+    map.addSource('test-events', {
+        type: 'geojson',
+        data: eventData
+    });
+    
+    map.addLayer({
+        id: 'test-events-circle',
+        type: 'circle',
+        source: 'test-events',
+        paint: {
+            'circle-radius': 30, // Fixed size
+            'circle-color': '#FFC107', // Fixed color
+            'circle-opacity': 0.15,
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#FFC107', // Fixed color
+            'circle-stroke-opacity': 0.3
+        }
+    });
+    
+    console.log('Test layers added successfully!');
+});
+
+map.on('error', (e) => {
+    console.error('Map error:', e);
+});
+
+</script>
+</body>
+</html>

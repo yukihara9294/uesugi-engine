@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Test Mapbox Fix</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet">
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        #status { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; }
+    </style>
+</head>
+<body>
+<div id="map"></div>
+<div id="status">Loading...</div>
+<script type="module">
+    // Import our validators
+    import { toValidGeoJSON, sanitizeProperties } from './src/utils/geoJSONValidator.js';
+    import { safeGet, safeMultiply } from './src/utils/mapboxExpressionHelpers.js';
+    
+    mapboxgl.accessToken = 'pk.eyJ1IjoieXVraWhhcmE5Mjk0IiwiYSI6ImNtYmh1MG1kbTAxOHYyanBseWMyYzU0bzgifQ.qXWlSlsfZfHWKWJ1JPdvOg';
+    
+    const map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/dark-v11',
+        center: [139.7, 35.6],
+        zoom: 10
+    });
+    
+    map.on('load', () => {
+        const status = document.getElementById('status');
+        
+        try {
+            // Test data with some missing properties
+            const testData = [
+                { coordinates: [139.7, 35.6], name: 'Test Point 1', intensity: 0.8 },
+                { coordinates: [139.8, 35.7], name: 'Test Point 2' }, // Missing intensity
+                { coordinates: [139.6, 35.5], name: 'Test Point 3', size: 5 }
+            ];
+            
+            // Convert to valid GeoJSON with required properties
+            const geoJSON = toValidGeoJSON(testData, 'Point', ['intensity', 'size']);
+            
+            // Add source
+            map.addSource('test-source', {
+                type: 'geojson',
+                data: geoJSON
+            });
+            
+            // Add layer with safe expressions
+            map.addLayer({
+                id: 'test-layer',
+                type: 'heatmap',
+                source: 'test-source',
+                paint: {
+                    'heatmap-weight': safeGet('intensity', 0.5),
+                    'heatmap-intensity': 1,
+                    'heatmap-radius': safeMultiply(safeGet('size', 10), 2, 20)
+                }
+            });
+            
+            status.textContent = 'Success! Layer added without errors.';
+            status.style.color = 'green';
+            
+        } catch (error) {
+            status.textContent = 'Error: ' + error.message;
+            status.style.color = 'red';
+            console.error(error);
+        }
+    });
+</script>
+</body>
+</html>

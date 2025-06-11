@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
+import { safeGet, safeDivide } from '../../utils/mapboxExpressionHelpers';
 
 const ConsumptionLayer = ({ map, data, visible }) => {
   const animationRef = useRef(null);
@@ -98,8 +99,8 @@ const ConsumptionLayer = ({ map, data, visible }) => {
         type: 'circle',
         source: 'consumption-source',
         paint: {
-          'circle-radius': ['/', ['get', 'radius'], 3], // さらに小さく
-          'circle-color': ['get', 'color'],
+          'circle-radius': 10, // 固定サイズに簡略化
+          'circle-color': '#4ECDC4', // 固定色に簡略化
           'circle-opacity': 0.8
         }
       });

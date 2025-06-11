@@ -131,11 +131,11 @@ const RightSidebar = ({
             sx={{
               p: 2,
               borderRadius: 2,
-              background: selectedLayers.includes(socialLayer.id) 
+              background: selectedLayers?.includes(socialLayer.id) 
                 ? alpha(socialLayer.color, 0.1)
                 : 'rgba(255, 255, 255, 0.02)',
               border: '1px solid',
-              borderColor: selectedLayers.includes(socialLayer.id)
+              borderColor: selectedLayers?.includes(socialLayer.id)
                 ? alpha(socialLayer.color, 0.3)
                 : 'rgba(255, 255, 255, 0.05)',
               transition: 'all 0.2s ease',

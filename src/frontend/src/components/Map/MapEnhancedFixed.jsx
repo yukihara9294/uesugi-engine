@@ -12,6 +12,15 @@ import {
   getPrefectureBounds,
   generateInterPrefectureMobilityRoutes
 } from '../../utils/multiPrefectureDataGenerator';
+import { 
+  safeGet, 
+  safeMultiply, 
+  safeDivide, 
+  safeInterpolate, 
+  safeMatch,
+  safeFilter,
+  safeCompoundFilter
+} from '../../utils/mapboxExpressionHelpers';
 
 // Mapbox access token from environment variable
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN || 'pk.eyJ1IjoieXVraWhhcmE5Mjk0IiwiYSI6ImNtYmh1MG1kbTAxOHYyanBseWMyYzU0bzgifQ.qXWlSlsfZfHWKWJ1JPdvOg';
@@ -375,7 +384,7 @@ const MapEnhancedFixed = forwardRef(({
           visibility: 'none'
         },
       paint: {
-        'heatmap-weight': ['get', 'intensity'],
+        'heatmap-weight': safeGet('intensity', 0.5),
         'heatmap-intensity': {
           stops: [[11, 1], [15, 3]]
         },
@@ -409,16 +418,15 @@ const MapEnhancedFixed = forwardRef(({
       },
       paint: {
         'circle-radius': 2,
-        'circle-color': [
-          'match',
+        'circle-color': safeMatch(
           ['get', 'category'],
-          '観光', '#00FFFF',
+          ['観光', '#00FFFF',
           'グルメ', '#FF00FF',
           'ショッピング', '#FFFF00',
           'イベント', '#00FF00',
-          '交通', '#FF0080',
+          '交通', '#FF0080'],
           '#FFFFFF'
-        ],
+        ),
         'circle-opacity': 0.8,
         'circle-blur': 0.5
       }
@@ -501,8 +509,8 @@ const MapEnhancedFixed = forwardRef(({
         visibility: 'none'
       },
       paint: {
-        'fill-extrusion-color': ['get', 'color'],
-        'fill-extrusion-height': ['get', 'height'],
+        'fill-extrusion-color': safeGet('color', '#FFFFFF'),
+        'fill-extrusion-height': safeGet('height', 20),
         'fill-extrusion-base': 0,
         'fill-extrusion-opacity': 0.9
       }
@@ -516,7 +524,7 @@ const MapEnhancedFixed = forwardRef(({
       source: 'landmarks-source',
       layout: {
         visibility: 'none',
-        'text-field': ['get', 'name'],
+        'text-field': safeGet('name', ''),
         'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
         'text-size': 14,
         'text-offset': [0, -2],
@@ -587,7 +595,7 @@ const MapEnhancedFixed = forwardRef(({
       },
       paint: {
         'fill-extrusion-color': colors.accommodation,
-        'fill-extrusion-height': ['get', 'height'],
+        'fill-extrusion-height': safeGet('height', 20),
         'fill-extrusion-base': 0,
         'fill-extrusion-opacity': 0.8
       }
@@ -652,7 +660,7 @@ const MapEnhancedFixed = forwardRef(({
       },
       paint: {
         'fill-extrusion-color': colors.consumption,
-        'fill-extrusion-height': ['get', 'height'],
+        'fill-extrusion-height': safeGet('height', 20),
         'fill-extrusion-base': 0,
         'fill-extrusion-opacity': 0.8
       }
@@ -785,17 +793,16 @@ const MapEnhancedFixed = forwardRef(({
       source: 'mobility-hubs-source',
       layout: { visibility: 'none' },
       paint: {
-        'circle-radius': ['get', 'glowRadius'],
-        'circle-color': [
-          'match',
+        'circle-radius': safeGet('glowRadius', 15),
+        'circle-color': safeMatch(
           ['get', 'type'],
-          'transport', 'rgba(0, 255, 255, 0.3)',
+          ['transport', 'rgba(0, 255, 255, 0.3)',
           'landmark', 'rgba(255, 215, 0, 0.3)',
           'event', 'rgba(0, 255, 100, 0.3)',
           'accommodation', 'rgba(76, 175, 80, 0.3)',
-          'sns_hotspot', 'rgba(255, 100, 0, 0.3)',
+          'sns_hotspot', 'rgba(255, 100, 0, 0.3)'],
           'rgba(100, 100, 255, 0.3)'
-        ],
+        ),
         'circle-blur': 1,
         'circle-opacity': [
           'interpolate',
@@ -816,17 +823,16 @@ const MapEnhancedFixed = forwardRef(({
       source: 'mobility-hubs-source',
       layout: { visibility: 'none' },
       paint: {
-        'circle-radius': ['get', 'radius'],
-        'circle-color': [
-          'match',
+        'circle-radius': safeGet('radius', 10),
+        'circle-color': safeMatch(
           ['get', 'type'],
-          'transport', 'rgba(255, 255, 255, 0.9)',
+          ['transport', 'rgba(255, 255, 255, 0.9)',
           'landmark', 'rgba(255, 215, 0, 0.9)',
           'event', 'rgba(0, 255, 100, 0.9)',
           'accommodation', 'rgba(76, 175, 80, 0.9)',
-          'sns_hotspot', 'rgba(255, 100, 0, 0.9)',
+          'sns_hotspot', 'rgba(255, 100, 0, 0.9)'],
           'rgba(150, 150, 255, 0.9)'
-        ],
+        ),
         'circle-blur': 0.3,
         'circle-opacity': 0.8
       }
@@ -1125,19 +1131,18 @@ const MapEnhancedFixed = forwardRef(({
       type: 'line',
       source: 'mobility-arcs-source',
       layout: { visibility: 'none' },
-      filter: ['all',
+      filter: safeCompoundFilter([
         ['==', ['get', 'showGlowingArc'], false],
         ['>=', ['get', 'distanceKm'], 10]  // Only show lines 10km or longer
-      ],
+      ]),
       paint: {
-        'line-color': [
-          'interpolate',
+        'line-color': safeInterpolate(
           ['linear'],
           ['get', 'congestion'],
-          0, 'rgba(100, 200, 255, 0.1)',
+          [0, 'rgba(100, 200, 255, 0.1)',
           0.5, 'rgba(0, 255, 255, 0.1)',
-          1, 'rgba(255, 0, 128, 0.1)'
-        ],
+          1, 'rgba(255, 0, 128, 0.1)']
+        ),
         'line-width': 1,
         'line-opacity': 0.2,
         'line-blur': 0.5
@@ -1151,21 +1156,20 @@ const MapEnhancedFixed = forwardRef(({
       type: 'line',
       source: 'mobility-arcs-source',
       layout: { visibility: 'none' },
-      filter: ['all',
+      filter: safeCompoundFilter([
         ['==', ['get', 'showGlowingArc'], true],
         ['>=', ['get', 'distanceKm'], 10]  // Only show lines 10km or longer
-      ],
+      ]),
       paint: {
-        'line-color': [
-          'interpolate',
+        'line-color': safeInterpolate(
           ['linear'],
           ['get', 'congestion'],
-          0, 'rgba(0, 200, 255, 0.8)',      // Light blue for low traffic
+          [0, 'rgba(0, 200, 255, 0.8)',      // Light blue for low traffic
           0.2, 'rgba(100, 255, 100, 0.8)',  // Light green for low-medium
           0.4, 'rgba(255, 255, 0, 0.8)',    // Yellow for medium
           0.6, 'rgba(255, 150, 0, 0.8)',    // Orange for medium-high
-          0.8, 'rgba(255, 50, 50, 0.8)'     // Red for high traffic
-        ],
+          0.8, 'rgba(255, 50, 50, 0.8)']     // Red for high traffic
+        ),
         'line-width': [
           'interpolate',
           ['linear'],
@@ -1174,7 +1178,7 @@ const MapEnhancedFixed = forwardRef(({
           14, 2,
           16, 1.5
         ],
-        'line-opacity': ['coalesce', ['get', 'currentOpacity'], 0],
+        'line-opacity': safeGet('currentOpacity', 0),
         'line-blur': 1
       }
     });
@@ -1199,13 +1203,13 @@ const MapEnhancedFixed = forwardRef(({
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, ['*', ['get', 'size'], 7.5],  // Half size when far
-          12, ['*', ['get', 'size'], 10],
-          14, ['*', ['get', 'size'], 8],   // Small when close
-          16, ['*', ['get', 'size'], 6]
+          10, safeMultiply(['get', 'size'], 7.5, 7.5),  // Half size when far
+          12, safeMultiply(['get', 'size'], 10, 10),
+          14, safeMultiply(['get', 'size'], 8, 8),   // Small when close
+          16, safeMultiply(['get', 'size'], 6, 6)
         ],
-        'circle-color': ['get', 'glowColor'],
-        'circle-opacity': ['get', 'glowOpacityOuter'],
+        'circle-color': safeGet('glowColor', '#FFFFFF'),
+        'circle-opacity': safeGet('glowOpacityOuter', 0.3),
         'circle-blur': 1
       }
     });
@@ -1222,13 +1226,13 @@ const MapEnhancedFixed = forwardRef(({
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, ['*', ['get', 'size'], 5],  // Half size when far
-          12, ['*', ['get', 'size'], 7],
-          14, ['*', ['get', 'size'], 5],   // Small when close
-          16, ['*', ['get', 'size'], 4]
+          10, safeMultiply(['get', 'size'], 5, 5),  // Half size when far
+          12, safeMultiply(['get', 'size'], 7, 7),
+          14, safeMultiply(['get', 'size'], 5, 5),   // Small when close
+          16, safeMultiply(['get', 'size'], 4, 4)
         ],
-        'circle-color': ['get', 'glowColor'],
-        'circle-opacity': ['get', 'glowOpacityMiddle'],
+        'circle-color': safeGet('glowColor', '#FFFFFF'),
+        'circle-opacity': safeGet('glowOpacityMiddle', 0.5),
         'circle-blur': 0.8
       }
     });
@@ -1245,13 +1249,13 @@ const MapEnhancedFixed = forwardRef(({
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, ['*', ['get', 'size'], 2.5],   // Half size when far
-          12, ['*', ['get', 'size'], 3],
-          14, ['*', ['get', 'size'], 2],   // Small when close
-          16, ['*', ['get', 'size'], 1.5]
+          10, safeMultiply(['get', 'size'], 2.5, 2.5),   // Half size when far
+          12, safeMultiply(['get', 'size'], 3, 3),
+          14, safeMultiply(['get', 'size'], 2, 2),   // Small when close
+          16, safeMultiply(['get', 'size'], 1.5, 1.5)
         ],
-        'circle-color': ['get', 'coreColor'],
-        'circle-opacity': ['get', 'coreOpacity'],
+        'circle-color': safeGet('coreColor', '#FFFFFF'),
+        'circle-opacity': safeGet('coreOpacity', 1),
         'circle-blur': 0.2
       }
     });
@@ -1271,9 +1275,9 @@ const MapEnhancedFixed = forwardRef(({
       source: 'mobility-trails-source',
       layout: { visibility: 'none' },
       paint: {
-        'line-color': ['get', 'color'],
+        'line-color': safeGet('color', '#FFFFFF'),
         'line-width': 1.5,  // Reduced from 3 for zoom 14
-        'line-opacity': ['get', 'opacity'],
+        'line-opacity': safeGet('opacity', 1),
         'line-blur': 1      // Reduced blur for sharper trails
       }
     });

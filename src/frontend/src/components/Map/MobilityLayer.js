@@ -130,7 +130,7 @@ const MobilityLayer = ({ map, visible }) => {
         this.size = 3 + Math.random() * 4;
         this.opacity = 0.6 + Math.random() * 0.4;
         this.trail = []; // 軌跡を保存
-        this.maxTrailLength = 20;
+        this.maxTrailLength = 10;
         
         // 弧の高さを計算（距離に基づく）
         const distance = Math.sqrt(
@@ -219,8 +219,8 @@ const MobilityLayer = ({ map, visible }) => {
     const createParticles = () => {
       particlesRef.current = [];
       
-      // ランダムに接続を作成（最大50個のパーティクル）
-      const numParticles = Math.min(50, dataPoints.length * 2);
+      // ランダムに接続を作成（最大25個のパーティクル）
+      const numParticles = Math.min(25, dataPoints.length);
       
       for (let i = 0; i < numParticles; i++) {
         const startIdx = Math.floor(Math.random() * dataPoints.length);
@@ -272,10 +272,24 @@ const MobilityLayer = ({ map, visible }) => {
         particle.draw(ctx);
       });
       
-      animationRef.current = requestAnimationFrame(animate);
+      animationRef.current = requestAnimationFrame(animateThrottled);
     };
 
-    animate();
+    // FPS制限の設定
+    let lastFrameTime = 0;
+    const targetFPS = 30;
+    const frameInterval = 1000 / targetFPS;
+
+    const animateThrottled = (currentTime) => {
+      if (currentTime - lastFrameTime < frameInterval) {
+        animationRef.current = requestAnimationFrame(animateThrottled);
+        return;
+      }
+      lastFrameTime = currentTime;
+      animate();
+    };
+
+    animationRef.current = requestAnimationFrame(animateThrottled);
 
     // マップの移動・ズーム時にパーティクルの位置を更新
     const updateParticlePositions = () => {

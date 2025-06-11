@@ -1,0 +1,160 @@
+/**
+ * 実データローダー
+ * 広島GTFS、山口県オープンデータなどの実データを読み込み、マップ表示用に変換
+ */
+
+import { apiClient } from '../services/api';
+
+// 広島電鉄GTFSデータの読み込み
+export async function loadHiroshimaGTFSData() {
+  try {
+    console.log('Loading Hiroshima GTFS data...');
+    
+    // 今はサンプルデータを使用
+    return generateSampleGTFSData();
+    
+  } catch (error) {
+    console.error('Failed to load GTFS data:', error);
+    return generateSampleGTFSData();
+  }
+}
+
+// 山口県観光施設データの読み込み
+export async function loadYamaguchiTourismData() {
+  try {
+    console.log('Loading Yamaguchi tourism data...');
+    
+    // 今はnullを返す
+    return null;
+    
+  } catch (error) {
+    console.error('Failed to load Yamaguchi tourism data:', error);
+    return null;
+  }
+}
+
+// 実際の宿泊施設データ（e-Statや観光庁データ）
+export async function loadRealAccommodationData(prefecture) {
+  try {
+    console.log(`Loading real accommodation data for ${prefecture}...`);
+    
+    // 今はnullを返す（ダミーデータを使用）
+    return null;
+    
+  } catch (error) {
+    console.error('Failed to load real accommodation data:', error);
+    return null;
+  }
+}
+
+// 実際の人流データ（モバイル空間統計など）
+export async function loadRealMobilityData(prefecture) {
+  try {
+    console.log(`Loading real mobility data for ${prefecture}...`);
+    
+    // 今はnullを返す（ダミーデータを使用）
+    return null;
+    
+  } catch (error) {
+    console.error('Failed to load real mobility data:', error);
+    return null;
+  }
+}
+
+// 実際のイベントデータ
+export async function loadRealEventData(prefecture) {
+  try {
+    console.log(`Loading real event data for ${prefecture}...`);
+    
+    // 今はnullを返す（ダミーデータを使用）
+    return null;
+    
+  } catch (error) {
+    console.error('Failed to load real event data:', error);
+    return null;
+  }
+}
+
+// サンプルGTFSデータの生成
+function generateSampleGTFSData() {
+  // 広島電鉄の主要路線サンプル
+  const majorStops = [
+    { id: 'hiroshima-station', name: '広島駅', coordinates: [132.4751, 34.3978] },
+    { id: 'kamiyacho', name: '紙屋町', coordinates: [132.4574, 34.3952] },
+    { id: 'genbaku-dome', name: '原爆ドーム前', coordinates: [132.4536, 34.3955] },
+    { id: 'hiroden-nishi', name: '広電西広島', coordinates: [132.4300, 34.3665] },
+    { id: 'miyajimaguchi', name: '広電宮島口', coordinates: [132.3028, 34.3137] }
+  ];
+
+  const routes = [
+    {
+      id: 'route-2',
+      name: '2号線（広島駅～広電宮島口）',
+      color: '#FF5722',
+      stops: ['hiroshima-station', 'kamiyacho', 'genbaku-dome', 'hiroden-nishi', 'miyajimaguchi']
+    },
+    {
+      id: 'route-6',
+      name: '6号線（広島駅～江波）',
+      color: '#4CAF50',
+      stops: ['hiroshima-station', 'kamiyacho', 'genbaku-dome']
+    }
+  ];
+
+  return {
+    type: 'FeatureCollection',
+    features: [
+      ...majorStops.map(stop => ({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: stop.coordinates
+        },
+        properties: {
+          id: stop.id,
+          name: stop.name,
+          type: 'bus_stop',
+          routes: routes.filter(r => r.stops.includes(stop.id)).map(r => r.id)
+        }
+      }))
+    ]
+  };
+}
+
+// 最小限の宿泊施設データ
+function generateMinimalAccommodationData(prefecture) {
+  const sampleHotels = {
+    '広島県': [
+      { name: 'グランドプリンスホテル広島', coordinates: [132.4526, 34.3643], capacity: 510 },
+      { name: 'シェラトングランドホテル広島', coordinates: [132.4751, 34.3978], capacity: 238 },
+      { name: 'リーガロイヤルホテル広島', coordinates: [132.4593, 34.3905], capacity: 491 }
+    ],
+    '山口県': [
+      { name: '湯田温泉 松田屋ホテル', coordinates: [131.4590, 34.1603], capacity: 65 },
+      { name: '下関グランドホテル', coordinates: [130.9400, 33.9570], capacity: 82 }
+    ]
+  };
+
+  const hotels = sampleHotels[prefecture] || [];
+  
+  return {
+    type: 'FeatureCollection',
+    features: hotels.map((hotel, idx) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: hotel.coordinates
+      },
+      properties: {
+        id: `hotel-${idx}`,
+        name: hotel.name,
+        capacity: hotel.capacity,
+        occupancy_rate: 0.65 + Math.random() * 0.25
+      }
+    }))
+  };
+}
+
+// その他のヘルパー関数...
+
+export { generateSampleGTFSData };

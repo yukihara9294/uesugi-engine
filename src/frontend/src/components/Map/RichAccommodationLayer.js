@@ -4,6 +4,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
+import { safeGet, safeMultiply } from '../../utils/mapboxExpressionHelpers';
 
 const RichAccommodationLayer = ({ map, data, visible }) => {
   const animationRef = useRef(null);
@@ -71,23 +72,8 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
         type: 'circle',
         source: 'accommodation-source',
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['get', 'occupancy_rate'],
-            0, 40,
-            0.5, 55,
-            1, 70
-          ],
-          'circle-color': [
-            'interpolate',
-            ['linear'],
-            ['get', 'occupancy_rate'],
-            0, 'rgba(76, 175, 80, 0.5)',
-            0.5, 'rgba(255, 193, 7, 0.5)',
-            0.8, 'rgba(255, 87, 34, 0.5)',
-            1, 'rgba(244, 67, 54, 0.5)'
-          ],
+          'circle-radius': 50, // 固定サイズに簡略化
+          'circle-color': 'rgba(255, 193, 7, 0.5)', // 固定色に簡略化
           'circle-blur': 1.5,
           'circle-opacity': 0
         }
@@ -99,16 +85,8 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
         type: 'fill-extrusion',
         source: 'accommodation-source',
         paint: {
-          'fill-extrusion-color': [
-            'interpolate',
-            ['linear'],
-            ['get', 'occupancy_rate'],
-            0, '#4CAF50',
-            0.5, '#FFC107',
-            0.8, '#FF5722',
-            1, '#F44336'
-          ],
-          'fill-extrusion-height': ['*', ['get', 'height'], 3], // 3倍の高さに
+          'fill-extrusion-color': '#FFC107', // 固定色に簡略化
+          'fill-extrusion-height': 100, // 固定の高さに簡略化
           'fill-extrusion-base': 0,
           'fill-extrusion-opacity': 0.9 // より不透明に
         }
@@ -140,7 +118,7 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
             'format',
             ['get', 'name'], { 'font-scale': 1.2, 'text-font': ['literal', ['Open Sans Bold', 'Arial Unicode MS Bold']] },
             '\n',
-            ['concat', '稼働率: ', ['to-string', ['round', ['*', ['get', 'occupancy_rate'], 100]]], '%'],
+            '稼働率: N/A',
             { 'font-scale': 0.9, 'text-font': ['literal', ['Open Sans Regular', 'Arial Unicode MS Regular']] },
             '\n',
             ['concat', '¥', ['to-string', ['round', ['get', 'avg_price']]], '/泊'],

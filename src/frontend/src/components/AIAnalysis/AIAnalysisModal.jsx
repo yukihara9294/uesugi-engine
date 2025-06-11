@@ -108,11 +108,13 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
 
   // 過去データの分析
   useEffect(() => {
-    if (open && activeTab === 0 && !analysisData && currentData.eventData?.length > 0) {
+    if (open && activeTab === 0 && !analysisData && currentData?.eventData?.length > 0) {
       // 最初のイベントを自動選択
-      setSelectedPastEvent(currentData.eventData[0]);
+      if (currentData?.eventData?.[0]) {
+        setSelectedPastEvent(currentData.eventData[0]);
+      }
     }
-  }, [open, activeTab, currentData.eventData]);
+  }, [open, activeTab, currentData?.eventData]);
 
   // 選択されたイベントが変更されたら分析を実行
   useEffect(() => {
@@ -309,7 +311,9 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
                         }}
                         label="イベントを選択"
                       >
-                        {currentData.eventData?.map((event) => (
+                        {(currentData && currentData.eventData && Array.isArray(currentData.eventData) ? currentData.eventData : 
+                        currentData && currentData.events && Array.isArray(currentData.events) ? currentData.events :
+                        currentData && currentData.events && currentData.events.features ? currentData.events.features : []).map((event) => (
                           <MenuItem key={event.id} value={event.id}>
                             <Box>
                               <Typography variant="body1" fontWeight={600}>
@@ -733,15 +737,17 @@ const AIAnalysisModal = ({ open, onClose, currentData, timeRange, currentPrefect
                       onChange={(e) => setReferenceEvent(e.target.value)}
                       label="類似イベントを選択"
                     >
-                      {currentData.eventData?.map((event) => (
-                        <MenuItem key={event.id} value={event.id}>
+                      {(currentData && currentData.eventData && Array.isArray(currentData.eventData) ? currentData.eventData : 
+                        currentData && currentData.events && Array.isArray(currentData.events) ? currentData.events :
+                        currentData && currentData.events && currentData.events.features ? currentData.events.features : []).map((event) => (
+                        <MenuItem key={event.id || event.properties?.id} value={event.id || event.properties?.id}>
                           <Box>
                             <Typography variant="body1" fontWeight={600}>
-                              {event.name}
+                              {event.name || event.properties?.name}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              {new Date(event.date).toLocaleDateString('ja-JP')} • 
-                              {(event.expected_attendees || event.expectedVisitors || event.attendees || 0).toLocaleString()}人
+                              {new Date(event.date || event.properties?.date).toLocaleDateString('ja-JP')} • 
+                              {(event.expected_attendees || event.expectedVisitors || event.attendees || event.properties?.expected_attendees || event.properties?.expectedVisitors || event.properties?.attendees || 0).toLocaleString()}人
                             </Typography>
                           </Box>
                         </MenuItem>

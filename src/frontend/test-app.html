@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Uesugi Engine Test</title>
+</head>
+<body>
+    <h1>Uesugi Engine - 動作確認</h1>
+    <p>アプリケーションのテスト結果：</p>
+    
+    <h2>✅ 実装した修正内容</h2>
+    <ul>
+        <li>GeoJSONデータの検証機能を追加</li>
+        <li>Mapbox式の安全なヘルパー関数を作成</li>
+        <li>すべてのプロパティにデフォルト値を設定</li>
+        <li>座標の形式を検証（[経度, 緯度]の順序）</li>
+    </ul>
+    
+    <h2>🗺️ 期待される表示内容</h2>
+    <ul>
+        <li><strong>ランドマーク</strong>: 赤い円形マーカー（広島城、平和記念公園など）</li>
+        <li><strong>宿泊施設</strong>: 青い3D棒グラフ</li>
+        <li><strong>人流データ</strong>: 
+            <ul>
+                <li>mobility-particles: 緑色の動くパーティクル</li>
+                <li>mobility-flows: 光の流れる線</li>
+            </ul>
+        </li>
+        <li><strong>SNSヒートマップ</strong>: カラフルなヒートマップ</li>
+        <li><strong>イベント</strong>: カテゴリ別アイコン（🎊🎵⚽など）と影響範囲</li>
+        <li><strong>消費データ</strong>: ヒートマップとポイント</li>
+    </ul>
+    
+    <h2>🔧 トラブルシューティング</h2>
+    <p>もしまだエラーが表示される場合：</p>
+    <ol>
+        <li>ブラウザのキャッシュをクリア（Ctrl+Shift+Delete）</li>
+        <li>完全リロード（Ctrl+F5 または Cmd+Shift+R）</li>
+        <li>開発者ツールのConsoleタブでエラーを確認</li>
+        <li>Networkタブでmapbox-gl.jsが正常に読み込まれているか確認</li>
+    </ol>
+    
+    <h2>📊 動作確認チェックリスト</h2>
+    <ul>
+        <li>□ 地図が表示される</li>
+        <li>□ 3D地形が表示される</li>
+        <li>□ 左サイドバーのトグルが動作する</li>
+        <li>□ 右サイドバーのトグルが動作する</li>
+        <li>□ 各レイヤーの表示/非表示が切り替わる</li>
+        <li>□ コンソールにエラーが表示されない</li>
+    </ul>
+</body>
+</html>

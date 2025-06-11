@@ -110,10 +110,10 @@ const LeftSidebar = ({
             border: '1px solid rgba(255, 255, 255, 0.05)'
           }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
-              中心座標: {viewport.latitude.toFixed(4)}, {viewport.longitude.toFixed(4)}
+              中心座標: {viewport?.latitude?.toFixed(4) || '0.0000'}, {viewport?.longitude?.toFixed(4) || '0.0000'}
             </Typography>
             <Typography variant="body2">
-              ズームレベル: {viewport.zoom.toFixed(1)}
+              ズームレベル: {viewport?.zoom?.toFixed(1) || '0.0'}
             </Typography>
           </Box>
         </Box>

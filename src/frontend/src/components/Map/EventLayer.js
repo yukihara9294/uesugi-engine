@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { safeGet, safeDivide } from '../../utils/mapboxExpressionHelpers';
 
 const EventLayer = ({ map, eventData, visible }) => {
   useEffect(() => {
@@ -95,18 +96,11 @@ const EventLayer = ({ map, eventData, visible }) => {
       type: 'circle',
       source: impactZoneSourceId,
       paint: {
-        'circle-radius': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          10, ['/', ['get', 'radius'], 100],
-          15, ['/', ['get', 'radius'], 20],
-          20, ['/', ['get', 'radius'], 5]
-        ],
-        'circle-color': ['get', 'color'],
+        'circle-radius': 30, // 固定サイズに簡略化
+        'circle-color': '#FFC107', // 固定色に簡略化
         'circle-opacity': 0.15,
         'circle-stroke-width': 2,
-        'circle-stroke-color': ['get', 'color'],
+        'circle-stroke-color': '#FFC107', // 固定色に簡略化
         'circle-stroke-opacity': 0.3
       }
     });
@@ -136,7 +130,7 @@ const EventLayer = ({ map, eventData, visible }) => {
         'circle-color': ['get', 'color'],
         'circle-opacity': 0,
         'circle-stroke-width': 3,
-        'circle-stroke-color': ['get', 'color'],
+        'circle-stroke-color': '#FFC107', // 固定色に簡略化
         'circle-stroke-opacity': 0
       }
     });

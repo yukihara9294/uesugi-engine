@@ -7,6 +7,38 @@ import {
   generateAllPrefectureData as generateHiroshimaData,
   getHiroshimaPrefectureBounds 
 } from './hiroshimaPrefectureDataGenerator';
+import { toValidGeoJSON, sanitizeProperties } from './geoJSONValidator';
+
+// Validation function to ensure prefecture data has required structure
+function validatePrefectureData(prefectureData, functionName) {
+  if (!prefectureData) {
+    console.error(`${functionName}: Prefecture data is null or undefined`);
+    return false;
+  }
+  
+  if (!prefectureData.bounds) {
+    console.warn(`${functionName}: Prefecture data missing bounds property`);
+    return false;
+  }
+  
+  if (!prefectureData.bounds.center || !Array.isArray(prefectureData.bounds.center)) {
+    console.warn(`${functionName}: Prefecture data missing bounds.center array`);
+    return false;
+  }
+  
+  if (!prefectureData.cities) {
+    console.warn(`${functionName}: Prefecture data missing cities property`);
+    return false;
+  }
+  
+  return true;
+}
+
+// Helper function to convert array data to GeoJSON FeatureCollection
+// Now uses the validated version from geoJSONValidator
+function toGeoJSON(data, geometryType = 'Point', requiredProps = []) {
+  return toValidGeoJSON(data, geometryType, requiredProps);
+}
 
 // Helper function to generate random points around a center with normal distribution
 function generatePointsAroundCenter(center, count, spread = 0.01) {
@@ -519,7 +551,15 @@ const FUKUOKA_DATA = {
 function generateAccommodationForPrefecture(prefectureData) {
   const accommodations = [];
   
+  if (!validatePrefectureData(prefectureData, 'generateAccommodationForPrefecture')) {
+    return accommodations;
+  }
+  
   Object.values(prefectureData.cities).forEach(city => {
+    if (!city.districts || !Array.isArray(city.districts)) {
+      console.warn('generateAccommodationForPrefecture: City missing districts array:', city.name);
+      return;
+    }
     city.districts.forEach(district => {
       // Generate more hotels for major cities (25-50 per district based on population)
       const baseHotelCount = city.population > 300000 ? 30 : 20;
@@ -637,7 +677,7 @@ function generateAccommodationForPrefecture(prefectureData) {
           capacity: type === 'シティホテル' ? 250 + Math.floor(Math.random() * 150) :
                    150 + Math.floor(Math.random() * 100),
           city: city.name,
-          district: city.districts[0].name,
+          district: city.districts && city.districts.length > 0 ? city.districts[0].name : city.name,
           nearStation: true,
           rating: 3.5 + Math.random() * 1.0
         });
@@ -668,7 +708,7 @@ function generateAccommodationForPrefecture(prefectureData) {
                      type === '旅館' ? 40 + Math.floor(Math.random() * 60) :
                      20 + Math.floor(Math.random() * 40),
             city: city.name,
-            district: city.districts[0].name,
+            district: city.districts && city.districts.length > 0 ? city.districts[0].name : city.name,
             nearLandmark: spot,
             rating: 3.5 + Math.random() * 1.5
           });
@@ -684,12 +724,20 @@ function generateAccommodationForPrefecture(prefectureData) {
 function generateConsumptionForPrefecture(prefectureData) {
   const consumptionData = [];
   
+  if (!validatePrefectureData(prefectureData, 'generateConsumptionForPrefecture')) {
+    return consumptionData;
+  }
+  
   Object.values(prefectureData.cities).forEach(city => {
     // Generate consumption data for commercial areas with increased density
-    city.commercialAreas.forEach(area => {
-      // More points for larger cities (15-40 points per area)
-      const basePoints = city.population > 500000 ? 20 : 12;
-      const pointCount = Math.floor(basePoints + (city.population / 30000) * 5);
+    const commercialAreas = Array.isArray(city.commercialAreas) 
+      ? city.commercialAreas 
+      : [city.name + '商業地区'];
+    commercialAreas.forEach(areaName => {
+      const area = typeof areaName === 'string' ? { name: areaName } : areaName;
+      // More points for larger cities (8-20 points per area)
+      const basePoints = city.population > 500000 ? 10 : 6;
+      const pointCount = Math.floor(basePoints + (city.population / 60000) * 2.5);
       const centerOffset = [
         city.center[0] + (Math.random() - 0.5) * 0.01,
         city.center[1] + (Math.random() - 0.5) * 0.01
@@ -716,18 +764,18 @@ function generateConsumptionForPrefecture(prefectureData) {
         };
         
         const timeVariation = Math.sin(idx * 0.3) * 0.3 + 0.7;
-        const locationVariation = area.includes('駅') ? 1.4 : 1.0;
+        const locationVariation = area?.name?.includes('駅') ? 1.4 : 1.0;
         const randomVariation = 0.3 + Math.random() * 1.2;
         
         const amount = baseAmount * categoryMultiplier[category] * timeVariation * 
                       locationVariation * randomVariation;
         
         consumptionData.push({
-          id: `${city.nameEn}-${area}-consumption-${idx}`,
+          id: `${city.nameEn}-${area?.name || 'area'}-consumption-${idx}`,
           coordinates: coord,
           amount: Math.floor(amount),
           category: category,
-          area: area,
+          area: area?.name || city.name + '商業地区',
           city: city.name,
           peak_time: Math.floor(Math.random() * 24),
           isTouristArea: city.touristSpots && city.touristSpots.length > 5
@@ -770,8 +818,9 @@ function generateConsumptionForPrefecture(prefectureData) {
     }
     
     // Add consumption data for districts
-    city.districts.forEach(district => {
-      // Residential areas have lower but steady consumption
+    if (city.districts && Array.isArray(city.districts)) {
+      city.districts.forEach(district => {
+        // Residential areas have lower but steady consumption
       const districtPoints = Math.floor(5 + (district.population / 50000) * 3);
       const points = generatePointsAroundCenter(district.center, districtPoints, 0.004);
       
@@ -795,6 +844,7 @@ function generateConsumptionForPrefecture(prefectureData) {
         });
       });
     });
+    }
   });
   
   return consumptionData;
@@ -806,6 +856,53 @@ function generateMobilityForPrefecture(prefectureData) {
     routes: [],
     congestionPoints: []
   };
+  
+  // Validate prefecture data structure
+  if (!prefectureData || !prefectureData.bounds || !prefectureData.bounds.center || !Array.isArray(prefectureData.bounds.center)) {
+    console.warn('Invalid prefecture data structure for mobility generation:', prefectureData);
+    // Convert mobility data to the format expected by MapWithRealData
+  // Add sanitized properties to ensure all required fields exist
+  const particlesData = mobilityData.congestionPoints.map((point, idx) => ({
+    coordinates: point.coordinates,
+    id: `particle-${idx}`,
+    size: 5 + point.level * 10,
+    color: point.level > 0.7 ? '#FF6B6B' : point.level > 0.5 ? '#FFA726' : '#66BB6A',
+    speed: 0.5 + point.level * 0.5,
+    glowRadius: 15,
+    glowColor: point.level > 0.7 ? '#FF6B6B' : point.level > 0.5 ? '#FFA726' : '#66BB6A',
+    glowOpacityOuter: 0.3,
+    glowOpacityMiddle: 0.5,
+    coreColor: '#FFFFFF',
+    coreOpacity: 1,
+    type: 'congestion',
+    radius: 10,
+    ...point
+  }));
+
+  const flowsData = mobilityData.routes.map((route, idx) => ({
+    coordinates: route.points,
+    id: route.id || `flow-${idx}`,
+    color: route.congestion > 0.8 ? '#FF5252' : route.congestion > 0.6 ? '#FFA726' : '#66BB6A',
+    width: 2 + route.congestion * 3,
+    showGlowingArc: route.congestion > 0.5,
+    currentOpacity: 1,
+    opacity: 1,
+    distanceKm: route.distanceKm || 10,
+    congestion: route.congestion || 0,
+    ...route
+  }));
+
+  // Use validated GeoJSON conversion
+  return {
+    particles: toGeoJSON(particlesData, 'Point', [
+      'size', 'glowRadius', 'glowColor', 'glowOpacityOuter', 
+      'glowOpacityMiddle', 'coreColor', 'coreOpacity', 'radius', 'type'
+    ]),
+    flows: toGeoJSON(flowsData, 'LineString', [
+      'showGlowingArc', 'currentOpacity', 'distanceKm', 'congestion', 'opacity'
+    ])
+  };
+  }
   
   // Prefecture-specific transportation routes
   if (prefectureData.bounds.center[0] === 139.7670) { // Tokyo
@@ -977,7 +1074,7 @@ function generateMobilityForPrefecture(prefectureData) {
       category: '高速道路'
     });
     
-  } else if (prefectureData.bounds.center[0] === 135.4959) { // Osaka
+  } else if (prefectureData.bounds && prefectureData.bounds.center && prefectureData.bounds.center[0] === 135.4959) { // Osaka
     // Osaka Loop Line - Complete circle
     const loopStations = [
       { name: '大阪', coord: [135.4959, 34.7028] },
@@ -1161,7 +1258,7 @@ function generateMobilityForPrefecture(prefectureData) {
       category: '高速道路'
     });
     
-  } else if (prefectureData.bounds.center[0] === 130.4017) { // Fukuoka
+  } else if (prefectureData.bounds && prefectureData.bounds.center && prefectureData.bounds.center[0] === 130.4017) { // Fukuoka
     // Fukuoka Airport Line (Kuko Line) - detailed stations
     const kukoStations = [
       { name: '姪浜', coord: [130.3235, 33.5851] },
@@ -1332,8 +1429,9 @@ function generateMobilityForPrefecture(prefectureData) {
   }
   
   // Generate highway routes between major areas
-  const cities = Object.values(prefectureData.cities);
-  for (let i = 0; i < cities.length - 1; i++) {
+  if (prefectureData.cities) {
+    const cities = Object.values(prefectureData.cities);
+    for (let i = 0; i < cities.length - 1; i++) {
     for (let j = i + 1; j < cities.length; j++) {
       const congestionLevel = 0.5 + Math.random() * 0.4;
       mobilityData.routes.push({
@@ -1349,7 +1447,8 @@ function generateMobilityForPrefecture(prefectureData) {
   }
   
   // Add congestion points
-  cities.forEach(city => {
+  if (cities && cities.length > 0) {
+    cities.forEach(city => {
     mobilityData.congestionPoints.push({
       coordinates: city.center,
       level: 0.6 + Math.random() * 0.3,
@@ -1358,26 +1457,76 @@ function generateMobilityForPrefecture(prefectureData) {
       name: `${city.name}駅周辺`
     });
     
-    city.commercialAreas.forEach(area => {
-      mobilityData.congestionPoints.push({
-        coordinates: [
-          city.center[0] + (Math.random() - 0.5) * 0.01,
-          city.center[1] + (Math.random() - 0.5) * 0.01
-        ],
-        level: 0.5 + Math.random() * 0.35,
-        radius: 0.005,
-        type: 'commercial',
-        name: area
+    if (city.commercialAreas && Array.isArray(city.commercialAreas)) {
+      city.commercialAreas.forEach(area => {
+        mobilityData.congestionPoints.push({
+          coordinates: [
+            city.center[0] + (Math.random() - 0.5) * 0.01,
+            city.center[1] + (Math.random() - 0.5) * 0.01
+          ],
+          level: 0.5 + Math.random() * 0.35,
+          radius: 0.005,
+          type: 'commercial',
+          name: area
+        });
       });
-    });
+    }
   });
+  }
+  }
   
-  return mobilityData;
+  // Convert mobility data to the format expected by MapWithRealData
+  // Add sanitized properties to ensure all required fields exist
+  const particlesData = mobilityData.congestionPoints.map((point, idx) => ({
+    coordinates: point.coordinates,
+    id: `particle-${idx}`,
+    size: 5 + point.level * 10,
+    color: point.level > 0.7 ? '#FF6B6B' : point.level > 0.5 ? '#FFA726' : '#66BB6A',
+    speed: 0.5 + point.level * 0.5,
+    glowRadius: 15,
+    glowColor: point.level > 0.7 ? '#FF6B6B' : point.level > 0.5 ? '#FFA726' : '#66BB6A',
+    glowOpacityOuter: 0.3,
+    glowOpacityMiddle: 0.5,
+    coreColor: '#FFFFFF',
+    coreOpacity: 1,
+    type: 'congestion',
+    radius: 10,
+    ...point
+  }));
+
+  const flowsData = mobilityData.routes.map((route, idx) => ({
+    coordinates: route.points,
+    id: route.id || `flow-${idx}`,
+    color: route.congestion > 0.8 ? '#FF5252' : route.congestion > 0.6 ? '#FFA726' : '#66BB6A',
+    width: 2 + route.congestion * 3,
+    showGlowingArc: route.congestion > 0.5,
+    currentOpacity: 1,
+    opacity: 1,
+    distanceKm: route.distanceKm || 10,
+    congestion: route.congestion || 0,
+    ...route
+  }));
+
+  // Use validated GeoJSON conversion
+  return {
+    particles: toGeoJSON(particlesData, 'Point', [
+      'size', 'glowRadius', 'glowColor', 'glowOpacityOuter', 
+      'glowOpacityMiddle', 'coreColor', 'coreOpacity', 'radius', 'type'
+    ]),
+    flows: toGeoJSON(flowsData, 'LineString', [
+      'showGlowingArc', 'currentOpacity', 'distanceKm', 'congestion', 'opacity'
+    ])
+  };
 }
 
 // Generate event data for a prefecture
 function generateEventForPrefecture(prefectureData) {
   const events = [];
+  
+  if (!prefectureData || !prefectureData.events) {
+    console.warn('generateEventForPrefecture: Prefecture data missing events property');
+    return events;
+  }
   
   prefectureData.events.forEach((event, idx) => {
     const city = Object.values(prefectureData.cities).find(c => 
@@ -1394,6 +1543,11 @@ function generateEventForPrefecture(prefectureData) {
                         attendance > 50000 ? 45 :
                         attendance > 20000 ? 30 : 20;
     
+    // 今日から前後30日のランダムな日付を生成
+    const dateOffset = Math.floor(Math.random() * 60) - 30;
+    const eventDate = new Date();
+    eventDate.setDate(eventDate.getDate() + dateOffset);
+    
     events.push({
       id: `event-${idx}`,
       coordinates: event.coordinates,
@@ -1403,7 +1557,11 @@ function generateEventForPrefecture(prefectureData) {
       impact_radius: impactRadius,
       expected_attendance: Math.floor(attendance),
       city: city ? city.name : '不明',
-      venue_type: event.category
+      venue_type: event.category,
+      date: eventDate.toISOString(),
+      expected_attendees: Math.floor(attendance),
+      expectedVisitors: Math.floor(attendance),
+      attendees: Math.floor(attendance)
     });
   });
   
@@ -1415,9 +1573,17 @@ function generateSNSHeatmapForPrefecture(prefectureData) {
   const heatmapPoints = [];
   const categories = ['観光', 'グルメ', 'ショッピング', 'イベント', '交通'];
   
+  if (!validatePrefectureData(prefectureData, 'generateSNSHeatmapForPrefecture')) {
+    return heatmapPoints;
+  }
+  
   Object.values(prefectureData.cities).forEach(city => {
+    if (!city.districts || !Array.isArray(city.districts)) {
+      console.warn('generateSNSHeatmapForPrefecture: City missing districts array:', city.name);
+      return;
+    }
     city.districts.forEach(district => {
-      const pointCount = Math.floor((district.population / 10000) * 3);
+      const pointCount = Math.floor((district.population / 20000) * 2);
       const points = generatePointsAroundCenter(district.center, pointCount, 0.005);
       
       points.forEach(coord => {
@@ -1438,7 +1604,8 @@ function generateSNSHeatmapForPrefecture(prefectureData) {
     });
     
     // Extra activity around tourist spots
-    city.touristSpots.forEach(spot => {
+    if (city.touristSpots && Array.isArray(city.touristSpots)) {
+      city.touristSpots.forEach(spot => {
       const touristPoints = generatePointsAroundCenter(city.center, 8, 0.003);
       touristPoints.forEach(coord => {
         heatmapPoints.push({
@@ -1451,6 +1618,7 @@ function generateSNSHeatmapForPrefecture(prefectureData) {
         });
       });
     });
+    }
   });
   
   return heatmapPoints;
@@ -1459,8 +1627,20 @@ function generateSNSHeatmapForPrefecture(prefectureData) {
 // Main function to generate data for all prefectures
 export function generateAllPrefectureData(prefectureName = '広島県') {
   switch (prefectureName) {
-    case '広島県':
-      return generateHiroshimaData();
+    case '広島県': {
+      const hiroshimaData = generateHiroshimaData();
+      return {
+        accommodation: toGeoJSON(hiroshimaData.accommodation, 'Point', ['height', 'occupancy_rate', 'avg_price']),
+        hotels: toGeoJSON(hiroshimaData.accommodation, 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
+        consumption: toGeoJSON(hiroshimaData.consumption, 'Point', ['radius', 'amount', 'total_amount', 'height']),
+        mobility: hiroshimaData.mobility, // Already in correct format
+        landmarks: toGeoJSON(hiroshimaData.landmarks, 'Point', ['height', 'color', 'name']),
+        events: toGeoJSON(hiroshimaData.events, 'Point', ['radius', 'color']),
+        eventData: toGeoJSON(hiroshimaData.events, 'Point', ['radius', 'color']), // Alias for compatibility
+        heatmap: toGeoJSON(hiroshimaData.heatmap, 'Point', ['intensity', 'category', 'sentiment']),
+        bounds: hiroshimaData.bounds
+      };
+    }
       
     case '東京都': {
       const tokyoLandmarks = TOKYO_DATA.landmarks.map((l, idx) => ({
@@ -1472,12 +1652,14 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
       }));
       
       return {
-        accommodation: generateAccommodationForPrefecture(TOKYO_DATA),
-        consumption: generateConsumptionForPrefecture(TOKYO_DATA),
-        mobility: generateMobilityForPrefecture(TOKYO_DATA),
-        landmarks: tokyoLandmarks,
-        events: generateEventForPrefecture(TOKYO_DATA),
-        heatmap: generateSNSHeatmapForPrefecture(TOKYO_DATA),
+        accommodation: toGeoJSON(generateAccommodationForPrefecture(TOKYO_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']),
+        hotels: toGeoJSON(generateAccommodationForPrefecture(TOKYO_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
+        consumption: toGeoJSON(generateConsumptionForPrefecture(TOKYO_DATA), 'Point', ['radius', 'amount', 'total_amount', 'height']),
+        mobility: generateMobilityForPrefecture(TOKYO_DATA), // Already returns correct format
+        landmarks: toGeoJSON(tokyoLandmarks, 'Point', ['height', 'color', 'name']),
+        events: toGeoJSON(generateEventForPrefecture(TOKYO_DATA), 'Point', ['radius', 'color']),
+        eventData: toGeoJSON(generateEventForPrefecture(TOKYO_DATA), 'Point', ['radius', 'color']), // Alias for compatibility
+        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(TOKYO_DATA), 'Point', ['intensity', 'category', 'sentiment']),
         bounds: TOKYO_DATA.bounds
       };
     }
@@ -1492,12 +1674,14 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
       }));
       
       return {
-        accommodation: generateAccommodationForPrefecture(OSAKA_DATA),
-        consumption: generateConsumptionForPrefecture(OSAKA_DATA),
-        mobility: generateMobilityForPrefecture(OSAKA_DATA),
-        landmarks: osakaLandmarks,
-        events: generateEventForPrefecture(OSAKA_DATA),
-        heatmap: generateSNSHeatmapForPrefecture(OSAKA_DATA),
+        accommodation: toGeoJSON(generateAccommodationForPrefecture(OSAKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']),
+        hotels: toGeoJSON(generateAccommodationForPrefecture(OSAKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
+        consumption: toGeoJSON(generateConsumptionForPrefecture(OSAKA_DATA), 'Point', ['radius', 'amount', 'total_amount', 'height']),
+        mobility: generateMobilityForPrefecture(OSAKA_DATA), // Already returns correct format
+        landmarks: toGeoJSON(osakaLandmarks, 'Point', ['height', 'color', 'name']),
+        events: toGeoJSON(generateEventForPrefecture(OSAKA_DATA), 'Point', ['radius', 'color']),
+        eventData: toGeoJSON(generateEventForPrefecture(OSAKA_DATA), 'Point', ['radius', 'color']), // Alias for compatibility
+        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(OSAKA_DATA), 'Point', ['intensity', 'category', 'sentiment']),
         bounds: OSAKA_DATA.bounds
       };
     }
@@ -1512,13 +1696,81 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
       }));
       
       return {
-        accommodation: generateAccommodationForPrefecture(FUKUOKA_DATA),
-        consumption: generateConsumptionForPrefecture(FUKUOKA_DATA),
-        mobility: generateMobilityForPrefecture(FUKUOKA_DATA),
-        landmarks: fukuokaLandmarks,
-        events: generateEventForPrefecture(FUKUOKA_DATA),
-        heatmap: generateSNSHeatmapForPrefecture(FUKUOKA_DATA),
+        accommodation: toGeoJSON(generateAccommodationForPrefecture(FUKUOKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']),
+        hotels: toGeoJSON(generateAccommodationForPrefecture(FUKUOKA_DATA), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
+        consumption: toGeoJSON(generateConsumptionForPrefecture(FUKUOKA_DATA), 'Point', ['radius', 'amount', 'total_amount', 'height']),
+        mobility: generateMobilityForPrefecture(FUKUOKA_DATA), // Already returns correct format
+        landmarks: toGeoJSON(fukuokaLandmarks, 'Point', ['height', 'color', 'name']),
+        events: toGeoJSON(generateEventForPrefecture(FUKUOKA_DATA), 'Point', ['radius', 'color']),
+        eventData: toGeoJSON(generateEventForPrefecture(FUKUOKA_DATA), 'Point', ['radius', 'color']), // Alias for compatibility
+        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(FUKUOKA_DATA), 'Point', ['intensity', 'category', 'sentiment']),
         bounds: FUKUOKA_DATA.bounds
+      };
+    }
+    
+    case '山口県': {
+      // 簡易的な山口県データ
+      const yamaguchiData = {
+        bounds: { 
+          north: 34.5, 
+          south: 33.7, 
+          east: 132.2, 
+          west: 130.8,
+          center: [131.5, 34.1],  // Center of Yamaguchi Prefecture
+          defaultZoom: 10
+        },
+        cities: {
+          yamaguchi: { 
+            name: '山口市', 
+            center: [131.4705, 34.1858], 
+            population: 196000,
+            districts: [
+              { name: '山口市中心部', center: [131.4705, 34.1858], population: 80000 }
+            ]
+          },
+          shimonoseki: { 
+            name: '下関市', 
+            center: [130.9400, 33.9570], 
+            population: 259000,
+            districts: [
+              { name: '下関市中心部', center: [130.9400, 33.9570], population: 100000 }
+            ]
+          },
+          ube: { 
+            name: '宇部市', 
+            center: [131.2465, 33.9430], 
+            population: 166000,
+            districts: [
+              { name: '宇部市中心部', center: [131.2465, 33.9430], population: 70000 }
+            ]
+          }
+        },
+        landmarks: [
+          { name: '錦帯橋', coordinates: [132.1800, 34.1667], category: '観光地' },
+          { name: '秋吉台', coordinates: [131.3033, 34.2347], category: '自然' },
+          { name: '萩城跡', coordinates: [131.3993, 34.4167], category: '史跡' }
+        ],
+        events: [
+          { name: '山口七夕ちょうちんまつり', coordinates: [131.4705, 34.1858], category: '祭り', icon: '🏮' },
+          { name: '錦帯橋まつり', coordinates: [132.1800, 34.1667], category: '祭り', icon: '🎊' }
+        ]
+      };
+      
+      return {
+        accommodation: toGeoJSON(generateAccommodationForPrefecture(yamaguchiData), 'Point', ['height', 'occupancy_rate', 'avg_price']),
+        hotels: toGeoJSON(generateAccommodationForPrefecture(yamaguchiData), 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
+        consumption: toGeoJSON(generateConsumptionForPrefecture(yamaguchiData), 'Point', ['radius', 'amount', 'total_amount', 'height']),
+        mobility: generateMobilityForPrefecture(yamaguchiData), // Already returns correct format
+        landmarks: toGeoJSON(yamaguchiData.landmarks.map((l, idx) => ({
+          id: `yamaguchi-landmark-${idx}`,
+          ...l,
+          city: '山口県',
+          visitor_count: Math.floor(10000 + Math.random() * 50000)
+        })), 'Point', ['height', 'color', 'name']),
+        events: toGeoJSON(generateEventForPrefecture(yamaguchiData), 'Point', ['radius', 'color']),
+        eventData: toGeoJSON(generateEventForPrefecture(yamaguchiData), 'Point', ['radius', 'color']), // Alias for compatibility
+        heatmap: toGeoJSON(generateSNSHeatmapForPrefecture(yamaguchiData), 'Point', ['intensity', 'category', 'sentiment']),
+        bounds: yamaguchiData.bounds
       };
     }
     

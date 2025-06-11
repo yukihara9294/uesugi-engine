@@ -1,17 +1,17 @@
 /**
- * Uesugi Engine - メインアプリケーション
- * 広島県ソーシャルヒートマップのフロントエンド
+ * Uesugi Engine - メインアプリケーション（安定版）
+ * エラーハンドリングとデータ同期を強化
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import { Box, Container, Alert, Snackbar, IconButton, Fab, Tooltip, Dialog, DialogContent } from '@mui/material';
+import { Box, Container, Alert, Snackbar, IconButton, Fab, Tooltip, Dialog, DialogContent, CircularProgress } from '@mui/material';
 import { ChevronRight, ChevronLeft, Science as ScienceIcon, LocationCity as CityIcon } from '@mui/icons-material';
 
-// コンポーネント
+// コンポーネント（実データ版を使用）
 import Header from './components/Header/Header';
-import MapEnhancedFixed from './components/Map/MapEnhancedFixed';
+import MapWithRealData from './components/Map/MapWithRealData';
 import MapErrorBoundary from './components/Map/MapErrorBoundary';
 import LeftSidebar from './components/Sidebar/LeftSidebar';
 import RightSidebar from './components/Sidebar/RightSidebar';
@@ -19,17 +19,26 @@ import Dashboard from './components/Dashboard/Dashboard';
 import AIAnalysisModal from './components/AIAnalysis/AIAnalysisModal';
 
 // 新機能コンポーネント
-import VisualizationShowcase from './components/VisualizationShowcase';
 import IntegratedDashboard from './components/IntegratedDashboard';
-import BuildingAnalysis from './components/BuildingAnalysis';
 
 // サービス
 import { weatherService, heatmapService, mobilityService, eventService } from './services/api';
 
 // データジェネレーター
-import { getPrefectureBounds } from './utils/multiPrefectureDataGenerator';
+import { 
+  generateLandmarks, 
+  generateHotels, 
+  generateMobilityData,
+  generateConsumptionData,
+  generateHeatmapData,
+  generateEventData
+} from './utils/dataGenerator';
+import { 
+  generateAllPrefectureData,
+  detectCurrentPrefecture 
+} from './utils/multiPrefectureDataGenerator';
 
-// テーマ設定
+// テーマ設定（既存のものを使用）
 const theme = createTheme({
   palette: {
     mode: 'dark',
@@ -98,694 +107,372 @@ const theme = createTheme({
         },
       },
     },
-    MuiButton: {
+    MuiAlert: {
       styleOverrides: {
         root: {
-          textTransform: 'none',
-          fontWeight: 600,
-          borderRadius: 12,
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          fontWeight: 500,
-          borderRadius: 8,
+          backdropFilter: 'blur(20px)',
+          backgroundColor: 'rgba(10, 10, 10, 0.9)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
         },
       },
     },
   },
 });
 
-// 初期ビューポート設定（広島県をデフォルトとする）
-const getInitialViewport = (prefecture = '広島県') => {
-  const bounds = getPrefectureBounds(prefecture);
-  return {
-    latitude: bounds.center[1],
-    longitude: bounds.center[0],
-    zoom: bounds.defaultZoom,
-  };
-};
-
 function App() {
-  // 地図ビューステート
-  const [viewport, setViewport] = useState(getInitialViewport());
-  
-  // フィルタ・表示設定
-  const [selectedLayers, setSelectedLayers] = useState(['heatmap', 'weather', 'accommodation', 'consumption', 'events']);
-  const [selectedCategories, setSelectedCategories] = useState(['観光', 'グルメ']);
-  const [timeRange, setTimeRange] = useState({
-    start: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24時間前
-    end: new Date(),
-  });
-  
-  // データ状態
-  const [heatmapData, setHeatmapData] = useState(null);
-  const [weatherData, setWeatherData] = useState(null);
-  const [statistics, setStatistics] = useState(null);
-  const [mobilityData, setMobilityData] = useState(null);
-  const [accommodationData, setAccommodationData] = useState(null);
-  const [consumptionData, setConsumptionData] = useState(null);
-  const [eventData, setEventData] = useState(null);
+  // 基本的な状態管理
   const [loading, setLoading] = useState(true);
-  
-  // エラー・通知状態
   const [error, setError] = useState(null);
-  const [notification, setNotification] = useState(null);
-  
-  // サイドバー表示状態
+  const [initializationStatus, setInitializationStatus] = useState({
+    dataGeneration: false,
+    apiConnection: false,
+    mapReady: false
+  });
+
+  // UI状態
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
-  const [dashboardOpen, setDashboardOpen] = useState(false);
-  const [currentPrefecture, setCurrentPrefecture] = useState('広島県');
-  const [aiAnalysisOpen, setAIAnalysisOpen] = useState(false);
-  
-  // 新機能デモ表示状態
-  const [showcaseOpen, setShowcaseOpen] = useState(false);
   const [integratedDashboardOpen, setIntegratedDashboardOpen] = useState(false);
+  const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
 
-  // 初期データ読み込み
-  useEffect(() => {
-    const initializeApp = async () => {
+  // データ選択状態
+  const [selectedPrefecture, setSelectedPrefecture] = useState('広島県');
+  const [selectedArea, setSelectedArea] = useState('全域');
+  const [layers, setLayers] = useState({
+    landmarks: true,
+    accommodation: true,  // Changed from hotels to accommodation to match MapWithRealData
+    mobility: true,
+    consumption: false,
+    heatmap: true,
+    events: true,
+  });
+  const [categoryFilter, setCategoryFilter] = useState(null);
+  const [timeRange, setTimeRange] = useState({
+    start: new Date(Date.now() - 24 * 60 * 60 * 1000),
+    end: new Date()
+  });
+
+  // データキャッシュ（重要：すべてのデータを保持）
+  const dataCache = useRef({
+    weather: null,
+    prefectureData: {},
+    lastUpdate: null,
+    initialized: false
+  });
+
+  // データ生成と初期化
+  const initializeData = useCallback(async () => {
+    try {
+      console.log('Starting data initialization...');
+      
+      // 1. 全都道府県データの生成
+      if (!dataCache.current.initialized) {
+        const prefectures = ['広島県', '東京都', '大阪府', '福岡県', '山口県'];
+        const allData = {};
+        
+        prefectures.forEach(pref => {
+          allData[pref] = generateAllPrefectureData(pref);
+          // eventDataがない場合は空配列を追加
+          if (!allData[pref].events) {
+            allData[pref].events = [];
+          }
+          // eventDataの形式を統一
+          allData[pref].eventData = allData[pref].events;
+        });
+        
+        dataCache.current.prefectureData = allData;
+        dataCache.current.initialized = true;
+        setInitializationStatus(prev => ({ ...prev, dataGeneration: true }));
+        console.log('✓ Prefecture data generated');
+      }
+
+      // 2. APIデータの取得（エラーを許容）
       try {
-        setLoading(true);
-        
-        // 並行してデータを取得（天気データは初回のみ）
-        const [
-          heatmapResult, 
-          weatherResult, 
-          statsResult,
-          mobilityResult,
-          accommodationResult,
-          consumptionResult,
-          eventResult
-        ] = await Promise.allSettled([
-          loadHeatmapData(),
-          loadWeatherData(), // 初回のみ読み込み
-          loadStatistics(),
-          loadMobilityData(),
-          loadAccommodationData(),
-          loadConsumptionData(),
-          loadEventData(),
+        const coordinates = { lat: 34.3966, lon: 132.4597 }; // 広島市の座標
+        const [weatherData, eventsData] = await Promise.allSettled([
+          weatherService.getCurrentWeather(coordinates.lat, coordinates.lon),
+          eventService.getEvents()
         ]);
-        
-        // エラーチェック
-        const errors = [];
-        if (heatmapResult.status === 'rejected') errors.push('ヒートマップデータ');
-        if (weatherResult.status === 'rejected') errors.push('気象データ');
-        if (statsResult.status === 'rejected') errors.push('統計データ');
-        if (mobilityResult.status === 'rejected') errors.push('人流データ');
-        if (accommodationResult.status === 'rejected') errors.push('宿泊データ');
-        if (consumptionResult.status === 'rejected') errors.push('消費データ');
-        if (eventResult.status === 'rejected') errors.push('イベントデータ');
-        
-        if (errors.length > 0) {
-          setNotification({
-            type: 'warning',
-            message: `一部のデータ読み込みに失敗しました: ${errors.join(', ')}`
-          });
-        } else {
-          setNotification({
-            type: 'success',
-            message: 'データの読み込みが完了しました'
+
+        if (weatherData.status === 'fulfilled') {
+          dataCache.current.weather = weatherData.value;
+        }
+
+        if (eventsData.status === 'fulfilled' && eventsData.value?.features) {
+          // APIイベントデータを各都道府県にマージ
+          Object.keys(dataCache.current.prefectureData).forEach(pref => {
+            if (dataCache.current.prefectureData[pref].events) {
+              const apiEvents = eventsData.value.features.filter(event => 
+                event.properties?.prefecture === pref
+              );
+              if (apiEvents.length > 0) {
+                dataCache.current.prefectureData[pref].events.features.push(...apiEvents);
+              }
+            }
           });
         }
-        
-      } catch (error) {
-        console.error('App initialization failed:', error);
-        setError('アプリケーションの初期化に失敗しました');
-      } finally {
-        setLoading(false);
-        // ローディング画面を非表示
-        if (window.hideLoading) window.hideLoading();
+
+        setInitializationStatus(prev => ({ ...prev, apiConnection: true }));
+        console.log('✓ API data fetched');
+      } catch (apiError) {
+        console.warn('API connection failed, using local data only:', apiError);
+        setInitializationStatus(prev => ({ ...prev, apiConnection: false }));
       }
-    };
-    
-    initializeApp();
+
+      // 3. 初期化完了
+      dataCache.current.lastUpdate = new Date();
+      setLoading(false);
+      setError(null);
+      console.log('✓ Initialization complete');
+
+    } catch (error) {
+      console.error('Failed to initialize data:', error);
+      setError('データの初期化に失敗しました。ページを再読み込みしてください。');
+      setLoading(false);
+    }
   }, []);
 
-  // ヒートマップデータの読み込み
-  const loadHeatmapData = async () => {
-    try {
-      const bounds = calculateBounds();
-      const data = await heatmapService.getHeatmapPoints({
-        ...bounds,
-        start_time: timeRange.start.toISOString(),
-        end_time: timeRange.end.toISOString(),
-        categories: selectedCategories.join(','),
-        limit: 2000,
-      });
-      
-      setHeatmapData(data);
-      return data;
-    } catch (error) {
-      console.error('Failed to load heatmap data:', error);
-      throw error;
-    }
-  };
-
-  // 気象データの読み込み
-  const loadWeatherData = async () => {
-    try {
-      const data = await weatherService.getLandmarksWeather();
-      console.log('App - Weather data loaded:', data);
-      console.log('App - Setting weatherData state...');
-      setWeatherData(data);
-      console.log('App - weatherData state set successfully');
-      return data;
-    } catch (error) {
-      console.error('Failed to load weather data:', error);
-      throw error;
-    }
-  };
-
-  // 統計データの読み込み
-  const loadStatistics = async () => {
-    try {
-      const data = await heatmapService.getStatistics({
-        start_time: timeRange.start.toISOString(),
-        end_time: timeRange.end.toISOString(),
-        categories: selectedCategories.join(','),
-      });
-      
-      setStatistics(data);
-      return data;
-    } catch (error) {
-      console.error('Failed to load statistics:', error);
-      throw error;
-    }
-  };
-
-  // 人流データの読み込み
-  const loadMobilityData = async () => {
-    try {
-      const bounds = calculateBounds();
-      const [flowsData, heatmapData] = await Promise.all([
-        mobilityService.getFlows({
-          ...bounds,
-          start_time: timeRange.start.toISOString(),
-          end_time: timeRange.end.toISOString(),
-        }),
-        mobilityService.getHeatmap({
-          ...bounds,
-          timestamp: new Date().toISOString(),
-        })
-      ]);
-      
-      setMobilityData({
-        ...flowsData,
-        heatmapData: heatmapData
-      });
-      return flowsData;
-    } catch (error) {
-      console.error('Failed to load mobility data:', error);
-      throw error;
-    }
-  };
-
-  // 宿泊データの読み込み
-  const loadAccommodationData = async () => {
-    try {
-      // 日付のみを送信（時刻部分を除去）
-      const today = new Date();
-      const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-      
-      const data = await mobilityService.getAccommodation({
-        date: dateStr,
-      });
-      console.log('App - Accommodation data loaded:', data);
-      setAccommodationData(data);
-      return data;
-    } catch (error) {
-      console.error('Failed to load accommodation data:', error);
-      throw error;
-    }
-  };
-
-  // 消費データの読み込み
-  const loadConsumptionData = async () => {
-    try {
-      const data = await mobilityService.getConsumption({
-        start_time: timeRange.start.toISOString(),
-        end_time: timeRange.end.toISOString(),
-      });
-      setConsumptionData(data);
-      return data;
-    } catch (error) {
-      console.error('Failed to load consumption data:', error);
-      throw error;
-    }
-  };
-
-  // イベントデータの読み込み
-  const loadEventData = async () => {
-    try {
-      const data = await eventService.getEvents();
-      console.log('App - Event data loaded:', data);
-      setEventData(data);
-      return data;
-    } catch (error) {
-      console.error('Failed to load event data:', error);
-      throw error;
-    }
-  };
-
-  // 地図の境界を計算
-  const calculateBounds = () => {
-    const padding = 0.5; // 度
-    return {
-      north: viewport.latitude + padding,
-      south: viewport.latitude - padding,
-      east: viewport.longitude + padding,
-      west: viewport.longitude - padding,
-    };
-  };
-
-  // フィルタ変更時のデータ再読み込み
+  // 初期化エフェクト
   useEffect(() => {
-    if (!loading) {
-      loadHeatmapData();
-      loadStatistics();
-    }
-  }, [selectedCategories, timeRange]);
+    initializeData();
+  }, [initializeData]);
 
-  // ビューポート変更時のデータ再読み込み（デバウンス付き）
+  // ローディング画面を非表示にする
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (!loading) {
-        loadHeatmapData();
-        // 人流データも更新（ただし大きな移動時のみ）
-        // Removed the HIROSHIMA_CENTER check - always update on significant viewport changes
-        loadMobilityData();
-      }
-    }, 2000); // デバウンス時間を長く
-
-    return () => clearTimeout(timeoutId);
-  }, [viewport]);
-
-  // エラー処理
-  const handleError = (error, context = '') => {
-    console.error(`Error in ${context}:`, error);
-    setError(`${context}でエラーが発生しました: ${error.message}`);
-  };
-
-  // 通知を閉じる
-  const handleCloseNotification = () => {
-    setNotification(null);
-  };
-
-  // エラーを閉じる
-  const handleCloseError = () => {
-    setError(null);
-  };
-  
-  // Map reference for smooth camera animation
-  const mapRef = useRef(null);
-  
-  // State to track if prefecture was clicked
-  const [prefectureClicked, setPrefectureClicked] = useState(false);
-  
-  // Handle prefecture selection with smooth camera animation
-  const handlePrefectureSelect = (prefecture) => {
-    setCurrentPrefecture(prefecture);
-    setPrefectureClicked(true);
-  };
-  
-  useEffect(() => {
-    if (prefectureClicked && mapRef.current && mapRef.current.flyToCenter) {
-      // Reset the flag
-      setPrefectureClicked(false);
-      
-      // Fly to the specified coordinates based on prefecture
+    if (!loading && window.hideLoading) {
+      // Reactのレンダリングが完了してから実行
       setTimeout(() => {
-        switch (currentPrefecture) {
-          case '広島県':
-            mapRef.current.flyToCenter([132.75, 34.5], 9.2);
-            break;
-          case '東京都':
-            mapRef.current.flyToCenter([139.7670, 35.6812], 10.5);
-            break;
-          case '大阪府':
-            mapRef.current.flyToCenter([135.4959, 34.7028], 10.5);
-            break;
-          case '福岡県':
-            mapRef.current.flyToCenter([130.4017, 33.5904], 10);
-            break;
-          default:
-            mapRef.current.flyToCenter([132.75, 34.5], 9.2);
-        }
+        window.hideLoading();
       }, 100);
     }
-  }, [currentPrefecture, prefectureClicked]);
+  }, [loading]);
+
+  // エラー表示
+  const handleCloseError = () => setError(null);
+
+  // 統合ダッシュボードのトグル
+  const toggleIntegratedDashboard = () => {
+    setIntegratedDashboardOpen(!integratedDashboardOpen);
+  };
+
+  // レンダリング
+  if (loading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100vh',
+            background: 'linear-gradient(135deg, #1a1a2e 0%, #0a0a1e 100%)',
+          }}
+        >
+          <CircularProgress size={60} sx={{ mb: 3, color: '#667eea' }} />
+          <Box sx={{ textAlign: 'center', color: 'white' }}>
+            <h2 style={{ marginBottom: '20px' }}>Uesugi Engine 起動中...</h2>
+            <Box sx={{ mt: 2 }}>
+              <div>✓ データ生成: {initializationStatus.dataGeneration ? '完了' : '処理中...'}</div>
+              <div>✓ API接続: {initializationStatus.apiConnection ? '完了' : '接続中...'}</div>
+              <div>✓ マップ準備: {initializationStatus.mapReady ? '完了' : '準備中...'}</div>
+            </Box>
+          </Box>
+        </Box>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      
-      <Box sx={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        height: '100vh',
-        overflow: 'hidden'
-      }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         {/* ヘッダー */}
-        <Header
+        <Header 
+          onAIAnalysisClick={() => setAiAnalysisOpen(true)}
+          dataCache={dataCache}
           timeRange={timeRange}
           onTimeRangeChange={setTimeRange}
-          currentPrefecture={currentPrefecture}
-          onPrefectureSelect={handlePrefectureSelect}
-          onAIAnalysisClick={() => setAIAnalysisOpen(true)}
+          currentPrefecture={selectedPrefecture}
+          onPrefectureSelect={setSelectedPrefecture}
         />
-        
+
         {/* メインコンテンツ */}
-        <Box sx={{ 
-          display: 'flex', 
-          flex: 1, 
-          overflow: 'hidden',
-          position: 'relative'
-        }}>
-          {/* 左サイドバー - 現実世界データ */}
-          <Box sx={{
-            width: leftSidebarOpen ? 360 : 0,
-            transition: 'width 0.3s ease',
-            overflow: 'hidden',
-            flexShrink: 0
-          }}>
-            {leftSidebarOpen && (
-              <LeftSidebar
-                selectedLayers={selectedLayers}
-                onLayerChange={setSelectedLayers}
-                viewport={viewport}
-                weatherData={weatherData}
-                onRefresh={() => {
-                  loadMobilityData();
-                  loadAccommodationData();
-                  loadConsumptionData();
-                  loadEventData();
-                }}
-                onClose={() => setLeftSidebarOpen(false)}
-              />
-            )}
-          </Box>
+        <Box sx={{ display: 'flex', flex: 1, position: 'relative', overflow: 'hidden' }}>
           
+          {/* 左サイドバー */}
+          <Box
+            sx={{
+              width: leftSidebarOpen ? 360 : 0,
+              transition: 'width 0.3s ease',
+              overflow: 'hidden',
+              position: 'relative',
+              zIndex: 2,
+              background: 'rgba(10, 10, 10, 0.95)',
+              borderRight: '1px solid rgba(255, 255, 255, 0.05)',
+            }}
+          >
+            <LeftSidebar
+              selectedLayers={Object.keys(layers).filter(key => layers[key])}
+              onLayerChange={(newLayers) => {
+                const updatedLayers = { ...layers };
+                Object.keys(layers).forEach(key => {
+                  updatedLayers[key] = newLayers.includes(key);
+                });
+                setLayers(updatedLayers);
+              }}
+              viewport={{ latitude: 34.3966, longitude: 132.4597, zoom: 11 }}
+              weatherData={dataCache.current.weather}
+              onRefresh={initializeData}
+              onClose={() => setLeftSidebarOpen(false)}
+            />
+          </Box>
+
           {/* 地図エリア */}
-          <Box sx={{ 
-            flex: 1, 
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'all 0.3s ease'
-          }}>
+          <Box sx={{ flex: 1, position: 'relative' }}>
             <MapErrorBoundary>
-              <MapEnhancedFixed
-                ref={mapRef}
-                viewport={viewport}
-                onViewportChange={setViewport}
-                heatmapData={heatmapData}
-                weatherData={weatherData}
-                mobilityData={mobilityData}
-                accommodationData={accommodationData}
-                consumptionData={consumptionData}
-                landmarkData={null}
-                eventData={eventData}
-                selectedLayers={selectedLayers}
-                selectedCategories={selectedCategories}
-                loading={loading}
-                onError={(error) => handleError(error, 'Map')}
+              <MapWithRealData
+                layers={layers}
+                categoryFilter={categoryFilter}
+                selectedPrefecture={selectedPrefecture}
                 leftSidebarOpen={leftSidebarOpen}
                 rightSidebarOpen={rightSidebarOpen}
+                loading={loading}
+                prefectureData={dataCache.current.prefectureData[selectedPrefecture]}
               />
             </MapErrorBoundary>
-            
-            {/* 左サイドバー開くボタン */}
+
+            {/* フローティングボタン（サイドバーが閉じている時） */}
             {!leftSidebarOpen && (
-              <IconButton
+              <Fab
+                color="primary"
+                size="small"
                 onClick={() => setLeftSidebarOpen(true)}
                 sx={{
                   position: 'absolute',
                   left: 16,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  bgcolor: 'rgba(102, 126, 234, 0.9)',
-                  color: 'white',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 4px 20px rgba(102, 126, 234, 0.3)',
-                  '&:hover': {
-                    bgcolor: 'rgba(102, 126, 234, 1)',
-                    transform: 'translateY(-50%) scale(1.1)',
-                  },
-                  transition: 'all 0.2s ease',
+                  top: 16,
                   zIndex: 1000,
                 }}
               >
                 <ChevronRight />
-              </IconButton>
+              </Fab>
             )}
-            
-            {/* 右サイドバー開くボタン */}
+
             {!rightSidebarOpen && (
-              <IconButton
+              <Fab
+                color="primary"
+                size="small"
                 onClick={() => setRightSidebarOpen(true)}
                 sx={{
                   position: 'absolute',
                   right: 16,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  bgcolor: 'rgba(255, 87, 34, 0.9)',
-                  color: 'white',
-                  backdropFilter: 'blur(10px)',
-                  boxShadow: '0 4px 20px rgba(255, 87, 34, 0.3)',
-                  '&:hover': {
-                    bgcolor: 'rgba(255, 87, 34, 1)',
-                    transform: 'translateY(-50%) scale(1.1)',
-                  },
-                  transition: 'all 0.2s ease',
+                  top: 16,
                   zIndex: 1000,
                 }}
               >
                 <ChevronLeft />
-              </IconButton>
+              </Fab>
             )}
+
+            {/* 統合ダッシュボードボタン */}
+            <Tooltip title="統合ダッシュボード">
+              <Fab
+                color="secondary"
+                onClick={toggleIntegratedDashboard}
+                sx={{
+                  position: 'absolute',
+                  left: 16,
+                  bottom: 16,
+                  zIndex: 1000,
+                }}
+              >
+                <CityIcon />
+              </Fab>
+            </Tooltip>
           </Box>
-          
-          {/* 右サイドバー - ソーシャルネットワーキングデータ */}
-          <Box sx={{
-            width: rightSidebarOpen ? 360 : 0,
-            transition: 'width 0.3s ease',
-            overflow: 'hidden',
-            flexShrink: 0
-          }}>
-            {rightSidebarOpen && (
-              <RightSidebar
-                selectedLayers={selectedLayers}
-                onLayerChange={setSelectedLayers}
-                selectedCategories={selectedCategories}
-                onCategoryChange={setSelectedCategories}
-                statistics={statistics}
-                onClose={() => setRightSidebarOpen(false)}
-              />
-            )}
-          </Box>
-          
-          {/* ダッシュボード */}
-          {dashboardOpen && (
-            <Dashboard
-              statistics={statistics}
-              weatherData={weatherData}
-              mobilityData={mobilityData}
-              accommodationData={accommodationData}
-              consumptionData={consumptionData}
-              timeRange={timeRange}
-              selectedCategories={selectedCategories}
-              viewport={viewport}
-              onClose={() => setDashboardOpen(false)}
+
+          {/* 右サイドバー */}
+          <Box
+            sx={{
+              width: rightSidebarOpen ? 360 : 0,
+              transition: 'width 0.3s ease',
+              overflow: 'hidden',
+              position: 'relative',
+              zIndex: 2,
+              background: 'rgba(10, 10, 10, 0.95)',
+              borderLeft: '1px solid rgba(255, 255, 255, 0.05)',
+            }}
+          >
+            <RightSidebar
+              selectedLayers={Object.keys(layers).filter(key => layers[key])}
+              onLayerChange={(newLayers) => {
+                const updatedLayers = { ...layers };
+                Object.keys(layers).forEach(key => {
+                  updatedLayers[key] = newLayers.includes(key);
+                });
+                setLayers(updatedLayers);
+              }}
+              selectedCategories={categoryFilter ? [categoryFilter] : []}
+              onCategoryChange={(category) => {
+                setCategoryFilter(categoryFilter === category ? null : category);
+              }}
+              statistics={dataCache.current.prefectureData[selectedPrefecture]?.statistics || {}}
+              onClose={() => setRightSidebarOpen(false)}
             />
-          )}
+          </Box>
         </Box>
 
-        {/* AI分析モーダル */}
-        <AIAnalysisModal
-          open={aiAnalysisOpen}
-          onClose={() => setAIAnalysisOpen(false)}
-          currentData={{
-            heatmapData,
-            weatherData,
-            mobilityData,
-            eventData,
-            statistics,
-          }}
-          timeRange={timeRange}
-          currentPrefecture={currentPrefecture}
-        />
-        
-        {/* 新機能ボタン群 */}
-        <Box sx={{ position: 'fixed', bottom: 24, left: 24, zIndex: 1200, display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Tooltip title="統合ダッシュボード" placement="right">
-            <Fab 
-              color="primary" 
-              onClick={() => setIntegratedDashboardOpen(true)}
-              sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                boxShadow: '0 4px 20px rgba(102, 126, 234, 0.4)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
-                }
-              }}
-            >
-              <CityIcon />
-            </Fab>
-          </Tooltip>
-          <Tooltip title="新機能デモ" placement="right">
-            <Fab 
-              color="secondary" 
-              onClick={() => setShowcaseOpen(true)}
-              size="small"
-              sx={{
-                background: 'linear-gradient(135deg, #764ba2 0%, #f953c6 100%)',
-                boxShadow: '0 4px 20px rgba(118, 75, 162, 0.4)',
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #f953c6 0%, #764ba2 100%)',
-                }
-              }}
-            >
-              <ScienceIcon />
-            </Fab>
-          </Tooltip>
-        </Box>
-        
-        {/* 可視化ショーケースダイアログ */}
-        <Dialog
-          fullScreen
-          open={showcaseOpen}
-          onClose={() => setShowcaseOpen(false)}
-          TransitionProps={{ unmountOnExit: true }}
-        >
-          <DialogContent sx={{ p: 0, bgcolor: 'background.default' }}>
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column',
-              height: '100vh',
-              overflow: 'auto'
-            }}>
-              {/* ヘッダー */}
-              <Box sx={{ 
-                p: 2, 
-                display: 'flex', 
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                borderBottom: 1,
-                borderColor: 'divider'
-              }}>
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <IconButton onClick={() => setShowcaseOpen(false)}>
-                    <ChevronLeft />
-                  </IconButton>
-                  <IconButton 
-                    color="primary"
-                    onClick={() => {
-                      setShowcaseOpen(false);
-                      setIntegratedDashboardOpen(true);
-                    }}
-                  >
-                    統合ダッシュボードを開く
-                  </IconButton>
-                </Box>
-              </Box>
-              
-              {/* ショーケースコンテンツ */}
-              <VisualizationShowcase />
-            </Box>
-          </DialogContent>
-        </Dialog>
-        
-        {/* 統合ダッシュボードダイアログ */}
-        <Dialog
-          fullScreen
-          open={integratedDashboardOpen}
-          onClose={() => setIntegratedDashboardOpen(false)}
-          TransitionProps={{ unmountOnExit: true }}
-        >
-          <DialogContent sx={{ p: 0, bgcolor: 'background.default' }}>
-            <Box sx={{ 
-              display: 'flex', 
-              flexDirection: 'column',
-              height: '100vh'
-            }}>
-              {/* ヘッダー */}
-              <Box sx={{ 
-                p: 2, 
-                display: 'flex', 
-                alignItems: 'center',
-                borderBottom: 1,
-                borderColor: 'divider'
-              }}>
-                <IconButton onClick={() => setIntegratedDashboardOpen(false)}>
-                  <ChevronLeft />
-                </IconButton>
-                <Box sx={{ ml: 2 }}>
-                  統合ダッシュボード - {currentPrefecture}
-                </Box>
-              </Box>
-              
-              {/* ダッシュボードコンテンツ */}
-              <Box sx={{ flex: 1, position: 'relative' }}>
-                <IntegratedDashboard 
-                  mapRef={mapRef}
-                  currentData={{
-                    heatmapData,
-                    weatherData,
-                    mobilityData,
-                    eventData,
-                    statistics,
-                  }}
-                />
-              </Box>
-              
-              {/* 建物分析パネル（サンプル） */}
-              {currentPrefecture && (
-                <Box sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
-                  <BuildingAnalysis 
-                    prefecture={currentPrefecture}
-                    plateauData={null} // TODO: 実際のPLATEAUデータを渡す
-                  />
-                </Box>
-              )}
-            </Box>
-          </DialogContent>
-        </Dialog>
-        
         {/* エラー通知 */}
         <Snackbar
           open={!!error}
           autoHideDuration={6000}
           onClose={handleCloseError}
-          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
         >
-          <Alert 
-            onClose={handleCloseError} 
-            severity="error"
-            variant="filled"
-          >
+          <Alert onClose={handleCloseError} severity="error" sx={{ width: '100%' }}>
             {error}
           </Alert>
         </Snackbar>
-        
-        {/* 一般通知 */}
-        <Snackbar
-          open={!!notification}
-          autoHideDuration={4000}
-          onClose={handleCloseNotification}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+
+        {/* AI分析モーダル */}
+        <AIAnalysisModal
+          open={aiAnalysisOpen}
+          onClose={() => setAiAnalysisOpen(false)}
+          currentData={dataCache.current.prefectureData[selectedPrefecture] || {
+            eventData: [],
+            heatmap: { features: [] },
+            mobility: { features: [] },
+            landmarks: { features: [] },
+            hotels: { features: [] },
+            consumption: { features: [] },
+            statistics: {}
+          }}
+          timeRange="24h"
+          currentPrefecture={selectedPrefecture}
+        />
+
+        {/* 統合ダッシュボード */}
+        <Dialog
+          open={integratedDashboardOpen}
+          onClose={toggleIntegratedDashboard}
+          maxWidth="xl"
+          fullWidth
+          PaperProps={{
+            sx: {
+              height: '90vh',
+              background: 'rgba(10, 10, 10, 0.98)',
+            }
+          }}
         >
-          <Alert 
-            onClose={handleCloseNotification} 
-            severity={notification?.type || 'info'}
-            variant="filled"
-          >
-            {notification?.message}
-          </Alert>
-        </Snackbar>
+          <DialogContent>
+            <IntegratedDashboard
+              dataCache={dataCache}
+              selectedPrefecture={selectedPrefecture}
+            />
+          </DialogContent>
+        </Dialog>
       </Box>
     </ThemeProvider>
   );

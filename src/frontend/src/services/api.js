@@ -42,6 +42,7 @@ class ApiService {
 }
 
 const apiService = new ApiService();
+export const apiClient = apiService;
 
 // ヒートマップサービス
 export const heatmapService = {
