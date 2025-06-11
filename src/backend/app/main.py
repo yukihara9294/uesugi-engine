@@ -13,7 +13,7 @@ from loguru import logger
 
 from app.core.config import settings
 from app.core.database import create_tables
-from app.api.endpoints import heatmap, weather, statistics, health, mobility, landmark, event
+from app.api.endpoints import heatmap, weather, statistics, health, mobility, landmark, event, data_management
 from app.api.v1 import opendata
 from app.services.dummy_data_generator import generate_initial_data
 
@@ -58,6 +58,7 @@ app.include_router(mobility.router, prefix="/api/v1/mobility", tags=["mobility"]
 app.include_router(landmark.router, prefix="/api/v1/landmarks", tags=["landmarks"])
 app.include_router(event.router, prefix="/api/v1/events", tags=["events"])
 app.include_router(opendata.router, prefix="/api/v1/opendata", tags=["opendata"])
+app.include_router(data_management.router, prefix="/api/v1/management", tags=["management"])
 
 # イベントハンドラー
 @app.on_event("startup")

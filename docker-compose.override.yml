@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  backend:
+    volumes:
+      - ./src/backend:/app
+      - ./data:/app/data
+      - ./scripts:/scripts:ro  # Mount scripts directory read-only
+      - ./uesugi-engine-data:/uesugi-engine-data:ro  # Mount data directory read-only
