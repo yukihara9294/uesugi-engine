@@ -1700,7 +1700,7 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
         accommodation: toGeoJSON(hiroshimaData.accommodation, 'Point', ['height', 'occupancy_rate', 'avg_price']),
         hotels: toGeoJSON(hiroshimaData.accommodation, 'Point', ['height', 'occupancy_rate', 'avg_price']), // Alias for compatibility
         consumption: toGeoJSON(hiroshimaData.consumption, 'Point', ['radius', 'amount', 'total_amount', 'height']),
-        mobility: hiroshimaData.mobility, // Already in correct format
+        mobility: hiroshimaData.mobility, // Already in GeoJSON format from generateMobilityFlowsGeoJSON
         landmarks: toGeoJSON(hiroshimaData.landmarks, 'Point', ['height', 'color', 'name']),
         events: toGeoJSON(hiroshimaData.events, 'Point', ['radius', 'color']),
         eventData: toGeoJSON(hiroshimaData.events, 'Point', ['radius', 'color']), // Alias for compatibility
@@ -1783,50 +1783,115 @@ export function generateAllPrefectureData(prefectureName = '広島県') {
     }
     
     case '山口県': {
-      // 簡易的な山口県データ
+      // 山口県データ
       const yamaguchiData = {
         bounds: { 
-          north: 34.5, 
+          north: 34.6, 
           south: 33.7, 
           east: 132.2, 
           west: 130.8,
-          center: [131.5, 34.1],  // Center of Yamaguchi Prefecture
-          defaultZoom: 10
+          center: [131.4705, 34.1858],  // Yamaguchi City center
+          defaultZoom: 9.5
         },
         cities: {
           yamaguchi: { 
             name: '山口市', 
+            nameEn: 'Yamaguchi',
             center: [131.4705, 34.1858], 
             population: 196000,
             districts: [
-              { name: '山口市中心部', center: [131.4705, 34.1858], population: 80000 }
-            ]
+              { name: '小郡', center: [131.3950, 34.1560], population: 35000 },
+              { name: '山口', center: [131.4705, 34.1858], population: 45000 },
+              { name: '湯田', center: [131.4550, 34.1650], population: 25000 },
+              { name: '大内', center: [131.4000, 34.1700], population: 30000 }
+            ],
+            touristSpots: ['瑠璃光寺', '山口県立美術館', '湯田温泉', '常栄寺雪舟庭', 'サビエル記念聖堂'],
+            commercialAreas: ['山口駅前', '湯田温泉街', '小郡駅前']
           },
           shimonoseki: { 
             name: '下関市', 
+            nameEn: 'Shimonoseki',
             center: [130.9400, 33.9570], 
             population: 259000,
             districts: [
-              { name: '下関市中心部', center: [130.9400, 33.9570], population: 100000 }
-            ]
+              { name: '下関', center: [130.9400, 33.9570], population: 60000 },
+              { name: '長府', center: [130.9800, 33.9900], population: 45000 },
+              { name: '唐戸', center: [130.9450, 33.9550], population: 35000 },
+              { name: '彦島', center: [130.9000, 33.9300], population: 30000 }
+            ],
+            touristSpots: ['関門橋', '唐戸市場', '海響館', '赤間神宮', '巌流島', '角島大橋'],
+            commercialAreas: ['下関駅前', '唐戸', 'シーモール下関']
           },
           ube: { 
             name: '宇部市', 
+            nameEn: 'Ube',
             center: [131.2465, 33.9430], 
             population: 166000,
             districts: [
-              { name: '宇部市中心部', center: [131.2465, 33.9430], population: 70000 }
-            ]
+              { name: '宇部', center: [131.2465, 33.9430], population: 50000 },
+              { name: '東岐波', center: [131.2800, 33.9600], population: 35000 },
+              { name: '西岐波', center: [131.2200, 33.9300], population: 30000 }
+            ],
+            touristSpots: ['ときわ公園', '宇部市立彫刻美術館', 'ときわ動物園'],
+            commercialAreas: ['宇部新川駅前', '宇部駅前']
+          },
+          iwakuni: {
+            name: '岩国市',
+            nameEn: 'Iwakuni',
+            center: [132.2200, 34.1667],
+            population: 133000,
+            districts: [
+              { name: '岩国', center: [132.2200, 34.1667], population: 40000 },
+              { name: '錦帯橋', center: [132.1800, 34.1667], population: 20000 },
+              { name: '南岩国', center: [132.2300, 34.1300], population: 25000 }
+            ],
+            touristSpots: ['錦帯橋', '岩国城', '吉香公園', '白蛇観覧所', '岩国美術館'],
+            commercialAreas: ['岩国駅前', '錦帯橋周辺']
+          },
+          hagi: {
+            name: '萩市',
+            nameEn: 'Hagi',
+            center: [131.3993, 34.4083],
+            population: 46000,
+            districts: [
+              { name: '萩', center: [131.3993, 34.4083], population: 25000 },
+              { name: '椿', center: [131.3700, 34.4200], population: 10000 }
+            ],
+            touristSpots: ['萩城跡', '松下村塾', '東光寺', '大照院', '萩博物館', '菊屋横町'],
+            commercialAreas: ['萩駅前', '萩城下町']
+          },
+          shunan: {
+            name: '周南市',
+            nameEn: 'Shunan',
+            center: [131.8058, 34.0556],
+            population: 142000,
+            districts: [
+              { name: '徳山', center: [131.8058, 34.0556], population: 60000 },
+              { name: '新南陽', center: [131.7500, 34.0300], population: 40000 }
+            ],
+            touristSpots: ['周南市美術博物館', '徳山動物園', '大津島'],
+            commercialAreas: ['徳山駅前', '新南陽駅前']
           }
         },
         landmarks: [
-          { name: '錦帯橋', coordinates: [132.1800, 34.1667], category: '観光地' },
-          { name: '秋吉台', coordinates: [131.3033, 34.2347], category: '自然' },
-          { name: '萩城跡', coordinates: [131.3993, 34.4167], category: '史跡' }
+          { name: '錦帯橋', coordinates: [132.1800, 34.1667], category: '観光地', height: 20, color: '#FFD700' },
+          { name: '秋吉台', coordinates: [131.3033, 34.2347], category: '自然', height: 30, color: '#90EE90' },
+          { name: '萩城跡', coordinates: [131.3993, 34.4167], category: '史跡', height: 25, color: '#DDA0DD' },
+          { name: '角島大橋', coordinates: [130.8900, 34.3567], category: '観光地', height: 35, color: '#87CEEB' },
+          { name: '関門橋', coordinates: [130.9586, 33.9608], category: '建造物', height: 40, color: '#4682B4' },
+          { name: '瑠璃光寺五重塔', coordinates: [131.4749, 34.1903], category: '史跡', height: 30, color: '#CD853F' },
+          { name: '秋芳洞', coordinates: [131.3033, 34.2300], category: '自然', height: 25, color: '#2F4F4F' },
+          { name: '元乃隅神社', coordinates: [130.9142, 34.4258], category: '神社', height: 20, color: '#DC143C' }
         ],
         events: [
           { name: '山口七夕ちょうちんまつり', coordinates: [131.4705, 34.1858], category: '祭り', icon: '🏮' },
-          { name: '錦帯橋まつり', coordinates: [132.1800, 34.1667], category: '祭り', icon: '🎊' }
+          { name: '錦帯橋まつり', coordinates: [132.1800, 34.1667], category: '祭り', icon: '🎊' },
+          { name: '萩時代まつり', coordinates: [131.3993, 34.4083], category: '祭り', icon: '🎭' },
+          { name: '下関海峡まつり', coordinates: [130.9400, 33.9570], category: '祭り', icon: '⛩️' },
+          { name: '防府天満宮御神幸祭', coordinates: [131.5667, 34.0514], category: '祭り', icon: '🎊' },
+          { name: '岩国港みなと祭花火大会', coordinates: [132.2200, 34.1667], category: '花火', icon: '🎆' },
+          { name: '宇部まつり', coordinates: [131.2465, 33.9430], category: '祭り', icon: '🎪' },
+          { name: '周南冬のツリーまつり', coordinates: [131.8058, 34.0556], category: 'イルミネーション', icon: '✨' }
         ]
       };
       
@@ -2128,6 +2193,15 @@ export function getPrefectureBounds(prefectureName) {
       return OSAKA_DATA.bounds;
     case '福岡県':
       return FUKUOKA_DATA.bounds;
+    case '山口県':
+      return {
+        north: 34.6,
+        south: 33.7,
+        east: 132.2,
+        west: 130.8,
+        center: [131.4705, 34.1858],
+        defaultZoom: 9.5
+      };
     case '広島県':
     default:
       return getHiroshimaPrefectureBounds();

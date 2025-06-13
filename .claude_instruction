@@ -14,13 +14,18 @@
 
 ## MDファイル管理
 
+**既存の5つのMDファイルのみ使用（新規作成禁止）：**
 - PROJECT_GUIDE.md: 作業指示・現状・優先順位
 - TECHNICAL_DETAILS.md: 技術仕様・バグ情報
-- CLAUDE.md: 作業履歴
+- CLAUDE.md: 作業履歴・セッション引き継ぎ情報
 - README.md: 外部向け説明
-- MD_FILES_MAP.md: ファイル間の関係図
+- DESIGN_REFERENCE.md: ダミーデータ時のデザイン仕様
 
-情報を追加する際は、既存ファイルの適切な箇所に追記する。新しいMDファイルは作らない。
+**重要：新しいMDファイルは絶対に作らない。**
+- 作業記録 → CLAUDE.mdに追記
+- 技術仕様 → TECHNICAL_DETAILS.mdに追記
+- 次回タスク → PROJECT_GUIDE.mdに追記
+- デザイン仕様 → DESIGN_REFERENCE.mdに追記
 
 ## 必須更新ルール
 

@@ -10,7 +10,7 @@ import { Box, Container, Alert, Snackbar, IconButton, Fab, Tooltip, Dialog, Dial
 import { ChevronRight, ChevronLeft, Science as ScienceIcon, LocationCity as CityIcon } from '@mui/icons-material';
 
 // コンポーネント（実データ版を使用）
-import HeaderEnhanced from './components/Header/HeaderEnhanced';
+import Header from './components/Header/Header';
 import MapWithRealData from './components/Map/MapWithRealData';
 import MapErrorBoundary from './components/Map/MapErrorBoundary';
 import LeftSidebar from './components/Sidebar/LeftSidebar';
@@ -151,7 +151,7 @@ function App() {
     heatmap: true,
     events: true,
   });
-  const [categoryFilter, setCategoryFilter] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState(['観光', 'グルメ', 'イベント', 'ショッピング', '交通']);
   const [timeRange, setTimeRange] = useState({
     start: new Date(Date.now() - 24 * 60 * 60 * 1000),
     end: new Date()
@@ -294,15 +294,17 @@ function App() {
       <CssBaseline />
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         {/* ヘッダー */}
-        <HeaderEnhanced 
-          onAIAnalysisClick={() => setAiAnalysisOpen(true)}
-          onRefresh={initializeData}
-          dataCache={dataCache}
-          timeRange={timeRange}
-          onTimeRangeChange={setTimeRange}
+        <Header 
+          title="Uesugi Engine"
           currentPrefecture={selectedPrefecture}
           onPrefectureSelect={setSelectedPrefecture}
+          onMenuClick={() => {}}
+          onAIAnalysisClick={() => setAiAnalysisOpen(true)}
+          weatherData={dataCache.current.weather}
           dataUpdateTime={dataCache.current.lastUpdate}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+          onRefresh={initializeData}
         />
 
         {/* メインコンテンツ */}

@@ -111,22 +111,42 @@ export async function loadRealMobilityData(prefecture) {
     const response = await realDataService.getMobility(prefecture);
     console.log('Mobility data loaded:', response);
     
-    if (response && response.data) {
+    // APIが新しい形式（flowsとparticles）を返す場合
+    if (response && response.flows && response.particles) {
       return {
-        type: 'FeatureCollection',
-        features: response.data.map(flow => ({
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: flow.coordinates || [[132.4597, 34.3966], [132.4751, 34.3978]]
-          },
-          properties: {
-            ...flow,
-            intensity: flow.intensity || Math.random() * 100,
-            category: 'mobility'
-          }
-        }))
+        flows: response.flows,
+        particles: response.particles
       };
+    }
+    // 古い形式（配列のflows）の場合
+    else if (response && response.flows && Array.isArray(response.flows)) {
+      return {
+        flows: {
+          type: 'FeatureCollection',
+          features: response.flows.map(flow => ({
+            type: 'Feature',
+            geometry: {
+              type: 'LineString',
+              coordinates: [
+                [flow.origin.lon, flow.origin.lat],
+                [flow.destination.lon, flow.destination.lat]
+              ]
+            },
+            properties: {
+              origin_name: flow.origin.name,
+              destination_name: flow.destination.name,
+              volume: flow.volume,
+              intensity: Math.min(100, flow.volume / 500),
+              category: 'mobility'
+            }
+          }))
+        },
+        particles: null  // ダミーデータにフォールバック
+      };
+    }
+    // 単一のGeoJSON FeatureCollectionの場合
+    else if (response && response.type === 'FeatureCollection') {
+      return response;
     }
     return null;
     

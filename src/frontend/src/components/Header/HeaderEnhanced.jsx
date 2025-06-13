@@ -153,6 +153,16 @@ const HeaderEnhanced = ({
                 広島県
               </MenuItem>
               <MenuItem 
+                onClick={() => handlePrefectureSelect('山口県')}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: alpha('#667eea', 0.1),
+                  },
+                }}
+              >
+                山口県
+              </MenuItem>
+              <MenuItem 
                 onClick={() => handlePrefectureSelect('東京都')}
                 sx={{
                   '&:hover': {

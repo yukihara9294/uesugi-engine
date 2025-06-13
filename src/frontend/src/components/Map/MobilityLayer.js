@@ -127,8 +127,9 @@ const MobilityLayer = ({ map, visible }) => {
         this.endPoint = endPoint;
         this.progress = 0;
         this.speed = 0.5 + Math.random() * 0.5; // 速度のランダム化
-        this.size = 3 + Math.random() * 4;
-        this.opacity = 0.6 + Math.random() * 0.4;
+        this.baseSize = 3 + Math.random() * 4;
+        this.size = this.baseSize;
+        this.opacity = 0.3 + Math.random() * 0.3;
         this.trail = []; // 軌跡を保存
         this.maxTrailLength = 10;
         
@@ -175,7 +176,7 @@ const MobilityLayer = ({ map, visible }) => {
       draw(ctx) {
         // 軌跡を描画
         this.trail.forEach((point, index) => {
-          const trailOpacity = (index / this.trail.length) * point.opacity * 0.5;
+          const trailOpacity = (index / this.trail.length) * point.opacity * 0.3;
           const trailSize = this.size * (index / this.trail.length);
           
           // グロー効果
@@ -194,7 +195,7 @@ const MobilityLayer = ({ map, visible }) => {
         // 外側のグロー
         ctx.shadowBlur = 20;
         ctx.shadowColor = 'rgba(59, 130, 246, 1)';
-        ctx.fillStyle = `rgba(96, 165, 250, ${this.opacity * 0.3})`;
+        ctx.fillStyle = `rgba(96, 165, 250, ${this.opacity * 0.2})`;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, this.size * 2, 0, Math.PI * 2);
         ctx.fill();
@@ -208,7 +209,7 @@ const MobilityLayer = ({ map, visible }) => {
         
         // 中心の白い部分
         ctx.shadowBlur = 0;
-        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.8})`;
+        ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.6})`;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, this.size * 0.5, 0, Math.PI * 2);
         ctx.fill();
@@ -254,7 +255,7 @@ const MobilityLayer = ({ map, visible }) => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
       // 接続線を描画（薄い青色）
-      ctx.strokeStyle = 'rgba(59, 130, 246, 0.1)';
+      ctx.strokeStyle = 'rgba(59, 130, 246, 0.05)';
       ctx.lineWidth = 1;
       particlesRef.current.forEach(particle => {
         ctx.beginPath();
@@ -293,11 +294,17 @@ const MobilityLayer = ({ map, visible }) => {
 
     // マップの移動・ズーム時にパーティクルの位置を更新
     const updateParticlePositions = () => {
+      const zoom = map.getZoom();
+      const zoomScale = Math.max(0.3, Math.min(2, zoom / 12)); // Scale based on zoom level
+      
       particlesRef.current.forEach(particle => {
         const startCoord = map.project(particle.startPoint.coordinates);
         const endCoord = map.project(particle.endPoint.coordinates);
         particle.start = [startCoord.x, startCoord.y];
         particle.end = [endCoord.x, endCoord.y];
+        
+        // ズームレベルに基づいてパーティクルサイズを調整
+        particle.size = particle.baseSize * zoomScale;
         
         // 弧の高さも再計算
         const distance = Math.sqrt(

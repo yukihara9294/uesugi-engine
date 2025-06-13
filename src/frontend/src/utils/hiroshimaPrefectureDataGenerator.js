@@ -114,6 +114,7 @@ export const HIROSHIMA_CITIES = {
 
 // Major transportation routes between cities
 export const TRANSPORTATION_ROUTES = [
+  // 主要高速道路
   {
     name: '山陽自動車道',
     type: 'highway',
@@ -126,6 +127,27 @@ export const TRANSPORTATION_ROUTES = [
       [133.3627, 34.4858]  // 福山
     ]
   },
+  {
+    name: '中国自動車道',
+    type: 'highway',
+    points: [
+      [132.4553, 34.3853], // 広島
+      [132.6526, 34.5858], // 北部経由
+      [132.8526, 34.8058]  // 三次
+    ]
+  },
+  {
+    name: '広島自動車道',
+    type: 'highway',
+    points: [
+      [132.4553, 34.3853], // 広島
+      [132.5000, 34.4500], // 可部
+      [132.6000, 34.5500], // 千代田
+      [132.6526, 34.5858]  // 中国道接続
+    ]
+  },
+  
+  // 国道網
   {
     name: '国道2号線',
     type: 'national',
@@ -140,6 +162,49 @@ export const TRANSPORTATION_ROUTES = [
     ]
   },
   {
+    name: '国道54号線',
+    type: 'national',
+    points: [
+      [132.4553, 34.3853], // 広島
+      [132.4800, 34.4500], // 可部
+      [132.5500, 34.5500], // 白木
+      [132.6000, 34.6500], // 高田
+      [132.7000, 34.7500], // 吉田
+      [132.8526, 34.8058]  // 三次
+    ]
+  },
+  {
+    name: '国道31号線',
+    type: 'national',
+    points: [
+      [132.4553, 34.3853], // 広島
+      [132.5000, 34.3500], // 海田
+      [132.5653, 34.2489], // 呉
+      [132.5283, 34.1619]  // 音戸
+    ]
+  },
+  {
+    name: '国道185号線',
+    type: 'national',
+    points: [
+      [132.5653, 34.2489], // 呉
+      [132.6500, 34.3000], // 竹原
+      [132.9000, 34.3500], // 竹原市街
+      [133.0794, 34.4011]  // 三原
+    ]
+  },
+  {
+    name: '国道183号線',
+    type: 'national',
+    points: [
+      [132.8526, 34.8058], // 三次
+      [132.7000, 34.8500], // 庄原方面
+      [132.5000, 34.9000]  // 北部
+    ]
+  },
+  
+  // 鉄道路線
+  {
     name: '山陽新幹線',
     type: 'shinkansen',
     points: [
@@ -150,12 +215,90 @@ export const TRANSPORTATION_ROUTES = [
     ]
   },
   {
-    name: '中国自動車道',
-    type: 'highway',
+    name: 'JR山陽本線',
+    type: 'train',
+    points: [
+      [132.3196, 34.2960], // 宮島口
+      [132.3318, 34.3486], // 廿日市
+      [132.4553, 34.3853], // 広島
+      [132.5000, 34.3500], // 海田
+      [132.5653, 34.2489], // 呉
+      [132.6500, 34.3000], // 広
+      [132.7426, 34.4286], // 西条
+      [133.0794, 34.4011], // 三原
+      [133.2050, 34.4090], // 尾道
+      [133.3627, 34.4858]  // 福山
+    ]
+  },
+  {
+    name: 'JR呉線',
+    type: 'train',
+    points: [
+      [132.5000, 34.3500], // 海田
+      [132.5653, 34.2489], // 呉
+      [132.6500, 34.3000], // 広
+      [132.9000, 34.3500], // 竹原
+      [133.0794, 34.4011]  // 三原
+    ]
+  },
+  {
+    name: 'JR可部線',
+    type: 'train',
     points: [
       [132.4553, 34.3853], // 広島
-      [132.6526, 34.5858], // 北部経由
+      [132.4600, 34.4000], // 横川
+      [132.4800, 34.4500]  // 可部
+    ]
+  },
+  {
+    name: 'JR芸備線',
+    type: 'train',
+    points: [
+      [132.4553, 34.3853], // 広島
+      [132.5000, 34.4500], // 安芸矢口
+      [132.6000, 34.5500], // 志和口
+      [132.7000, 34.6500], // 向原
       [132.8526, 34.8058]  // 三次
+    ]
+  },
+  
+  // 広域連携路線（県境を越える流動）
+  {
+    name: '広島-岡山連絡',
+    type: 'inter-prefecture',
+    points: [
+      [133.3627, 34.4858], // 福山
+      [133.5000, 34.5500], // 笠岡方面
+      [133.9194, 34.6618]  // 岡山
+    ]
+  },
+  {
+    name: '広島-山口連絡',
+    type: 'inter-prefecture',
+    points: [
+      [132.3318, 34.3486], // 廿日市
+      [132.1000, 34.3000], // 大竹
+      [131.4705, 34.1860]  // 山口方面
+    ]
+  },
+  {
+    name: '広島-愛媛連絡（しまなみ海道）',
+    type: 'inter-prefecture',
+    points: [
+      [133.2050, 34.4090], // 尾道
+      [133.1800, 34.3200], // 因島
+      [133.1000, 34.2500], // 生口島
+      [133.0000, 34.1500], // 大三島
+      [132.9900, 34.0600]  // 今治方面
+    ]
+  },
+  {
+    name: '広島-島根連絡',
+    type: 'inter-prefecture',
+    points: [
+      [132.8526, 34.8058], // 三次
+      [132.7000, 34.9000], // 北部
+      [132.5000, 35.0000]  // 邑南町方面
     ]
   }
 ];
@@ -515,6 +658,7 @@ export function generateMobilityData() {
   TRANSPORTATION_ROUTES.forEach(route => {
     const congestionLevel = route.type === 'highway' ? 0.6 + Math.random() * 0.3 :
                            route.type === 'shinkansen' ? 0.3 + Math.random() * 0.3 :
+                           route.type === 'inter-prefecture' ? 0.4 + Math.random() * 0.3 :
                            0.7 + Math.random() * 0.25;
     
     mobilityData.routes.push({
@@ -525,11 +669,61 @@ export function generateMobilityData() {
       congestion: congestionLevel,
       flow_speed: route.type === 'shinkansen' ? 200 : 
                   route.type === 'highway' ? 80 - (congestionLevel * 30) : 
-                  40 - (congestionLevel * 20)
+                  route.type === 'inter-prefecture' ? 60 - (congestionLevel * 20) :
+                  40 - (congestionLevel * 20),
+      flow_count: route.type === 'shinkansen' ? 50000 + Math.random() * 30000 :
+                  route.type === 'highway' ? 40000 + Math.random() * 20000 :
+                  route.type === 'inter-prefecture' ? 20000 + Math.random() * 15000 :
+                  15000 + Math.random() * 10000
     });
   });
   
-  // Add congestion points at major intersections
+  // Add inter-city mobility flows (direct connections between major cities)
+  const cityPairs = [
+    { from: HIROSHIMA_CITIES.hiroshima, to: HIROSHIMA_CITIES.fukuyama, flow: 35000 },
+    { from: HIROSHIMA_CITIES.hiroshima, to: HIROSHIMA_CITIES.kure, flow: 45000 },
+    { from: HIROSHIMA_CITIES.hiroshima, to: HIROSHIMA_CITIES.higashihiroshima, flow: 40000 },
+    { from: HIROSHIMA_CITIES.hiroshima, to: HIROSHIMA_CITIES.hatsukaichi, flow: 50000 },
+    { from: HIROSHIMA_CITIES.fukuyama, to: HIROSHIMA_CITIES.onomichi, flow: 30000 },
+    { from: HIROSHIMA_CITIES.onomichi, to: HIROSHIMA_CITIES.mihara, flow: 25000 },
+    { from: HIROSHIMA_CITIES.kure, to: HIROSHIMA_CITIES.higashihiroshima, flow: 20000 },
+    { from: HIROSHIMA_CITIES.hiroshima, to: HIROSHIMA_CITIES.miyoshi, flow: 15000 },
+  ];
+  
+  cityPairs.forEach((pair, idx) => {
+    mobilityData.routes.push({
+      id: `city-flow-${idx}`,
+      name: `${pair.from.name} - ${pair.to.name} 通勤・通学`,
+      type: 'commute',
+      points: [pair.from.center, pair.to.center],
+      congestion: 0.6 + Math.random() * 0.3,
+      flow_speed: 50,
+      flow_count: pair.flow + Math.random() * 10000
+    });
+  });
+  
+  // Add tourist flow routes (especially to major tourist destinations)
+  const touristFlows = [
+    { from: [132.4757, 34.3972], to: [132.3196, 34.2960], name: '広島駅 - 宮島', flow: 30000 }, // Hiroshima Station to Miyajima
+    { from: [132.4553, 34.3853], to: [132.4500, 34.3920], name: '市内 - 平和記念公園', flow: 40000 }, // City to Peace Park
+    { from: [133.3627, 34.4858], to: [133.3833, 34.3833], name: '福山 - 鞆の浦', flow: 20000 }, // Fukuyama to Tomonoura
+    { from: [133.2050, 34.4090], to: [133.2100, 34.3900], name: '尾道 - しまなみ海道', flow: 25000 }, // Onomichi to Shimanami
+    { from: [132.5653, 34.2489], to: [132.5550, 34.2410], name: '呉市内 - 大和ミュージアム', flow: 15000 }, // Kure to Yamato Museum
+  ];
+  
+  touristFlows.forEach((flow, idx) => {
+    mobilityData.routes.push({
+      id: `tourist-flow-${idx}`,
+      name: flow.name,
+      type: 'tourist',
+      points: [flow.from, flow.to],
+      congestion: 0.5 + Math.random() * 0.3,
+      flow_speed: 40,
+      flow_count: flow.flow + Math.random() * 5000
+    });
+  });
+  
+  // Add congestion points at major intersections and interchanges
   Object.values(HIROSHIMA_CITIES).forEach(city => {
     // Station areas tend to be congested
     const stationCongestion = {
@@ -537,7 +731,8 @@ export function generateMobilityData() {
       level: 0.7 + Math.random() * 0.25,
       radius: city.population > 200000 ? 0.01 : 0.005,
       type: 'station',
-      name: `${city.name}駅周辺`
+      name: `${city.name}駅周辺`,
+      flow_count: Math.floor(city.population * 0.1)
     };
     mobilityData.congestionPoints.push(stationCongestion);
     
@@ -551,9 +746,46 @@ export function generateMobilityData() {
         level: 0.5 + Math.random() * 0.35,
         radius: 0.004,
         type: 'commercial',
-        name: area
+        name: area,
+        flow_count: Math.floor(city.population * 0.05 * Math.random())
       };
       mobilityData.congestionPoints.push(areaCongestion);
+    });
+    
+    // Add highway interchange congestion points for major cities
+    if (city.population > 100000) {
+      const interchangeCongestion = {
+        coordinates: [
+          city.center[0] + (Math.random() - 0.5) * 0.02,
+          city.center[1] + (Math.random() - 0.5) * 0.02
+        ],
+        level: 0.6 + Math.random() * 0.3,
+        radius: 0.008,
+        type: 'interchange',
+        name: `${city.name} IC`,
+        flow_count: Math.floor(20000 + Math.random() * 15000)
+      };
+      mobilityData.congestionPoints.push(interchangeCongestion);
+    }
+  });
+  
+  // Add major junction points
+  const majorJunctions = [
+    { name: '広島JCT', coordinates: [132.4600, 34.4000], level: 0.8 },
+    { name: '廿日市JCT', coordinates: [132.3400, 34.3550], level: 0.75 },
+    { name: '西条IC', coordinates: [132.7400, 34.4350], level: 0.7 },
+    { name: '福山東IC', coordinates: [133.3800, 34.4900], level: 0.7 },
+    { name: '尾道IC', coordinates: [133.2100, 34.4150], level: 0.65 },
+  ];
+  
+  majorJunctions.forEach(junction => {
+    mobilityData.congestionPoints.push({
+      coordinates: junction.coordinates,
+      level: junction.level + Math.random() * 0.1,
+      radius: 0.01,
+      type: 'junction',
+      name: junction.name,
+      flow_count: Math.floor(30000 + Math.random() * 20000)
     });
   });
   
@@ -1157,12 +1389,44 @@ export function getHiroshimaPrefectureBounds() {
   };
 }
 
+// Convert mobility data to GeoJSON format for CyberFlowLayer
+export function generateMobilityFlowsGeoJSON() {
+  const mobilityData = generateMobilityData();
+  const features = [];
+  
+  // Convert routes to LineString features
+  mobilityData.routes.forEach((route, idx) => {
+    features.push({
+      type: 'Feature',
+      geometry: {
+        type: 'LineString',
+        coordinates: route.points
+      },
+      properties: {
+        id: route.id,
+        name: route.name,
+        type: route.type, // 'commute', 'tourist', 'highway', etc.
+        flow_count: route.flow_count,
+        congestion: route.congestion,
+        flow_speed: route.flow_speed
+      }
+    });
+  });
+  
+  return {
+    type: 'FeatureCollection',
+    features: features
+  };
+}
+
 // Generate all data for the prefecture
 export function generateAllPrefectureData() {
+  const mobilityFlows = generateMobilityFlowsGeoJSON();
+  
   return {
     accommodation: generateAccommodationData(),
     consumption: generateConsumptionData(),
-    mobility: generateMobilityData(),
+    mobility: mobilityFlows, // Use GeoJSON format
     landmarks: generateLandmarkData(),
     events: generateEventData(),
     heatmap: generateSNSHeatmapData(),

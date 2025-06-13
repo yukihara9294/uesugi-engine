@@ -232,7 +232,7 @@ const MapSimple = ({
       {mapLoaded && map.current && mobilityData && (
         <CyberFlowLayer
           map={map.current}
-          data={mobilityData}
+          mobilityData={mobilityData}
           visible={selectedLayers.includes('mobility')}
         />
       )}

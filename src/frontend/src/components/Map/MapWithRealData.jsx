@@ -18,6 +18,7 @@ import {
   generateConsumptionData
 } from '../../utils/dataGenerator';
 import { realDataService } from '../../services/api';
+import CyberFlowLayer from './CyberFlowLayer';
 
 // Mapbox token
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
@@ -90,11 +91,11 @@ const MapWithRealData = ({
           updateAccommodationLayer(hotelsData);
         }
 
-        // 人流データ - prefectureDataまたはダミーデータを使用
-        const mobilityDummyData = mobilityData || prefectureData?.mobility || generateMobilityData(selectedPrefecture);
-        if (mobilityDummyData) {
-          updateMobilityLayer(mobilityDummyData);
-        }
+        // 人流データ - CyberFlowLayerで処理するため、ここではスキップ
+        // const mobilityDummyData = mobilityData || prefectureData?.mobility || generateMobilityData(selectedPrefecture);
+        // if (mobilityDummyData) {
+        //   updateMobilityLayer(mobilityDummyData);
+        // }
 
         // イベントデータ - prefectureDataまたはダミーデータを使用
         const eventDummyData = eventData || prefectureData?.events || prefectureData?.eventData || generateEventData(selectedPrefecture);
@@ -274,16 +275,45 @@ const MapWithRealData = ({
   const updateAccommodationLayer = (accommodationData) => {
     const sourceId = 'accommodation';
     
+    // PointデータをPolygonに変換
+    const createPolygon = (center, size = 0.0005) => {
+      const coords = [[
+        [center[0] - size/2, center[1] - size/2],
+        [center[0] + size/2, center[1] - size/2],
+        [center[0] + size/2, center[1] + size/2],
+        [center[0] - size/2, center[1] + size/2],
+        [center[0] - size/2, center[1] - size/2]
+      ]];
+      return coords;
+    };
+    
+    const polygonFeatures = accommodationData.features.map(feature => {
+      if (feature.geometry.type === 'Point') {
+        return {
+          ...feature,
+          geometry: {
+            type: 'Polygon',
+            coordinates: createPolygon(feature.geometry.coordinates)
+          }
+        };
+      }
+      return feature;
+    });
+    
+    const polygonData = {
+      type: 'FeatureCollection',
+      features: polygonFeatures
+    };
+    
     if (map.current.getSource(sourceId)) {
-      map.current.getSource(sourceId).setData(accommodationData);
+      map.current.getSource(sourceId).setData(polygonData);
     } else {
       map.current.addSource(sourceId, {
         type: 'geojson',
-        data: accommodationData
+        data: polygonData
       });
 
-      // 3D宿泊施設（一時的に無効化）
-      /*
+      // 3D宿泊施設（ダミーデータ時の表現）
       map.current.addLayer({
         id: 'accommodation-3d',
         type: 'fill-extrusion',
@@ -296,22 +326,7 @@ const MapWithRealData = ({
             40  // Default height
           ],
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.7
-        }
-      });
-      */
-
-      // 宿泊施設の円形マーカー（3Dの代替）
-      map.current.addLayer({
-        id: 'accommodation-3d',
-        type: 'circle',
-        source: sourceId,
-        paint: {
-          'circle-radius': 8,
-          'circle-color': '#4A90E2',
-          'circle-opacity': 0.8,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
+          'fill-extrusion-opacity': 0.5  // ダミーデータ時と同じ透明度50%
         }
       });
 
@@ -341,50 +356,53 @@ const MapWithRealData = ({
   };
 
   const updateMobilityLayer = (mobilityData) => {
-    // パーティクル
-    if (mobilityData.particles) {
-      const particleSourceId = 'mobility-particles';
-      
-      if (map.current.getSource(particleSourceId)) {
-        map.current.getSource(particleSourceId).setData(mobilityData.particles);
-      } else {
-        map.current.addSource(particleSourceId, {
-          type: 'geojson',
-          data: mobilityData.particles
-        });
-
-        map.current.addLayer({
-          id: 'mobility-particles',
-          type: 'circle',
-          source: particleSourceId,
-          paint: {
-            'circle-radius': [
-              'coalesce',
-              ['get', 'size'],
-              4  // Default size
-            ],
-            'circle-color': [
-              'coalesce',
-              ['get', 'color'],
-              '#00FF00'  // Default green color
-            ],
-            'circle-opacity': 0.8,
-            'circle-blur': 0.5
-          }
-        });
-      }
+    // GeoJSON形式のデータとparticles/flows形式の両方に対応
+    let flowsData, particlesData;
+    
+    console.log('updateMobilityLayer called with:', mobilityData);
+    
+    if (!mobilityData) {
+      console.warn('No mobility data provided');
+      return;
     }
-
+    
+    if (mobilityData.type === 'FeatureCollection') {
+      // GeoJSON形式の場合（旧形式）
+      flowsData = mobilityData;
+      // パーティクルデータは生成しない（フローのみ表示）
+    } else if (mobilityData.flows || mobilityData.particles) {
+      // particles/flows形式の場合（実データAPIおよびダミーデータ）
+      flowsData = mobilityData.flows;
+      particlesData = mobilityData.particles;
+      
+      // Validate flow data
+      if (flowsData && (!flowsData.type || flowsData.type !== 'FeatureCollection')) {
+        console.warn('Invalid flows data format, expected FeatureCollection:', flowsData);
+        flowsData = null;
+      }
+      
+      // Validate particle data
+      if (particlesData && (!particlesData.type || particlesData.type !== 'FeatureCollection')) {
+        console.warn('Invalid particles data format, expected FeatureCollection:', particlesData);
+        particlesData = null;
+      }
+    } else {
+      console.warn('Unknown mobility data format:', mobilityData);
+      return;
+    }
+    
+    console.log('Processing mobility data - flows:', !!flowsData, 'particles:', !!particlesData);
+    
     // フロー
-    if (mobilityData.flows) {
+    if (flowsData) {
       const flowSourceId = 'mobility-flows';
       
       if (map.current.getSource(flowSourceId)) {
-        map.current.getSource(flowSourceId).setData(mobilityData.flows);
+        map.current.getSource(flowSourceId).setData(flowsData);
       } else {
         map.current.addSource(flowSourceId, {
           type: 'geojson',
-          data: mobilityData.flows
+          data: flowsData
         });
 
         map.current.addLayer({
@@ -393,23 +411,113 @@ const MapWithRealData = ({
           source: flowSourceId,
           paint: {
             'line-color': [
-              'coalesce',
-              ['get', 'color'],
-              '#00FF00'  // Default green color
+              'interpolate',
+              ['linear'],
+              ['get', 'intensity'],
+              0, '#00FF00',
+              50, '#FFFF00',
+              100, '#FF0000'
             ],
             'line-width': [
-              'coalesce',
-              ['get', 'width'],
-              2  // Default width
+              'interpolate',
+              ['linear'],
+              ['get', 'intensity'],
+              0, 2,
+              50, 4,
+              100, 6
             ],
-            'line-opacity': 0.6
+            'line-opacity': 0.15,  // より透明に
+            'line-blur': 1  // ぼかし効果
           }
         });
       }
     }
+    
+    // パーティクル（ダミーデータの場合のみ）
+    if (particlesData) {
+      const particleSourceId = 'mobility-particles';
+      
+      if (map.current.getSource(particleSourceId)) {
+        map.current.getSource(particleSourceId).setData(particlesData);
+      } else {
+        map.current.addSource(particleSourceId, {
+          type: 'geojson',
+          data: particlesData
+        });
 
-    // 人流アニメーション開始
-    startMobilityAnimation();
+        // パーティクル本体
+        map.current.addLayer({
+          id: 'mobility-particles',
+          type: 'circle',
+          source: particleSourceId,
+          paint: {
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              8, 1,    // ズームレベル8で1px
+              10, 2,   // ズームレベル10で2px
+              12, 3,   // ズームレベル12で3px
+              14, 4,   // ズームレベル14で4px
+              16, 6    // ズームレベル16で6px
+            ],
+            'circle-color': [
+              'coalesce',
+              ['get', 'color'],
+              '#00FFFF'
+            ],
+            'circle-opacity': [
+              'coalesce',
+              ['get', 'opacity'],
+              0.8
+            ],
+            'circle-blur': 0.5,
+            'circle-pitch-alignment': 'map',  // 3D表示のため
+            'circle-pitch-scale': 'map'
+          }
+        });
+        
+        // パーティクルの影（高さを表現）
+        try {
+          map.current.addLayer({
+            id: 'mobility-particles-shadow',
+            type: 'circle',
+            source: particleSourceId,
+            paint: {
+              'circle-radius': 3,
+              'circle-color': '#000000',
+              'circle-opacity': 0.2,
+              'circle-blur': 2,
+              'circle-translate': [0, 0],  // 影のオフセット
+              'circle-translate-anchor': 'map'
+            }
+          }, 'mobility-particles');  // パーティクルの下に配置
+        } catch (error) {
+          console.warn('Failed to add mobility-particles-shadow layer:', error);
+          // Try adding without the beforeId parameter
+          try {
+            map.current.addLayer({
+              id: 'mobility-particles-shadow',
+              type: 'circle',
+              source: particleSourceId,
+              paint: {
+                'circle-radius': 3,
+                'circle-color': '#000000',
+                'circle-opacity': 0.2,
+                'circle-blur': 2,
+                'circle-translate': [0, 0],  // 影のオフセット
+                'circle-translate-anchor': 'map'
+              }
+            });
+          } catch (retryError) {
+            console.error('Failed to add mobility-particles-shadow layer even without beforeId:', retryError);
+          }
+        }
+      }
+      
+      // パーティクルがある場合のみアニメーション開始
+      startMobilityAnimation();
+    }
   };
 
   const updateEventLayer = (eventData) => {
@@ -482,39 +590,89 @@ const MapWithRealData = ({
       firstFeature: landmarksData?.features?.[0]
     });
     
+    // Convert Point data to Polygon for 3D buildings that have height
+    const createLandmarkPolygon = (center, size = 0.0005) => {
+      return [[
+        [center[0] - size/2, center[1] - size/2],
+        [center[0] + size/2, center[1] - size/2],
+        [center[0] + size/2, center[1] + size/2],
+        [center[0] - size/2, center[1] + size/2],
+        [center[0] - size/2, center[1] - size/2]
+      ]];
+    };
+    
+    // Separate point features and polygon features
+    const pointFeatures = [];
+    const polygonFeatures = [];
+    
+    landmarksData.features.forEach(feature => {
+      if (feature.geometry.type === 'Point') {
+        // Keep as point for circle layer
+        pointFeatures.push(feature);
+        
+        // Convert to polygon if it has height for 3D layer
+        if (feature.properties && feature.properties.height && feature.properties.height > 20) {
+          polygonFeatures.push({
+            ...feature,
+            geometry: {
+              type: 'Polygon',
+              coordinates: createLandmarkPolygon(feature.geometry.coordinates)
+            }
+          });
+        }
+      }
+    });
+    
+    // Create separate data for points and polygons
+    const pointData = {
+      type: 'FeatureCollection',
+      features: pointFeatures
+    };
+    
+    const polygonData = {
+      type: 'FeatureCollection',
+      features: polygonFeatures
+    };
+    
     if (map.current.getSource(sourceId)) {
-      map.current.getSource(sourceId).setData(landmarksData);
+      map.current.getSource(sourceId).setData(pointData);
     } else {
       map.current.addSource(sourceId, {
         type: 'geojson',
-        data: landmarksData
+        data: pointData
       });
 
-      // ランドマークのポイントレイヤー（赤い丸で表示）
+      // ランドマークのポイントレイヤー（ダミーデータ時の表現）
       map.current.addLayer({
         id: 'landmarks-points',
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': 12,
+          'circle-radius': 6,
           'circle-color': '#FF6B6B',
-          'circle-stroke-width': 3,
+          'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
           'circle-stroke-opacity': 1,
-          'circle-opacity': 0.9
+          'circle-opacity': 0.8
         }
       });
+    }
+    
+    // Add 3D landmarks source and layer
+    const landmarks3dSourceId = 'landmarks-3d-source';
+    if (map.current.getSource(landmarks3dSourceId)) {
+      map.current.getSource(landmarks3dSourceId).setData(polygonData);
+    } else {
+      map.current.addSource(landmarks3dSourceId, {
+        type: 'geojson',
+        data: polygonData
+      });
 
-      // 3Dランドマーク（一時的に無効化）
-      /*
+      // 3Dランドマーク（ダミーデータ時の表現）
       map.current.addLayer({
         id: 'landmarks-3d',
         type: 'fill-extrusion',
-        source: sourceId,
-        filter: ['all',
-          ['has', 'height'],
-          ['>', ['get', 'height'], 50]
-        ], // 50m以上の建物のみ3D表示
+        source: landmarks3dSourceId,
         paint: {
           'fill-extrusion-color': [
             'match',
@@ -525,19 +683,18 @@ const MapWithRealData = ({
             'museum', '#4169E1',
             '超高層建築', '#667eea',
             '高層建築', '#764ba2',
-            '#808080'
+            '#FF6B6B'  // デフォルトはランドマーク色
           ],
           'fill-extrusion-height': [
             'coalesce',
             ['get', 'height'],
-            100  // Default height for landmarks
+            50  // デフォルト高さ
           ],
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.6
+          'fill-extrusion-opacity': 0.8
         },
-        minzoom: 13 // ズームレベル13以上で表示
+        minzoom: 12  // より広いズームレベルで表示
       });
-      */
 
       // ランドマークラベル
       map.current.addLayer({
@@ -567,8 +724,19 @@ const MapWithRealData = ({
   const updatePlateauLayer = () => {
     const sourceId = 'plateau-buildings';
     
+    // PointデータをPolygonに変換する関数
+    const createBuildingPolygon = (center, size = 0.0008) => {
+      return [[
+        [center[0] - size/2, center[1] - size/2],
+        [center[0] + size/2, center[1] - size/2],
+        [center[0] + size/2, center[1] + size/2],
+        [center[0] - size/2, center[1] + size/2],
+        [center[0] - size/2, center[1] - size/2]
+      ]];
+    };
+    
     // PLATEAU 3D building data for Hiroshima
-    const plateauData = {
+    const plateauPointData = {
       type: 'FeatureCollection',
       features: [
         // Hiroshima City Center
@@ -591,6 +759,18 @@ const MapWithRealData = ({
       ]
     };
     
+    // PointデータをPolygonデータに変換
+    const plateauData = {
+      type: 'FeatureCollection',
+      features: plateauPointData.features.map(feature => ({
+        ...feature,
+        geometry: {
+          type: 'Polygon',
+          coordinates: createBuildingPolygon(feature.geometry.coordinates)
+        }
+      }))
+    };
+    
     if (map.current.getSource(sourceId)) {
       map.current.getSource(sourceId).setData(plateauData);
     } else {
@@ -599,44 +779,51 @@ const MapWithRealData = ({
         data: plateauData
       });
 
-      // 3D buildings layer
+      // PLATEAU 3D建物（宿泊施設と同じ表現、紫色）
       map.current.addLayer({
         id: 'plateau-3d',
         type: 'fill-extrusion',
         source: sourceId,
         paint: {
-          'fill-extrusion-color': [
-            'match',
-            ['get', 'type'],
-            'office', '#4A90E2',
-            'hotel', '#9B59B6',
-            'residential', '#2ECC71',
-            'commercial', '#F39C12',
-            'mixed', '#7F8C8D',
-            'cultural', '#E74C3C',
-            '#808080'  // default color
+          'fill-extrusion-color': '#9B59B6',  // 紫色
+          'fill-extrusion-height': [
+            'coalesce',
+            ['get', 'height'],
+            50  // Default height
           ],
-          'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-base': 0,
           'fill-extrusion-opacity': 0.8
         }
       });
 
-      // Building labels
+      // PLATEAU建物の詳細情報ラベル
       map.current.addLayer({
         id: 'plateau-labels',
         type: 'symbol',
         source: sourceId,
         layout: {
-          'text-field': ['get', 'name'],
+          'text-field': [
+            'concat',
+            ['get', 'name'],
+            '\n',
+            '階数: ', ['to-string', ['get', 'floors']], 'F',
+            '\n',
+            '種別: ', ['get', 'type'],
+            '\n',
+            '高さ: ', ['to-string', ['get', 'height']], 'm'
+          ],
           'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
-          'text-size': 10,
-          'text-offset': [0, -2]
+          'text-size': 11,
+          'text-offset': [0, -3],
+          'text-anchor': 'bottom',
+          'text-max-width': 10,
+          'text-line-height': 1.2
         },
         paint: {
           'text-color': '#ffffff',
-          'text-halo-color': '#000000',
-          'text-halo-width': 1
+          'text-halo-color': '#9B59B6',
+          'text-halo-width': 2,
+          'text-halo-blur': 1
         },
         minzoom: 13
       });
@@ -646,73 +833,138 @@ const MapWithRealData = ({
   const updateConsumptionLayer = (consumptionData) => {
     const sourceId = 'consumption';
     
+    // Validate and ensure data is properly formatted
+    if (!consumptionData || !consumptionData.type || !consumptionData.features) {
+      console.warn('Invalid consumption data format:', consumptionData);
+      consumptionData = { type: 'FeatureCollection', features: [] };
+    }
+    
+    // Convert Point features to Polygon features for fill-extrusion
+    // Create small circles around each point
+    const createCirclePolygon = (center, radiusInDegrees = 0.00006) => {  // 1/5のサイズ
+      const steps = 8; // Number of vertices
+      const coordinates = [[]];
+      
+      for (let i = 0; i <= steps; i++) {
+        const angle = (i / steps) * 2 * Math.PI;
+        const dx = radiusInDegrees * Math.cos(angle);
+        const dy = radiusInDegrees * Math.sin(angle);
+        coordinates[0].push([center[0] + dx, center[1] + dy]);
+      }
+      
+      return coordinates;
+    };
+    
+    // Convert features from Points to Polygons
+    const polygonFeatures = (consumptionData.features || []).map(feature => {
+      // Validate feature structure
+      if (!feature || !feature.geometry || !feature.geometry.coordinates || !feature.properties) {
+        console.warn('Invalid consumption feature:', feature);
+        return null;
+      }
+      
+      // Ensure amount property exists
+      if (typeof feature.properties.amount === 'undefined') {
+        feature.properties.amount = 0;
+      }
+      
+      // Convert Point to Polygon
+      if (feature.geometry.type === 'Point') {
+        return {
+          ...feature,
+          geometry: {
+            type: 'Polygon',
+            coordinates: createCirclePolygon(feature.geometry.coordinates)
+          }
+        };
+      }
+      
+      return feature;
+    }).filter(f => f !== null);
+    
+    const validatedData = {
+      type: 'FeatureCollection',
+      features: polygonFeatures
+    };
+    
+    console.log('Validated consumption data:', {
+      featureCount: validatedData.features.length,
+      sample: validatedData.features[0]
+    });
+    
     if (map.current.getSource(sourceId)) {
-      map.current.getSource(sourceId).setData(consumptionData);
+      map.current.getSource(sourceId).setData(validatedData);
     } else {
-      map.current.addSource(sourceId, {
-        type: 'geojson',
-        data: consumptionData
-      });
+      try {
+        map.current.addSource(sourceId, {
+          type: 'geojson',
+          data: validatedData
+        });
 
-      // 消費ヒートマップ
-      map.current.addLayer({
-        id: 'consumption-heatmap',
-        type: 'heatmap',
-        source: sourceId,
-        paint: {
-          'heatmap-weight': [
-            '/',
-            [
-              'coalesce',
+        // 消費データ3D棒グラフ
+        map.current.addLayer({
+          id: 'consumption-3d',
+          type: 'fill-extrusion',
+          source: sourceId,
+          paint: {
+            'fill-extrusion-color': [
+              'interpolate',
+              ['linear'],
               ['get', 'amount'],
-              1000  // Default amount
+              0, '#4CAF50',
+              5000, '#FFEB3B',
+              10000, '#FF9800',
+              20000, '#F44336'
             ],
-            10000
-          ],
-          'heatmap-intensity': 0.8,
-          'heatmap-color': [
-            'interpolate',
-            ['linear'],
-            ['heatmap-density'],
-            0, 'rgba(0,0,255,0)',
-            0.2, 'rgb(0,100,255)',
-            0.4, 'rgb(0,255,255)',
-            0.6, 'rgb(0,255,100)',
-            0.8, 'rgb(255,255,0)',
-            1, 'rgb(255,0,0)'
-          ],
-          'heatmap-radius': 40,
-          'heatmap-opacity': 0.6
-        }
-      });
+            'fill-extrusion-height': [
+              '/',
+              ['sqrt', ['get', 'amount']],  // ダミーデータ時と同じ計算式
+              50
+            ],
+            'fill-extrusion-base': 0,
+            'fill-extrusion-opacity': 0.3  // 透明度30%
+          }
+        });
 
-      // 消費ポイントマーカー
-      map.current.addLayer({
-        id: 'consumption-points',
-        type: 'circle',
-        source: sourceId,
-        paint: {
-          'circle-radius': 10,
-          'circle-color': '#FF6B6B',
-          'circle-opacity': 0.6,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
-        },
-        minzoom: 13
-      });
+        // 消費ポイントのラベルは削除（金額表記なし）
+      } catch (error) {
+        console.error('Error creating consumption layers:', error);
+        console.error('Layer data that caused error:', validatedData);
+      }
     }
   };
 
   const updateHeatmapLayer = (heatmapData) => {
     const sourceId = 'sns-heatmap';
     
+    console.log('updateHeatmapLayer called:', {
+      hasData: !!heatmapData,
+      featuresCount: heatmapData?.features?.length,
+      categoryFilter: categoryFilter
+    });
+    
     // カテゴリフィルタリング
-    const filteredData = categoryFilter && heatmapData?.features ? {
-      ...heatmapData,
-      features: heatmapData.features.filter(f => 
-        f.properties && f.properties.category === categoryFilter
-      )
-    } : heatmapData || { type: 'FeatureCollection', features: [] };
+    // 重要: categoryFilterが空配列の場合は非表示（データなし）
+    let filteredData;
+    if (!heatmapData) {
+      filteredData = { type: 'FeatureCollection', features: [] };
+    } else if (!categoryFilter || categoryFilter.length === 0) {
+      // カテゴリが選択されていない場合は非表示
+      filteredData = { type: 'FeatureCollection', features: [] };
+    } else {
+      // カテゴリが選択されている場合のみフィルタリング
+      filteredData = {
+        ...heatmapData,
+        features: heatmapData.features.filter(f => 
+          f.properties && categoryFilter.includes(f.properties.category)
+        )
+      };
+    }
+    
+    console.log('Filtered heatmap data:', {
+      featuresCount: filteredData?.features?.length,
+      isFiltered: categoryFilter && categoryFilter.length > 0
+    });
     
     if (map.current.getSource(sourceId)) {
       map.current.getSource(sourceId).setData(filteredData);
@@ -733,12 +985,13 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['heatmap-density'],
-            0, 'rgba(33,102,172,0)',
-            0.2, 'rgb(103,169,207)',
-            0.4, 'rgb(209,229,240)',
-            0.6, 'rgb(253,219,199)',
-            0.8, 'rgb(239,138,98)',
-            1, 'rgb(178,24,43)'
+            0, 'rgba(0,0,255,0)',      // 透明な青
+            0.2, 'rgb(0,0,255)',       // 青
+            0.4, 'rgb(0,255,255)',     // シアン
+            0.5, 'rgb(255,255,255)',   // 白
+            0.6, 'rgb(255,255,0)',     // 黄
+            0.8, 'rgb(255,170,0)',     // オレンジ
+            1, 'rgb(255,0,0)'          // 赤
           ],
           'heatmap-radius': 30,
           'heatmap-opacity': 0.7
@@ -753,9 +1006,22 @@ const MapWithRealData = ({
       cancelAnimationFrame(animationFrame.current);
     }
 
+    let progress = 0;
+    let flowOpacityPhase = 0;
+    
     const animate = () => {
       if (!map.current || !map.current.getSource('mobility-particles')) {
         return;
+      }
+
+      progress += 0.001; // よりスローなアニメーション
+      if (progress > 1) progress = 0;
+      
+      // フローラインのフェードアニメーション
+      flowOpacityPhase += 0.02;
+      if (map.current.getLayer('mobility-flows')) {
+        const opacity = 0.2 + Math.sin(flowOpacityPhase) * 0.15;
+        map.current.setPaintProperty('mobility-flows', 'line-opacity', opacity);
       }
 
       // パーティクルの位置を更新
@@ -766,13 +1032,50 @@ const MapWithRealData = ({
             return feature;
           }
           
-          const speed = feature.properties.speed || 0.5;
-          const coords = feature.geometry.coordinates;
+          const props = feature.properties;
+          const speed = props.speed || 0.5;
           
-          // ランダムな方向に移動（座標が配列であることを確認）
-          if (Array.isArray(coords) && coords.length >= 2) {
-            coords[0] += (Math.random() - 0.5) * 0.0001 * speed;
-            coords[1] += (Math.random() - 0.5) * 0.0001 * speed;
+          // 各パーティクルの個別の進捗を計算
+          const particleProgress = (progress * speed + props.particle_index * 0.1) % 1;
+          
+          // 起点から終点への移動（弧を描く）
+          if (props.origin_lon !== undefined && props.destination_lon !== undefined) {
+            // ダミーデータ時と同じベジエ曲線計算
+            const start = [props.origin_lon, props.origin_lat];
+            const end = [props.destination_lon, props.destination_lat];
+            const midpoint = [
+              (start[0] + end[0]) / 2,
+              (start[1] + end[1]) / 2
+            ];
+            
+            // 距離を計算（弧の高さの基準）
+            const distance = Math.sqrt(
+              Math.pow(end[0] - start[0], 2) + 
+              Math.pow(end[1] - start[1], 2)
+            );
+            
+            // ベジエ曲線上の位置を計算
+            const t = particleProgress;
+            const x = start[0] * (1 - t) * (1 - t) + 2 * midpoint[0] * (1 - t) * t + end[0] * t * t;
+            const y = start[1] * (1 - t) * (1 - t) + 2 * midpoint[1] * (1 - t) * t + end[1] * t * t;
+            
+            // 弧の高さ（中央で最大）- ダミーデータ時と同じ計算
+            const height = 0.1;  // ダミーデータ時のデフォルト高さ
+            const arcHeight = Math.sin(t * Math.PI) * height * distance;
+            
+            // 北向きに迂回（Y座標に正のオフセット）
+            feature.geometry.coordinates = [
+              x,
+              y + arcHeight * 0.5  // ダミーデータ時と同じオフセット
+            ];
+            
+            // 3D表現用の高さ情報
+            feature.properties.elevation = Math.sin(particleProgress * Math.PI);
+            
+            // フェードイン・フェードアウトアニメーション
+            const fadeIn = Math.min(1, particleProgress * 3);  // 最初の1/3でフェードイン
+            const fadeOut = Math.min(1, (1 - particleProgress) * 3);  // 最後の1/3でフェードアウト
+            feature.properties.opacity = Math.min(fadeIn, fadeOut) * 0.8;
           }
           
           return feature;
@@ -803,10 +1106,10 @@ const MapWithRealData = ({
       landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-labels', 'transport-stops', 'transport-labels'],
       plateau: ['plateau-3d', 'plateau-labels'],  // PLATEAU 3D buildings
       accommodation: ['accommodation-3d', 'accommodation-labels'],  // Changed from hotels to accommodation
-      mobility: ['mobility-particles', 'mobility-flows'],
+      mobility: ['mobility-particles', 'mobility-particles-shadow', 'mobility-flows'],
       heatmap: ['sns-heatmap'],
       events: ['event-impact', 'event-markers', 'event-labels'],
-      consumption: ['consumption-heatmap', 'consumption-points']
+      consumption: ['consumption-3d']  // ラベルは削除
     };
 
     Object.entries(layerMapping).forEach(([key, layerIds]) => {
@@ -864,11 +1167,11 @@ const MapWithRealData = ({
 
   // カテゴリフィルター更新
   useEffect(() => {
-    if (mapLoaded && map.current.getSource('sns-heatmap')) {
-      const heatmapData = generateHeatmapData(selectedPrefecture);
+    if (mapLoaded && map.current && map.current.getSource('sns-heatmap')) {
+      const heatmapData = prefectureData?.heatmap || generateHeatmapData(selectedPrefecture);
       updateHeatmapLayer(heatmapData);
     }
-  }, [categoryFilter, mapLoaded, selectedPrefecture]);
+  }, [categoryFilter, mapLoaded, selectedPrefecture, prefectureData]);
 
   return (
     <div className="map-wrapper" style={{ width: '100%', height: '100%', position: 'relative', background: '#000' }}>
@@ -895,6 +1198,14 @@ const MapWithRealData = ({
             className="map-container" 
             style={{ width: '100%', height: '100%' }}
           />
+          {/* CyberFlowLayer for mobility visualization */}
+          {mapLoaded && map.current && prefectureData?.mobility && (
+            <CyberFlowLayer
+              map={map.current}
+              mobilityData={prefectureData.mobility}
+              visible={layers.mobility}
+            />
+          )}
           {!realDataLoaded && mapLoaded && (
             <div style={{
               position: 'absolute',
