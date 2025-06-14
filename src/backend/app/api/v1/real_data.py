@@ -57,28 +57,35 @@ async def get_hiroshima_gtfs_data(db: Session = Depends(get_db)):
                 "features": features
             }
         
-        # ファイルから読み込み
+        # ファイルから読み込み（BOM対応）
         features = []
-        with open(stops_file, 'r', encoding='utf-8') as f:
+        with open(stops_file, 'r', encoding='utf-8-sig') as f:
             lines = f.readlines()
             headers = lines[0].strip().split(',')
             
             for line in lines[1:]:
                 data = line.strip().split(',')
-                if len(data) >= 5:
-                    features.append({
-                        "type": "Feature",
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": [float(data[4]), float(data[3])]  # lon, lat
-                        },
-                        "properties": {
-                            "stop_id": data[0],
-                            "stop_name": data[1],
-                            "type": "tram_stop",
-                            "color": "#FF6B6B"
-                        }
-                    })
+                if len(data) >= 6 and data[4] and data[5]:  # stop_lat, stop_lon が存在
+                    try:
+                        lat = float(data[4])
+                        lon = float(data[5])
+                        features.append({
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "Point",
+                                "coordinates": [lon, lat]
+                            },
+                            "properties": {
+                                "stop_id": data[0],
+                                "stop_name": data[2] if data[2] else "停留所",
+                                "stop_code": data[1] if data[1] else "",
+                                "type": "tram_stop",
+                                "color": "#FF6B6B"
+                            }
+                        })
+                    except ValueError:
+                        # 無効な座標データはスキップ
+                        continue
         
         return {
             "type": "FeatureCollection",
