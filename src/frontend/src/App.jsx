@@ -149,7 +149,7 @@ function App() {
     consumption: false,
     heatmap: false,
     events: false,
-    transport: false,  // Public transportation layer
+    transport: false,  // Public transportation layer - set to OFF by default
   });
   const [categoryFilter, setCategoryFilter] = useState(['観光', 'グルメ', 'イベント', 'ショッピング', '交通']);
   const [timeRange, setTimeRange] = useState({

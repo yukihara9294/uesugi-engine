@@ -134,6 +134,7 @@ const MapWithRealData = ({
           setRealMobilityData(mobilityData); // 実データを保存
         }
         if (transportData) {
+          console.log('Setting transport data:', transportData);
           setTransportData(transportData); // Set transport data
         }
       }
@@ -1127,13 +1128,28 @@ const MapWithRealData = ({
           })()}
           
           {/* TransportLayer for public transportation */}
-          {mapLoaded && map.current && transportData && (
-            <TransportLayer
-              map={map.current}
-              transportData={transportData}
-              visible={layers.transport}
-            />
-          )}
+          {(() => {
+            console.log('TransportLayer render check:', {
+              mapLoaded,
+              hasMap: !!map.current,
+              hasTransportData: !!transportData,
+              transportDataType: transportData?.type,
+              stopsCount: transportData?.stops?.length,
+              routesCount: transportData?.routes?.length,
+              layersTransport: layers.transport
+            });
+            
+            if (mapLoaded && map.current && transportData) {
+              return (
+                <TransportLayer
+                  map={map.current}
+                  transportData={transportData}
+                  visible={layers.transport}
+                />
+              );
+            }
+            return null;
+          })()}
         </>
       )}
     </div>

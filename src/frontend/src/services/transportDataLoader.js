@@ -7,14 +7,24 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
  */
 export const loadTransportData = async () => {
   try {
+    console.log('Loading transport data from:', `${API_BASE_URL}/api/v1/transport/gtfs`);
     // First, try to load from backend API
     const response = await axios.get(`${API_BASE_URL}/api/v1/transport/gtfs`);
+    console.log('Transport data from API:', {
+      hasData: !!response.data,
+      stopsCount: response.data?.stops?.length || 0,
+      routesCount: response.data?.routes?.length || 0,
+      totalStops: response.data?.total_stops,
+      totalRoutes: response.data?.total_routes
+    });
     return response.data;
   } catch (error) {
     console.warn('Failed to load transport data from API, using local data:', error);
     
     // Fallback to loading local GTFS files
-    return loadLocalGTFSData();
+    const localData = await loadLocalGTFSData();
+    console.log('Local transport data generated:', localData);
+    return localData;
   }
 };
 

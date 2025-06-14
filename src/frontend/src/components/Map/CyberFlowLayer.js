@@ -282,8 +282,8 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
               return;
             }
             
-            // 通行量に基づいてパーティクル数を決定
-            const baseParticles = Math.max(5, Math.min(20, Math.floor(flowPath.normalized * 20)));
+            // 通行量に基づいてパーティクル数を決定 (半分に削減)
+            const baseParticles = Math.max(3, Math.min(10, Math.floor(flowPath.normalized * 10)));
             const numParticles = baseParticles;
             
             for (let i = 0; i < numParticles; i++) {
@@ -291,7 +291,7 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
                 id: particlesRef.current.length,
                 flowIndex: index,
                 position: (i / numParticles) + (Math.random() * 0.1),  // 少しランダムに分布
-                speed: 0.002 + Math.random() * 0.003,  // 速度を遅く
+                speed: 0.001 + Math.random() * 0.002,  // 速度を更に遅く (パフォーマンス改善)
                 color: flowPath.color || '#00FFFF',
                 size: 2 + flowPath.normalized * 2,  // サイズを2-4の範囲に
                 flowPath: flowPath.points
@@ -462,10 +462,10 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
           // エラーを無視
         }
         
-        // FPSを20に制限（50ms = 1000ms / 20fps）
+        // FPSを10に制限（100ms = 1000ms / 10fps）
         setTimeout(() => {
           animationRef.current = requestAnimationFrame(animate);
-        }, 50);
+        }, 100);
       };
       
       // アニメーションを開始（既存のアニメーションは停止済み）

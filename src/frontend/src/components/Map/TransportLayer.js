@@ -2,7 +2,18 @@ import { useEffect } from 'react';
 
 const TransportLayer = ({ map, transportData, visible }) => {
   useEffect(() => {
-    if (!map || !transportData) return;
+    console.log('TransportLayer effect:', { 
+      map: !!map, 
+      transportData: !!transportData, 
+      visible,
+      dataStops: transportData?.stops?.length || 0,
+      dataRoutes: transportData?.routes?.length || 0
+    });
+    
+    if (!map || !transportData || !visible) {
+      console.log('TransportLayer: Skipping - missing requirements');
+      return;
+    }
 
     // Layer IDs
     const routeLayerId = 'transport-routes';
@@ -33,6 +44,7 @@ const TransportLayer = ({ map, transportData, visible }) => {
     };
 
     // Convert GTFS data to GeoJSON features
+    console.log('Transport data structure:', transportData);
     const stopFeatures = transportData.stops?.map(stop => ({
       type: 'Feature',
       properties: {
@@ -48,6 +60,7 @@ const TransportLayer = ({ map, transportData, visible }) => {
         coordinates: [parseFloat(stop.stop_lon), parseFloat(stop.stop_lat)]
       }
     })) || [];
+    console.log('Stop features:', stopFeatures.length);
 
     // Convert routes to LineString features
     const routeFeatures = transportData.routes?.map(route => ({
@@ -63,6 +76,7 @@ const TransportLayer = ({ map, transportData, visible }) => {
         coordinates: route.shapes || [] // Assuming shapes data is preprocessed
       }
     })).filter(route => route.geometry.coordinates.length > 0) || [];
+    console.log('Route features:', routeFeatures.length);
 
     // Cleanup function
     const cleanup = () => {
@@ -77,7 +91,16 @@ const TransportLayer = ({ map, transportData, visible }) => {
 
     cleanup();
 
-    if (!visible) return;
+    if (!visible) {
+      console.log('TransportLayer: Not visible, skipping render');
+      return;
+    }
+    
+    // Check if we have valid data
+    if (!stopFeatures.length && !routeFeatures.length) {
+      console.warn('TransportLayer: No stops or routes to display');
+      return;
+    }
 
     // Add route lines layer
     if (routeFeatures.length > 0) {
