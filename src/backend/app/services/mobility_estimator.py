@@ -139,24 +139,37 @@ class MobilityEstimator:
                 
                 # 同じ市内の移動は増幅（市内移動は多い）
                 if is_same_city:
-                    # 市内移動は2倍に増幅（特に広島市）
+                    # 市内移動は人口規模に応じて増幅
                     if origin_city == "広島市":
                         base_flow = base_flow * 3.0  # 広島市内は特に多い
+                    elif origin_city in ["福山市", "呉市"]:
+                        base_flow = base_flow * 2.5  # 中核都市は多め
+                    elif origin_city in ["東広島市", "尾道市", "三原市", "廿日市市"]:
+                        base_flow = base_flow * 2.2  # 中規模都市
                     else:
-                        base_flow = base_flow * 2.0
+                        base_flow = base_flow * 2.0  # その他の市
+                    
                     # 特に短距離（5km未満）の市内移動はさらに増幅
                     if distance < 5:
                         base_flow = base_flow * 1.5
+                    # 中距離（5-10km）の市内移動も少し増幅
+                    elif distance < 10 and origin_city in ["福山市", "呉市", "東広島市"]:
+                        base_flow = base_flow * 1.2
                 
                 # 時間帯補正
                 flow_volume = int(base_flow * time_factor)
                 
                 # 最小閾値を設定（ノイズ除去）
                 # 市内移動の場合は閾値を下げて、より多くの移動を表示
+                # 人口規模に応じて閾値を調整
                 if is_same_city and origin_city == "広島市":
                     min_threshold = 50  # 広島市内は特に低い閾値
+                elif is_same_city and origin_city in ["福山市", "呉市", "東広島市"]:
+                    min_threshold = 60  # 中規模都市は低めの閾値
+                elif is_same_city and origin_city in ["尾道市", "三原市", "廿日市市"]:
+                    min_threshold = 70  # 小規模都市も適度に表示
                 elif is_same_city:
-                    min_threshold = 100  # その他の市内移動
+                    min_threshold = 80  # その他の市内移動（三次市、庄原市など）
                 else:
                     min_threshold = 200  # 市外への移動
                 if flow_volume > min_threshold:

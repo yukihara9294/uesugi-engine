@@ -66,6 +66,19 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         if (map.getLayer(particleLayerId + '-inner-glow')) map.removeLayer(particleLayerId + '-inner-glow');
         if (map.getLayer(particleLayerId + '-mid-glow')) map.removeLayer(particleLayerId + '-mid-glow');
         if (map.getLayer(particleLayerId + '-glow')) map.removeLayer(particleLayerId + '-glow');
+        
+        // 距離グループごとのレイヤーも削除
+        ['short', 'medium', 'long'].forEach(groupName => {
+          const layerId = `${flowLayerId}-${groupName}`;
+          const glowLayerId = `${flowGlowLayerId}-${groupName}`;
+          const sourceId = `${flowSourceId}-${groupName}`;
+          
+          if (map.getLayer(layerId)) map.removeLayer(layerId);
+          if (map.getLayer(glowLayerId)) map.removeLayer(glowLayerId);
+          if (map.getSource(sourceId)) map.removeSource(sourceId);
+        });
+        
+        // 旧バージョンのレイヤーも削除（互換性のため）
         if (map.getLayer(flowGlowLayerId)) map.removeLayer(flowGlowLayerId);
         if (map.getLayer(flowLayerId)) map.removeLayer(flowLayerId);
         if (map.getSource(particleSourceId)) map.removeSource(particleSourceId);
@@ -106,6 +119,12 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
     const flowPaths = [];
     const arcFeatures = [];
     
+    // 距離グループごとのフェード設定
+    const distanceGroups = {
+      short: { maxDistance: 0.05, features: [] },    // 5km未満
+      medium: { maxDistance: 0.2, features: [] },    // 20km未満
+      long: { maxDistance: Infinity, features: [] }  // 20km以上
+    };
     
     // フローラインごとに処理
     flowsData.features.forEach((feature, index) => {
@@ -118,6 +137,22 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
       const normalized = (flowCount - minFlow) / (maxFlow - minFlow) || 0;
       const color = flowTypeColors[flowType] || flowTypeColors['default'];
       
+      // 距離計算
+      const distance = Math.sqrt(
+        Math.pow(destination[0] - origin[0], 2) + 
+        Math.pow(destination[1] - origin[1], 2)
+      );
+      
+      // 距離グループを決定
+      let distanceGroup;
+      if (distance < 0.05) {
+        distanceGroup = 'short';
+      } else if (distance < 0.2) {
+        distanceGroup = 'medium';
+      } else {
+        distanceGroup = 'long';
+      }
+      
       // ベジエ曲線のパスを生成
       const points = [];
       const steps = 30;
@@ -127,10 +162,6 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         const midLng = (origin[0] + destination[0]) / 2;
         const midLat = (origin[1] + destination[1]) / 2;
         
-        const distance = Math.sqrt(
-          Math.pow(destination[0] - origin[0], 2) + 
-          Math.pow(destination[1] - origin[1], 2)
-        );
         const height = Math.min(distance * 0.2, 0.05);
         
         // 簡単な2次ベジエ曲線
@@ -151,10 +182,12 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         flowCount: flowCount,
         normalized: normalized,
         color: color,
-        flowType: flowType
+        flowType: flowType,
+        distance: distance,
+        distanceGroup: distanceGroup
       });
       
-      arcFeatures.push({
+      const arcFeature = {
         type: 'Feature',
         geometry: {
           type: 'LineString',
@@ -164,44 +197,64 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
           flow_count: flowCount,
           color: color,
           type: flowType,
-          lineWidth: 0.5 + normalized * 1.5
+          lineWidth: 0.5 + normalized * 1.5,
+          distanceGroup: distanceGroup
         }
-      });
+      };
+      
+      arcFeatures.push(arcFeature);
+      distanceGroups[distanceGroup].features.push(arcFeature);
     });
     
     try {
-      // フローラインソースを追加
-      map.addSource(flowSourceId, {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: arcFeatures
-        }
-      });
+      // 距離グループごとにソースとレイヤーを作成
+      const distanceGroupLayers = {};
       
-      // グロー効果
-      map.addLayer({
-        id: flowGlowLayerId,
-        type: 'line',
-        source: flowSourceId,
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': ['get', 'lineWidth'],
-          'line-blur': 1.5,
-          'line-opacity': 0
-        }
-      });
-      
-      // メインライン
-      map.addLayer({
-        id: flowLayerId,
-        type: 'line',
-        source: flowSourceId,
-        paint: {
-          'line-color': ['get', 'color'],
-          'line-width': ['*', ['get', 'lineWidth'], 0.6],
-          'line-opacity': 0.8
-        }
+      Object.entries(distanceGroups).forEach(([groupName, groupData]) => {
+        if (groupData.features.length === 0) return;
+        
+        const sourceId = `${flowSourceId}-${groupName}`;
+        const layerId = `${flowLayerId}-${groupName}`;
+        const glowLayerId = `${flowGlowLayerId}-${groupName}`;
+        
+        // ソースを追加
+        map.addSource(sourceId, {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: groupData.features
+          }
+        });
+        
+        // グロー効果
+        map.addLayer({
+          id: glowLayerId,
+          type: 'line',
+          source: sourceId,
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': ['get', 'lineWidth'],
+            'line-blur': 1.5,
+            'line-opacity': 0
+          }
+        });
+        
+        // メインライン
+        map.addLayer({
+          id: layerId,
+          type: 'line',
+          source: sourceId,
+          paint: {
+            'line-color': ['get', 'color'],
+            'line-width': ['*', ['get', 'lineWidth'], 0.6],
+            'line-opacity': 0
+          }
+        });
+        
+        distanceGroupLayers[groupName] = {
+          layerId: layerId,
+          glowLayerId: glowLayerId
+        };
       });
       
       // パーティクルの初期化と生成
@@ -292,8 +345,12 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         data: initialParticleData
       });
       
-      // フローラインのフェードイン・フェードアウト用の変数
-      let flowOpacityPhase = 0;
+      // フローラインのフェードイン・フェードアウト用の変数（グループごと）
+      const flowOpacityPhases = {
+        short: 0,
+        medium: Math.PI / 3,    // 120度ずらす
+        long: 2 * Math.PI / 3   // 240度ずらす
+      };
       
       // パーティクルグローレイヤー（大きい光の表現）
       map.addLayer({
@@ -381,21 +438,23 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
           return;
         }
         
-        // フローラインのフェードイン・フェードアウト
-        flowOpacityPhase += 0.02;
-        const flowOpacity = Math.abs(Math.sin(flowOpacityPhase)) * 0.3;
-        const glowOpacity = Math.abs(Math.sin(flowOpacityPhase)) * 0.15;
-        
-        try {
-          if (map.getLayer(flowLayerId)) {
-            map.setPaintProperty(flowLayerId, 'line-opacity', flowOpacity);
+        // フローラインのフェードイン・フェードアウト（距離グループごと）
+        Object.entries(distanceGroupLayers).forEach(([groupName, layers]) => {
+          flowOpacityPhases[groupName] += 0.02;
+          const flowOpacity = Math.abs(Math.sin(flowOpacityPhases[groupName])) * 0.3;
+          const glowOpacity = Math.abs(Math.sin(flowOpacityPhases[groupName])) * 0.15;
+          
+          try {
+            if (map.getLayer(layers.layerId)) {
+              map.setPaintProperty(layers.layerId, 'line-opacity', flowOpacity);
+            }
+            if (map.getLayer(layers.glowLayerId)) {
+              map.setPaintProperty(layers.glowLayerId, 'line-opacity', glowOpacity);
+            }
+          } catch (e) {
+            // エラーを無視
           }
-          if (map.getLayer(flowGlowLayerId)) {
-            map.setPaintProperty(flowGlowLayerId, 'line-opacity', glowOpacity);
-          }
-        } catch (e) {
-          // エラーを無視
-        }
+        });
         
         // パーティクルの位置を更新
         particlesRef.current.forEach(particle => {

@@ -251,6 +251,8 @@ async def get_real_mobility_data(prefecture: str, city_only: bool = False):
             {"name": "八本松駅", "lat": 34.4241, "lon": 132.6913, "population": 8000},
             {"name": "高屋駅", "lat": 34.4483, "lon": 132.8061, "population": 5000},
             {"name": "黒瀬", "lat": 34.3686, "lon": 132.6626, "population": 6000},
+            {"name": "フジグラン東広島", "lat": 34.4320, "lon": 132.7380, "population": 12000},
+            {"name": "ゆめタウン東広島", "lat": 34.4250, "lon": 132.7450, "population": 10000},
             
             # 呉市（人口: 約21万人）
             {"name": "呉駅", "lat": 34.2490, "lon": 132.5556, "population": 30000},
@@ -259,6 +261,8 @@ async def get_real_mobility_data(prefecture: str, city_only: bool = False):
             {"name": "広駅", "lat": 34.2430, "lon": 132.5300, "population": 15000},
             {"name": "安浦駅", "lat": 34.2770, "lon": 132.7550, "population": 5000},
             {"name": "音戸", "lat": 34.1830, "lon": 132.5350, "population": 6000},
+            {"name": "呉中央商店街", "lat": 34.2480, "lon": 132.5570, "population": 8000},
+            {"name": "呉ポートピアパーク", "lat": 34.2520, "lon": 132.5480, "population": 5000},
             
             # 福山市（人口: 約46万人）
             {"name": "福山駅", "lat": 34.4858, "lon": 133.3627, "population": 60000},
@@ -268,6 +272,8 @@ async def get_real_mobility_data(prefecture: str, city_only: bool = False):
             {"name": "新市駅", "lat": 34.5350, "lon": 133.2880, "population": 8000},
             {"name": "神辺駅", "lat": 34.5430, "lon": 133.3900, "population": 10000},
             {"name": "福山市役所", "lat": 34.4870, "lon": 133.3600, "population": 10000},
+            {"name": "福山東IC", "lat": 34.5030, "lon": 133.3950, "population": 5000},
+            {"name": "福山駅前商店街", "lat": 34.4880, "lon": 133.3600, "population": 12000},
             
             # 尾道市（人口: 約13万人）
             {"name": "尾道駅", "lat": 34.4090, "lon": 133.1950, "population": 20000},
