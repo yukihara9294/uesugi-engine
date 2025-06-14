@@ -9,6 +9,7 @@ import {
   loadRealMobilityData,
   loadRealEventData
 } from '../../utils/realDataLoader';
+import { loadTransportData } from '../../services/transportDataLoader';
 import { 
   generateHeatmapData,
   generateLandmarks,
@@ -17,6 +18,7 @@ import {
   generateConsumptionData
 } from '../../utils/dataGenerator';
 import CyberFlowLayer from './CyberFlowLayer';
+import TransportLayer from './TransportLayer';
 
 // Mapbox token
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
@@ -38,6 +40,7 @@ const MapWithRealData = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [realDataLoaded, setRealDataLoaded] = useState(false);
   const [realMobilityData, setRealMobilityData] = useState(null); // 実際のモビリティデータを保存
+  const [transportData, setTransportData] = useState(null); // Public transport data
   // Remove unused refs
 
   // 都道府県ごとの初期座標
@@ -79,7 +82,7 @@ const MapWithRealData = ({
       };
       
       // 並列でデータ読み込み（タイムアウト付き）
-      const [gtfsData, tourismData, accommodationData, mobilityData, eventData] = await Promise.all([
+      const [gtfsData, tourismData, accommodationData, mobilityData, eventData, transportData] = await Promise.all([
         selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData()).catch(() => null) : Promise.resolve(null),
         selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData()).catch(() => null) : Promise.resolve(null),
         loadWithTimeout(loadRealAccommodationData(selectedPrefecture)).catch(() => null),
@@ -105,7 +108,8 @@ const MapWithRealData = ({
           console.error('Failed to load mobility data:', error);
           return null;
         }),
-        loadWithTimeout(loadRealEventData(selectedPrefecture)).catch(() => null)
+        loadWithTimeout(loadRealEventData(selectedPrefecture)).catch(() => null),
+        loadWithTimeout(loadTransportData()).catch(() => null)
       ]);
       
       console.log('Loaded mobility data:', mobilityData);
@@ -128,6 +132,9 @@ const MapWithRealData = ({
         }
         if (mobilityData) {
           setRealMobilityData(mobilityData); // 実データを保存
+        }
+        if (transportData) {
+          setTransportData(transportData); // Set transport data
         }
       }
     } catch (error) {
@@ -1096,6 +1103,15 @@ const MapWithRealData = ({
             }
             return null;
           })()}
+          
+          {/* TransportLayer for public transportation */}
+          {mapLoaded && map.current && transportData && (
+            <TransportLayer
+              map={map.current}
+              transportData={transportData}
+              visible={layers.transport}
+            />
+          )}
         </>
       )}
     </div>

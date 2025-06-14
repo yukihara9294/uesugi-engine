@@ -34,6 +34,7 @@ import {
   Water,
   ChevronLeft,
   LocationCity,
+  DirectionsBus,
 } from '@mui/icons-material';
 
 const LeftSidebar = ({
@@ -51,6 +52,7 @@ const LeftSidebar = ({
     { id: 'consumption', label: '消費データ', icon: <ShoppingCart />, color: '#FF69B4', description: '購買・消費動向' },
     { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#4CAF50', description: '稼働率・空室状況' },
     { id: 'events', label: 'イベント情報', icon: <ShareIcon />, color: '#FF6B6B', description: '開催中・予定イベント' },
+    { id: 'transport', label: '公共交通', icon: <DirectionsBus />, color: '#3B82F6', description: 'バス・鉄道路線・停留所' },
   ];
 
   const handleLayerToggle = (layerId) => {
