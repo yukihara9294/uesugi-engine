@@ -84,9 +84,9 @@ const MapWithRealData = ({
       
       // 並列でデータ読み込み（タイムアウト付き）
       const [gtfsData, tourismData, accommodationData, mobilityData, eventData, transportData] = await Promise.all([
-        selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData()).catch(() => null) : Promise.resolve(null),
-        selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData()).catch(() => null) : Promise.resolve(null),
-        loadWithTimeout(loadRealAccommodationData(selectedPrefecture)).catch(() => null),
+        selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData(), 30000).catch(() => null) : Promise.resolve(null),
+        selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData(), 30000).catch(() => null) : Promise.resolve(null),
+        loadWithTimeout(loadRealAccommodationData(selectedPrefecture), 30000).catch(() => null),
         // 最初は市内のみ読み込み（広島県の場合）
         loadWithTimeout(
           loadRealMobilityData(selectedPrefecture, selectedPrefecture === '広島県'), 
@@ -109,8 +109,14 @@ const MapWithRealData = ({
           console.error('Failed to load mobility data:', error);
           return null;
         }),
-        loadWithTimeout(loadRealEventData(selectedPrefecture)).catch(() => null),
-        loadWithTimeout(loadTransportData()).catch(() => null)
+        loadWithTimeout(loadRealEventData(selectedPrefecture), 30000).catch((err) => {
+          console.error('Failed to load event data:', err);
+          return null;
+        }),
+        loadWithTimeout(loadTransportData(), 30000).catch((err) => {
+          console.error('Failed to load transport data:', err);
+          return null;
+        })
       ]);
       
       console.log('Loaded mobility data:', mobilityData);
@@ -1121,6 +1127,13 @@ const MapWithRealData = ({
             const dataToUse = realMobilityData; // 実データのみ使用
             const dataKey = realMobilityData ? 'real' : 'no-data';
             
+            console.log('CyberFlowLayer check:', {
+              mapLoaded,
+              hasMap: !!map.current,
+              hasRealMobilityData: !!realMobilityData,
+              shouldShowCyberFlow,
+              layersMobility: layers.mobility
+            });
             
             if (shouldShowCyberFlow) {
               return (
