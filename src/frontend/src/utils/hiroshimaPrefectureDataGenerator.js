@@ -107,7 +107,7 @@ export const HIROSHIMA_CITIES = {
       { name: '中心部', center: [132.8526, 34.8058], population: 35000 },
       { name: '周辺部', center: [132.8026, 34.7858], population: 16000 }
     ],
-    touristSpots: ['奥田元宋・小由女美術館', '尾関山公園', '霧の海展望台', '君田温泉森の泉', '三次もののけミュージアム'],
+    touristSpots: ['奥田元宋・小由女美術館', '尾関山公園', '霧の海展望台', '三次もののけミュージアム'],
     commercialAreas: ['三次駅前']
   }
 };
@@ -866,7 +866,6 @@ export function generateLandmarkData() {
     '奥田元宋・小由女美術館': [132.8526, 34.8058],
     '尾関山公園': [132.8600, 34.8100],
     '霧の海展望台': [132.8700, 34.8200],
-    '君田温泉森の泉': [132.8400, 34.7900],
     '三次もののけミュージアム': [132.8550, 34.8080]
   };
   
@@ -892,6 +891,7 @@ export function generateLandmarkData() {
         coordinates: coord,
         name: spot,
         height: height,
+        color: '#FFD700', // Yellow color for landmarks
         city: city.name,
         visitor_count: Math.floor((city.population / 100) * (0.5 + Math.random())),
         category: spot.includes('城') ? '歴史' : 

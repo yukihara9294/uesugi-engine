@@ -194,8 +194,8 @@ class MobilityEstimator:
             lat = (1-t)**2 * origin["lat"] + 2*(1-t)*t * control_lat + t**2 * dest["lat"]
             lon = (1-t)**2 * origin["lon"] + 2*(1-t)*t * control_lon + t**2 * dest["lon"]
             
-            # 速度の変動
-            base_speed = 0.3 + (flow["volume"] / 100000)
+            # 速度の変動（速度を1/3に減らす）
+            base_speed = (0.3 + (flow["volume"] / 100000)) / 3
             speed_variation = random.uniform(0.8, 1.2)
             
             particles.append({

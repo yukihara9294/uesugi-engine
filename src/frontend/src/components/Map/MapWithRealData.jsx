@@ -548,14 +548,7 @@ const MapWithRealData = ({
             14, 60,
             16, 100
           ],
-          'circle-color': [
-            'match',
-            ['get', 'category'],
-            'festival', '#9C27B0',  // イベントカテゴリと同じ紫色
-            'sports', '#2196F3',    // スポーツは青系
-            'cultural', '#4CAF50',  // 文化は緑系
-            '#9C27B0'  // デフォルトはイベント色
-          ],
+          'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 1,
           'circle-opacity': [
             'interpolate',
@@ -582,35 +575,9 @@ const MapWithRealData = ({
             14, 12,
             16, 16
           ],
-          'circle-color': [
-            'match',
-            ['get', 'category'],
-            'festival', '#9C27B0',
-            'sports', '#2196F3',
-            'cultural', '#4CAF50',
-            '#9C27B0'
-          ],
+          'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 0.5,
           'circle-opacity': 0.9
-        }
-      });
-
-      // イベント中心部の明るい点
-      map.current.addLayer({
-        id: 'event-center',
-        type: 'circle',
-        source: sourceId,
-        paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            10, 3,
-            14, 5,
-            16, 7
-          ],
-          'circle-color': '#ffffff',
-          'circle-opacity': 0.8
         }
       });
 
@@ -630,7 +597,7 @@ const MapWithRealData = ({
           'text-offset': [0, 2]
         },
         paint: {
-          'text-color': '#ffffff',
+          'text-color': '#FF6B6B',  // イベント情報の色に統一
           'text-halo-color': '#000000',
           'text-halo-width': 1
         }
@@ -671,15 +638,18 @@ const MapWithRealData = ({
         // Keep as point for circle layer
         pointFeatures.push(feature);
         
-        // Convert to polygon if it has height for 3D layer
-        if (feature.properties && feature.properties.height && feature.properties.height > 20) {
-          polygonFeatures.push({
-            ...feature,
-            geometry: {
-              type: 'Polygon',
-              coordinates: createLandmarkPolygon(feature.geometry.coordinates)
-            }
-          });
+        // Convert to polygon for 3D layer (全てのランドマークを円柱として表示)
+        polygonFeatures.push({
+          ...feature,
+          geometry: {
+            type: 'Polygon',
+            coordinates: createLandmarkPolygon(feature.geometry.coordinates)
+          },
+          properties: {
+            ...feature.properties,
+            height: feature.properties?.height || 30  // デフォルト高さ設定
+          }
+        });
         }
       }
     });
@@ -704,6 +674,7 @@ const MapWithRealData = ({
       });
 
       // ランドマークのポイントレイヤー（黄色に統一）
+      // 3D表示が無効の場合のみ表示
       map.current.addLayer({
         id: 'landmarks-points',
         type: 'circle',
@@ -715,7 +686,8 @@ const MapWithRealData = ({
           'circle-stroke-color': '#ffffff',
           'circle-stroke-opacity': 1,
           'circle-opacity': 0.8
-        }
+        },
+        minzoom: 15  // 3Dが表示されるズームレベルより大きく設定
       });
     }
     

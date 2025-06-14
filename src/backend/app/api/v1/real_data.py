@@ -334,7 +334,8 @@ async def get_real_mobility_data(prefecture: str):
             })
             
             # リアルなパーティクル生成（統計モデルベース）
-            num_particles = min(30, max(10, flow["volume"] // 3000))
+            # パーティクル数10倍に増やす
+            num_particles = min(300, max(100, flow["volume"] // 300))
             realistic_particles = estimator.generate_realistic_particles(flow, num_particles)
             
             for i, particle_data in enumerate(realistic_particles):
