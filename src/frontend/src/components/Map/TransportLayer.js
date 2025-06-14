@@ -76,7 +76,12 @@ const TransportLayer = ({ map, transportData, visible }) => {
         coordinates: route.shapes || [] // Assuming shapes data is preprocessed
       }
     })).filter(route => route.geometry.coordinates.length > 0) || [];
-    console.log('Route features:', routeFeatures.length);
+    console.log('Route features:', routeFeatures.length, 'from', transportData.routes?.length || 0, 'routes');
+    
+    // If no routes have shapes, skip route rendering
+    if (routeFeatures.length === 0) {
+      console.log('TransportLayer: No routes with valid shapes data');
+    }
 
     // Cleanup function
     const cleanup = () => {

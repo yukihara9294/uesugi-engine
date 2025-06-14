@@ -35,6 +35,7 @@ const MapWithRealData = ({
   loading,
   prefectureData = null
 }) => {
+  console.log('MapWithRealData layers prop:', layers);
   const mapContainer = useRef(null);
   const map = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -115,6 +116,8 @@ const MapWithRealData = ({
       console.log('Loaded mobility data:', mobilityData);
       console.log('Is mobility data null?', mobilityData === null);
       console.log('Is mobility data undefined?', mobilityData === undefined);
+      console.log('Loaded transport data:', transportData);
+      console.log('All loaded data:', { gtfsData, tourismData, accommodationData, mobilityData, eventData, transportData });
 
       // データをマップに適用
       if (map.current && mapLoaded) {
