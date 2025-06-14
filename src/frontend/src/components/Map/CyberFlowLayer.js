@@ -27,6 +27,8 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
     const cleanupLayers = () => {
       try {
         if (map.getLayer(particleLayerId)) map.removeLayer(particleLayerId);
+        if (map.getLayer(particleLayerId + '-mid-glow')) map.removeLayer(particleLayerId + '-mid-glow');
+        if (map.getLayer(particleLayerId + '-glow')) map.removeLayer(particleLayerId + '-glow');
         if (map.getLayer(flowGlowLayerId)) map.removeLayer(flowGlowLayerId);
         if (map.getLayer(flowLayerId)) map.removeLayer(flowLayerId);
         if (map.getSource(particleSourceId)) map.removeSource(particleSourceId);
@@ -110,7 +112,7 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         particlePositions.current[featureIndex] = {
           position: 0,
           direction: 1,
-          speed: 0.005 + Math.random() * 0.01, // 速度をランダム化
+          speed: 0.003 + Math.random() * 0.005, // 速度を遅く（約半分）
           path: points
         };
       }
@@ -207,7 +209,41 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         }
       });
       
-      // パーティクルレイヤー
+      // パーティクルグローレイヤー（大きい光の表現）
+      map.addLayer({
+        id: particleLayerId + '-glow',
+        type: 'circle',
+        source: particleSourceId,
+        paint: {
+          'circle-radius': [
+            '*',
+            ['get', 'size'],
+            4  // グローは4倍の大きさ
+          ],
+          'circle-color': ['get', 'color'],
+          'circle-blur': 1.5,  // 強いブラー
+          'circle-opacity': 0.2  // 透明度を低く
+        }
+      });
+      
+      // パーティクル中間グロー
+      map.addLayer({
+        id: particleLayerId + '-mid-glow',
+        type: 'circle',
+        source: particleSourceId,
+        paint: {
+          'circle-radius': [
+            '*',
+            ['get', 'size'],
+            2  // 中間グローは2倍
+          ],
+          'circle-color': ['get', 'color'],
+          'circle-blur': 1,
+          'circle-opacity': 0.4
+        }
+      });
+      
+      // パーティクル本体（中心部）
       map.addLayer({
         id: particleLayerId,
         type: 'circle',
@@ -215,8 +251,8 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         paint: {
           'circle-radius': ['get', 'size'],
           'circle-color': ['get', 'color'],
-          'circle-blur': 0.5,
-          'circle-opacity': 0.9
+          'circle-blur': 0.3,  // 中心はシャープに
+          'circle-opacity': 1  // 完全に不透明
         }
       });
       

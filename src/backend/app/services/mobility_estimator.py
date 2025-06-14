@@ -224,7 +224,7 @@ class MobilityEstimator:
             if distance < 5:
                 speed_multiplier = 0.15  # 近距離はゆっくり
             elif distance > 20:
-                speed_multiplier = 0.8  # 遠距離は速い
+                speed_multiplier = 0.5  # 遠距離も適度な速度に
             else:
                 speed_multiplier = 0.33  # 中距離は標準（1/3）
             

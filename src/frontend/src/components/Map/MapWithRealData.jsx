@@ -568,7 +568,7 @@ const MapWithRealData = ({
         data: eventData
       });
 
-      // イベント影響範囲（オーブ風の表現）
+      // イベント大グロー（最外周の光）
       map.current.addLayer({
         id: 'event-impact',
         type: 'circle',
@@ -578,19 +578,73 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['zoom'],
-            10, 30,
-            14, 60,
-            16, 100
+            10, 80,
+            14, 120,
+            16, 160
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
+          'circle-blur': 1.5,
+          'circle-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 0.1,
+            14, 0.08,
+            16, 0.05
+          ]
+        }
+      });
+
+      // イベント中グロー
+      map.current.addLayer({
+        id: 'event-mid-glow',
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 40,
+            14, 60,
+            16, 80
+          ],
+          'circle-color': '#FF6B6B',
+          'circle-blur': 1.2,
+          'circle-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 0.2,
+            14, 0.15,
+            16, 0.1
+          ]
+        }
+      });
+
+      // イベント内グロー
+      map.current.addLayer({
+        id: 'event-inner-glow',
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 20,
+            14, 30,
+            16, 40
+          ],
+          'circle-color': '#FF6B6B',
           'circle-blur': 1,
           'circle-opacity': [
             'interpolate',
             ['linear'],
             ['zoom'],
-            10, 0.15,
-            14, 0.1,
-            16, 0.05
+            10, 0.3,
+            14, 0.25,
+            16, 0.2
           ]
         }
       });
@@ -610,8 +664,8 @@ const MapWithRealData = ({
             16, 16
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
-          'circle-blur': 0.5,
-          'circle-opacity': 0.9
+          'circle-blur': 0.3,  // 中心はシャープに
+          'circle-opacity': 1  // 完全に不透明
         }
       });
 
@@ -1178,9 +1232,9 @@ const MapWithRealData = ({
       if (progress > 1) progress = 0;
       
       // フローラインのフェードアニメーション（より強調）
-      flowOpacityPhase += 0.03;
+      flowOpacityPhase += 0.04;
       if (map.current.getLayer('mobility-flows')) {
-        const opacity = 0.1 + Math.abs(Math.sin(flowOpacityPhase)) * 0.3; // フェードイン・フェードアウト強化
+        const opacity = 0.05 + Math.abs(Math.sin(flowOpacityPhase)) * 0.4; // より大きな変化幅
         map.current.setPaintProperty('mobility-flows', 'line-opacity', opacity);
       }
 
@@ -1268,7 +1322,7 @@ const MapWithRealData = ({
       accommodation: ['accommodation-3d', 'accommodation-labels'],  // Changed from hotels to accommodation
       mobility: ['mobility-particles-glow', 'mobility-particles', 'mobility-particles-shadow', 'mobility-flows'],
       heatmap: ['sns-heatmap'],
-      events: ['event-impact', 'event-markers', 'event-labels'],
+      events: ['event-impact', 'event-mid-glow', 'event-inner-glow', 'event-markers', 'event-labels'],
       consumption: ['consumption-3d']  // ラベルは削除
     };
 
