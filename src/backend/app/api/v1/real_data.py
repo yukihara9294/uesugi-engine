@@ -337,8 +337,10 @@ async def get_real_mobility_data(prefecture: str):
             })
             
             # リアルなパーティクル生成（統計モデルベース）
-            # パーティクル数10倍に増やす
-            num_particles = min(300, max(100, flow["volume"] // 300))
+            # パーティクル数を適切に設定（パフォーマンスと表示品質のバランス）
+            # 距離とフロー量に基づいて調整
+            base_particles = flow["volume"] // 1000  # 基本パーティクル数
+            num_particles = min(500, max(50, base_particles))  # 50～500個の範囲で調整
             realistic_particles = estimator.generate_realistic_particles(flow, num_particles)
             
             for i, particle_data in enumerate(realistic_particles):
@@ -364,7 +366,7 @@ async def get_real_mobility_data(prefecture: str):
                     }
                 })
         
-        return {
+        result = {
             "flows": {
                 "type": "FeatureCollection",
                 "features": flow_features
@@ -374,6 +376,10 @@ async def get_real_mobility_data(prefecture: str):
                 "features": particle_features
             }
         }
+        
+        print(f"Returning mobility data - flows: {len(flow_features)}, particles: {len(particle_features)}")
+        
+        return result
         
     except Exception as e:
         print(f"Mobility data error: {e}")

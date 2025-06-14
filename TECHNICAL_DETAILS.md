@@ -138,3 +138,122 @@
 - realDataLoader.jsを修正し、realDataServiceを使用
 - GeoJSON形式への変換処理を実装
 - エラーハンドリングでフォールバック対応
+
+## 2025-06-14 追加情報
+
+### 人流パーティクル表示問題の技術的詳細
+
+#### 問題の概要
+- **現象**: 6,540パーティクルが表示されるが、5秒後に動きが停止
+- **原因**: パーティクルの終点到達後のリセット処理に問題がある可能性
+- **データフロー**: hiroshimaPrefectureDataGenerator.js → CyberFlowLayer.js
+
+#### パーティクルデータ構造
+
+1. **渋滞ポイントパーティクル（円運動）**
+```javascript
+{
+  coordinates: [lon, lat],
+  id: `particle-${idx}-${i}`,
+  is_circular: true,
+  center_lon: 132.4553,
+  center_lat: 34.3853,
+  angle_offset: 0.628,
+  orbit_radius: 0.001
+}
+```
+
+2. **フローパーティクル（ベジエ曲線運動）**
+```javascript
+{
+  coordinates: [origin_lon, origin_lat],
+  id: `flow-particle-${routeIdx}-${i}`,
+  origin_lon: 132.4553,
+  origin_lat: 34.3853,
+  destination_lon: 133.3627,
+  destination_lat: 34.4858
+}
+```
+
+#### アニメーション処理
+
+```javascript
+// CyberFlowLayer.js animate()関数
+if (particle.is_circular) {
+  // 円運動 - 正常動作
+  particle.angle += particle.angleSpeed;
+} else if (particle.position !== undefined) {
+  // 直線運動 - 5秒で停止
+  particle.position += particle.speed;
+  if (particle.position >= 1) {
+    particle.position = 0; // ← ここで問題が発生？
+  }
+}
+```
+
+#### 推測される原因
+
+1. **positionの初期化漏れ**
+   - 一部のパーティクルでpositionが正しく初期化されていない
+   - デフォルト処理でposition=0, speed=0に設定される
+
+2. **パーティクルキーの不一致**
+   - `particle_${flow_index}_${particle_index}`の生成ロジックに問題
+   - flow_indexがundefinedの場合の処理
+
+3. **createParticles()の複数回呼び出し**
+   - アニメーションループ内で毎フレームcreateParticles()が呼ばれる
+   - 新しいパーティクルが生成され、古いparticlePositionsが上書き
+
+#### デバッグ方法
+
+1. **パーティクル初期化のログ**
+```javascript
+console.log('Init particle:', particleKey, {
+  hasPosition: 'position' in particleInfo,
+  position: particleInfo.position,
+  speed: particleInfo.speed
+});
+```
+
+2. **5秒後の状態確認**
+```javascript
+setTimeout(() => {
+  console.log('Particle states after 5s:', particlePositions.current);
+}, 5000);
+```
+
+3. **アニメーションループの監視**
+```javascript
+let frameCount = 0;
+const animate = () => {
+  console.log('Frame:', frameCount++, 'Active particles:', 
+    Object.keys(particlePositions.current).length);
+}
+```
+
+#### 解決策の提案
+
+1. **position初期化の保証**
+```javascript
+if (!('position' in particleInfo)) {
+  particleInfo.position = 0;
+}
+```
+
+2. **パーティクルキーの正規化**
+```javascript
+const particleKey = `particle_${particle.properties.id || 
+  `${particle.properties.flow_index}_${particle.properties.particle_index}`}`;
+```
+
+3. **createParticlesのキャッシュ**
+```javascript
+let cachedParticles = null;
+const createParticles = () => {
+  if (cachedParticles) return cachedParticles;
+  // ... particle creation logic
+  cachedParticles = particles;
+  return particles;
+}
+```

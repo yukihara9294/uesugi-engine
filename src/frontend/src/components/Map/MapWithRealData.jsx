@@ -43,6 +43,7 @@ const MapWithRealData = ({
   const map = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [realDataLoaded, setRealDataLoaded] = useState(false);
+  const [realMobilityData, setRealMobilityData] = useState(null); // 実際のモビリティデータを保存
   const layersInitialized = useRef(false);
   const animationFrame = useRef(null);
 
@@ -60,66 +61,83 @@ const MapWithRealData = ({
     console.log('Loading real data for', selectedPrefecture);
     console.log('Prefecture data available:', !!prefectureData, prefectureData);
     
+    // ローカルデータを先に設定（即時表示）
+    if (prefectureData && map.current && mapLoaded) {
+      // ローカルデータを即座に適用
+      updateLandmarksLayer(prefectureData.landmarks || generateLandmarks(selectedPrefecture));
+      updateAccommodationLayer(prefectureData.hotels || generateHotels(selectedPrefecture));
+      updateEventLayer(prefectureData.events || prefectureData.eventData || generateEventData(selectedPrefecture));
+      updateConsumptionLayer(prefectureData.consumption || generateConsumptionData(selectedPrefecture));
+      updateHeatmapLayer(prefectureData.heatmap || generateHeatmapData(selectedPrefecture));
+      updatePlateauLayer();
+      
+      // 人流データも即座に表示（ダミーデータで初期化）
+      if (prefectureData.mobility) {
+        console.log('Initializing with dummy mobility data:', prefectureData.mobility);
+        console.log('Dummy data has particles?', !!prefectureData.mobility.particles);
+        console.log('Dummy data has flows?', !!prefectureData.mobility.flows);
+      }
+      
+      setRealDataLoaded(true);
+      console.log('Local data applied immediately');
+    }
+    
     try {
-      // 並列でデータ読み込み
+      // APIデータをタイムアウト付きで取得（バックグラウンド）
+      const loadWithTimeout = (promise, timeout = 10000) => {  // 10秒に延長
+        return Promise.race([
+          promise,
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
+        ]);
+      };
+      
+      // 並列でデータ読み込み（タイムアウト付き）
       const [gtfsData, tourismData, accommodationData, mobilityData, eventData] = await Promise.all([
-        selectedPrefecture === '広島県' ? loadHiroshimaGTFSData() : Promise.resolve(null),
-        selectedPrefecture === '山口県' ? loadYamaguchiTourismData() : Promise.resolve(null),
-        loadRealAccommodationData(selectedPrefecture),
-        loadRealMobilityData(selectedPrefecture),
-        loadRealEventData(selectedPrefecture)
+        selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData()).catch(() => null) : Promise.resolve(null),
+        selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData()).catch(() => null) : Promise.resolve(null),
+        loadWithTimeout(loadRealAccommodationData(selectedPrefecture)).catch(() => null),
+        loadWithTimeout(loadRealMobilityData(selectedPrefecture), 30000).catch((error) => {  // 30秒に延長
+          console.error('Failed to load mobility data:', error);
+          return null;
+        }),
+        loadWithTimeout(loadRealEventData(selectedPrefecture)).catch(() => null)
       ]);
+      
+      console.log('Loaded mobility data:', mobilityData);
+      console.log('Is mobility data null?', mobilityData === null);
+      console.log('Is mobility data undefined?', mobilityData === undefined);
 
       // データをマップに適用
       if (map.current && mapLoaded) {
-        // GTFSデータ（広島県のみ）- 現在はGTFSにサンプルデータあり
+        // APIデータを取得できた場合のみ更新
         if (gtfsData && selectedPrefecture === '広島県') {
           updateTransportLayer(gtfsData);
         }
-
-        // 観光施設データ - prefectureDataまたはダミーデータを使用
-        const landmarksData = prefectureData?.landmarks || generateLandmarks(selectedPrefecture);
-        console.log('Landmarks data:', landmarksData ? 'Available' : 'Not available', landmarksData?.features?.length, 'features');
-        console.log('Landmarks data structure:', landmarksData);
-        if (landmarksData) {
-          updateLandmarksLayer(landmarksData);
-        }
-
-        // 宿泊施設データ - prefectureDataまたはダミーデータを使用
-        const hotelsData = accommodationData || prefectureData?.hotels || generateHotels(selectedPrefecture);
-        if (hotelsData) {
-          updateAccommodationLayer(hotelsData);
-        }
-
-        // 人流データ - CyberFlowLayerで処理するため、ここではスキップ
-        // const mobilityDummyData = mobilityData || prefectureData?.mobility || generateMobilityData(selectedPrefecture);
-        // if (mobilityDummyData) {
-        //   updateMobilityLayer(mobilityDummyData);
-        // }
-
-        // イベントデータ - prefectureDataまたはダミーデータを使用
-        const eventDummyData = eventData || prefectureData?.events || prefectureData?.eventData || generateEventData(selectedPrefecture);
-        if (eventDummyData) {
-          updateEventLayer(eventDummyData);
-        }
-
-        // 消費データ - prefectureDataまたはダミーデータを使用
-        const consumptionData = prefectureData?.consumption || generateConsumptionData(selectedPrefecture);
-        if (consumptionData) {
-          updateConsumptionLayer(consumptionData);
-        }
-
-        // SNSヒートマップ - prefectureDataまたはダミーデータを使用
-        const heatmapData = prefectureData?.heatmap || generateHeatmapData(selectedPrefecture);
-        updateHeatmapLayer(heatmapData);
-
-        // PLATEAU buildings are now handled with landmarks layer
-
-        setRealDataLoaded(true);
-        console.log('Real data loaded successfully');
         
-        // Apply initial layer visibility after all layers are created
-        // This will be handled by the useEffect that watches realDataLoaded
+        // 他のAPIデータも取得できた場合のみ更新
+        if (accommodationData) {
+          updateAccommodationLayer(accommodationData);
+        }
+        if (eventData) {
+          updateEventLayer(eventData);
+        }
+        if (mobilityData) {
+          console.log('Step 1: Mobility data received:', mobilityData);
+          console.log('Step 2: Has flows:', !!mobilityData.flows);
+          console.log('Step 3: Has particles:', !!mobilityData.particles);
+          if (mobilityData.particles) {
+            console.log('Step 4: Particle count:', mobilityData.particles.features?.length);
+          }
+          console.log('Step 5: Setting realMobilityData state...');
+          setRealMobilityData(mobilityData); // 実データを保存
+          
+          // 即座にCyberFlowLayerを更新（データが存在することを確認）
+          setTimeout(() => {
+            console.log('Step 6: Verifying realMobilityData was set:', !!realMobilityData);
+          }, 100);
+        }
+        
+        console.log('API data updates completed');
       }
     } catch (error) {
       console.error('Failed to load real data:', error);
@@ -318,7 +336,7 @@ const MapWithRealData = ({
         type: 'fill-extrusion',
         source: sourceId,
         paint: {
-          'fill-extrusion-color': '#4A90E2',
+          'fill-extrusion-color': '#4CAF50',  // 緑色に統一
           'fill-extrusion-height': [
             '*',
             [
@@ -349,7 +367,7 @@ const MapWithRealData = ({
           'text-offset': [0, 2]
         },
         paint: {
-          'text-color': '#4A90E2',
+          'text-color': '#4CAF50',  // 緑色に統一
           'text-halo-color': '#000000',
           'text-halo-width': 1
         },
@@ -578,20 +596,36 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['zoom'],
-            10, 80,
-            14, 120,
-            16, 160
+            5, [  // ズームレベル5（日本全体）
+              '*',
+              [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', 'expected_visitors'], 30000],
+                10000, 0.5,    // 小規模イベント（ランドマークの0.5倍）
+                50000, 2,      // 中規模イベント（ランドマークの2倍）
+                100000, 4,     // 大規模イベント（ランドマークの4倍）
+                200000, 6      // 超大規模イベント（最大20倍の体積 = 半径2.7倍）
+              ],
+              5  // ズームレベル5の基準サイズ
+            ],
+            12, [  // ズームレベル12以上
+              '*',
+              [
+                'interpolate',
+                ['linear'],
+                ['coalesce', ['get', 'expected_visitors'], 30000],
+                10000, 2,      // 小規模イベント（ランドマークの2倍）
+                50000, 4,      // 中規模イベント（ランドマークの4倍）
+                100000, 8,     // 大規模イベント（ランドマークの8倍）
+                200000, 12     // 超大規模イベント（ランドマークの12倍）
+              ],
+              40  // ズームレベル12の基準サイズ
+            ]
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 1.5,
-          'circle-opacity': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            10, 0.1,
-            14, 0.08,
-            16, 0.05
-          ]
+          'circle-opacity': 0.08  // 固定の透明度
         }
       });
 
@@ -602,23 +636,21 @@ const MapWithRealData = ({
         source: sourceId,
         paint: {
           'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            10, 40,
-            14, 60,
-            16, 80
+            '*',
+            [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', 'expected_visitors'], 30000],
+              10000, 2,     // 小規模イベント
+              50000, 4,     // 中規模イベント
+              100000, 6,    // 大規模イベント
+              200000, 8     // 超大規模イベント
+            ],
+            40  // 固定サイズ
           ],
           'circle-color': '#FF6B6B',
           'circle-blur': 1.2,
-          'circle-opacity': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            10, 0.2,
-            14, 0.15,
-            16, 0.1
-          ]
+          'circle-opacity': 0.15  // 固定の透明度
         }
       });
 
@@ -631,21 +663,15 @@ const MapWithRealData = ({
           'circle-radius': [
             'interpolate',
             ['linear'],
-            ['zoom'],
-            10, 20,
-            14, 30,
-            16, 40
+            ['coalesce', ['get', 'expected_visitors'], 30000],
+            10000, 40,    // 小規模イベント
+            50000, 80,    // 中規模イベント
+            100000, 120,  // 大規模イベント
+            200000, 160   // 超大規模イベント
           ],
           'circle-color': '#FF6B6B',
           'circle-blur': 1,
-          'circle-opacity': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            10, 0.3,
-            14, 0.25,
-            16, 0.2
-          ]
+          'circle-opacity': 0.25  // 固定の透明度
         }
       });
 
@@ -658,14 +684,15 @@ const MapWithRealData = ({
           'circle-radius': [
             'interpolate',
             ['linear'],
-            ['zoom'],
-            10, 8,
-            14, 12,
-            16, 16
+            ['coalesce', ['get', 'expected_visitors'], 30000],
+            10000, 16,    // 小規模イベント
+            50000, 32,    // 中規模イベント
+            100000, 48,   // 大規模イベント
+            200000, 64    // 超大規模イベント
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
-          'circle-blur': 0.3,  // 中心はシャープに
-          'circle-opacity': 1  // 完全に不透明
+          'circle-blur': 0.2,  // 中心はシャープに
+          'circle-opacity': 0.05  // 中心部をさらに透明に（ほぼ透明）
         }
       });
 
@@ -707,14 +734,19 @@ const MapWithRealData = ({
     });
     
     // Convert Point data to Polygon for 3D buildings that have height
-    const createLandmarkPolygon = (center, size = 0.0005) => {
-      return [[
-        [center[0] - size/2, center[1] - size/2],
-        [center[0] + size/2, center[1] - size/2],
-        [center[0] + size/2, center[1] + size/2],
-        [center[0] - size/2, center[1] + size/2],
-        [center[0] - size/2, center[1] - size/2]
-      ]];
+    const createLandmarkPolygon = (center, radius = 0.0003) => {
+      // Create a circular polygon (cylinder base)
+      const coordinates = [[]];
+      const steps = 16; // Number of points for the circle
+      
+      for (let i = 0; i <= steps; i++) {
+        const angle = (i / steps) * 2 * Math.PI;
+        const x = center[0] + radius * Math.cos(angle);
+        const y = center[1] + radius * Math.sin(angle);
+        coordinates[0].push([x, y]);
+      }
+      
+      return coordinates;
     };
     
     // Separate point features and polygon features
@@ -802,7 +834,7 @@ const MapWithRealData = ({
             50  // デフォルト高さ
           ],
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.95  // より明るく光る表現
+          'fill-extrusion-opacity': 0.8  // 透明度を調整
         },
         minzoom: 12  // より広いズームレベルで表示
       });
@@ -934,8 +966,7 @@ const MapWithRealData = ({
     const plateauPointData = {
       type: 'FeatureCollection',
       features: [
-        // Office buildings only
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4553, 34.3853] }, properties: { height: 120, floors: 30, name: '広島センタービル', type: 'office' }},
+        // Office buildings and commercial (hotels moved to accommodation layer)
         { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4590, 34.3939] }, properties: { height: 95, floors: 24, name: '広島ビジネスタワー', type: 'office' }},
         { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4610, 34.3935] }, properties: { height: 65, floors: 16, name: 'そごう広島店', type: 'commercial' }},
       ]
@@ -1370,6 +1401,23 @@ const MapWithRealData = ({
       updateLayerVisibility();
     }
   }, [layers, updateLayerVisibility, realDataLoaded]);
+  
+  // Log when realMobilityData changes
+  useEffect(() => {
+    if (realMobilityData) {
+      console.log('=== realMobilityData State Updated ===');
+      console.log('Step 7: realMobilityData has been set:', realMobilityData);
+      console.log('Step 8: Flows count:', realMobilityData.flows?.features?.length);
+      console.log('Step 9: Particles count:', realMobilityData.particles?.features?.length);
+      
+      // Force re-render of CyberFlowLayer
+      if (mapLoaded && map.current) {
+        console.log('Step 10: Force updating CyberFlowLayer with new data');
+      }
+    } else {
+      console.log('=== realMobilityData is null ===');
+    }
+  }, [realMobilityData, mapLoaded]);
 
   useEffect(() => {
     if (map.current && mapLoaded) {
@@ -1413,28 +1461,39 @@ const MapWithRealData = ({
             style={{ width: '100%', height: '100%' }}
           />
           {/* CyberFlowLayer for mobility visualization */}
-          {mapLoaded && map.current && prefectureData?.mobility && (
-            <CyberFlowLayer
-              map={map.current}
-              mobilityData={prefectureData.mobility}
-              visible={layers.mobility}
-            />
-          )}
-          {!realDataLoaded && mapLoaded && (
-            <div style={{
-              position: 'absolute',
-              top: '10px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              background: 'rgba(0,0,0,0.8)',
-              color: 'white',
-              padding: '10px 20px',
-              borderRadius: '20px',
-              zIndex: 100
-            }}>
-              実データ読み込み中...
-            </div>
-          )}
+          {(() => {
+            const shouldShowCyberFlow = mapLoaded && map.current && (realMobilityData || prefectureData?.mobility);
+            const dataToUse = realMobilityData || prefectureData?.mobility;
+            const dataKey = realMobilityData ? 'real' : 'dummy';
+            
+            console.log('=== CyberFlowLayer Render Check ===');
+            console.log('mapLoaded:', mapLoaded);
+            console.log('map.current:', !!map.current);
+            console.log('realMobilityData:', !!realMobilityData);
+            console.log('prefectureData?.mobility:', !!prefectureData?.mobility);
+            console.log('Should show:', !!shouldShowCyberFlow);
+            console.log('Data type:', dataKey);
+            if (dataToUse) {
+              console.log('Data structure:', {
+                type: dataToUse.type,
+                hasFeatures: !!dataToUse.features,
+                hasFlows: !!dataToUse.flows,
+                hasParticles: !!dataToUse.particles
+              });
+            }
+            
+            if (shouldShowCyberFlow) {
+              return (
+                <CyberFlowLayer
+                  map={map.current}
+                  mobilityData={dataToUse}
+                  visible={layers.mobility}
+                  key={dataKey}
+                />
+              );
+            }
+            return null;
+          })()}
         </>
       )}
     </div>

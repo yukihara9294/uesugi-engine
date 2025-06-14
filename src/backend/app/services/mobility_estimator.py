@@ -181,8 +181,8 @@ class MobilityEstimator:
         else:
             particle_multiplier = 1.0
         
-        # 全体的に10倍に増やす
-        adjusted_num_particles = int(num_particles * particle_multiplier * 10)
+        # 適切なパーティクル数に調整（パフォーマンスを考慮）
+        adjusted_num_particles = int(num_particles * particle_multiplier * 5)  # 5倍に減らす
         particles = []
         
         # フロータイプに応じた色設定

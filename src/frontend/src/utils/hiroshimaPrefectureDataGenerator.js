@@ -725,47 +725,76 @@ export function generateMobilityData() {
   
   // Add congestion points at major intersections and interchanges
   Object.values(HIROSHIMA_CITIES).forEach(city => {
-    // Station areas tend to be congested
-    const stationCongestion = {
-      coordinates: [city.center[0] + 0.002, city.center[1] + 0.002],
-      level: 0.7 + Math.random() * 0.25,
-      radius: city.population > 200000 ? 0.01 : 0.005,
-      type: 'station',
-      name: `${city.name}駅周辺`,
-      flow_count: Math.floor(city.population * 0.1)
-    };
-    mobilityData.congestionPoints.push(stationCongestion);
-    
-    // Commercial areas also have congestion
-    city.commercialAreas.forEach(area => {
-      const areaCongestion = {
+    // Station areas tend to be congested - multiple points for larger stations
+    const stationPointCount = city.population > 500000 ? 5 : city.population > 200000 ? 3 : 2;
+    for (let i = 0; i < stationPointCount; i++) {
+      const stationCongestion = {
         coordinates: [
-          city.center[0] + (Math.random() - 0.5) * 0.01,
-          city.center[1] + (Math.random() - 0.5) * 0.01
+          city.center[0] + (Math.random() - 0.5) * 0.003,
+          city.center[1] + (Math.random() - 0.5) * 0.003
         ],
-        level: 0.5 + Math.random() * 0.35,
-        radius: 0.004,
-        type: 'commercial',
-        name: area,
-        flow_count: Math.floor(city.population * 0.05 * Math.random())
+        level: 0.7 + Math.random() * 0.25,
+        radius: city.population > 200000 ? 0.01 : 0.005,
+        type: 'station',
+        name: `${city.name}駅周辺`,
+        flow_count: Math.floor(city.population * 0.1)
       };
-      mobilityData.congestionPoints.push(areaCongestion);
+      mobilityData.congestionPoints.push(stationCongestion);
+    }
+    
+    // Commercial areas also have congestion - multiple points per area
+    city.commercialAreas.forEach(area => {
+      const areaPointCount = city.population > 300000 ? 4 : 2;
+      for (let i = 0; i < areaPointCount; i++) {
+        const areaCongestion = {
+          coordinates: [
+            city.center[0] + (Math.random() - 0.5) * 0.01,
+            city.center[1] + (Math.random() - 0.5) * 0.01
+          ],
+          level: 0.5 + Math.random() * 0.35,
+          radius: 0.004,
+          type: 'commercial',
+          name: area,
+          flow_count: Math.floor(city.population * 0.05 * Math.random())
+        };
+        mobilityData.congestionPoints.push(areaCongestion);
+      }
     });
     
-    // Add highway interchange congestion points for major cities
+    // Add highway interchange congestion points for major cities - multiple points
     if (city.population > 100000) {
-      const interchangeCongestion = {
+      const interchangeCount = city.population > 500000 ? 3 : 2;
+      for (let i = 0; i < interchangeCount; i++) {
+        const interchangeCongestion = {
+          coordinates: [
+            city.center[0] + (Math.random() - 0.5) * 0.02,
+            city.center[1] + (Math.random() - 0.5) * 0.02
+          ],
+          level: 0.6 + Math.random() * 0.3,
+          radius: 0.008,
+          type: 'interchange',
+          name: `${city.name} IC-${i + 1}`,
+          flow_count: Math.floor(20000 + Math.random() * 15000)
+        };
+        mobilityData.congestionPoints.push(interchangeCongestion);
+      }
+    }
+    
+    // Add additional traffic points along major roads
+    const trafficPointCount = Math.floor(city.population / 50000);
+    for (let i = 0; i < trafficPointCount; i++) {
+      const trafficPoint = {
         coordinates: [
-          city.center[0] + (Math.random() - 0.5) * 0.02,
-          city.center[1] + (Math.random() - 0.5) * 0.02
+          city.center[0] + (Math.random() - 0.5) * 0.03,
+          city.center[1] + (Math.random() - 0.5) * 0.03
         ],
-        level: 0.6 + Math.random() * 0.3,
-        radius: 0.008,
-        type: 'interchange',
-        name: `${city.name} IC`,
-        flow_count: Math.floor(20000 + Math.random() * 15000)
+        level: 0.4 + Math.random() * 0.4,
+        radius: 0.003,
+        type: 'traffic',
+        name: `交通点${i + 1}`,
+        flow_count: Math.floor(5000 + Math.random() * 10000)
       };
-      mobilityData.congestionPoints.push(interchangeCongestion);
+      mobilityData.congestionPoints.push(trafficPoint);
     }
   });
   
@@ -779,14 +808,75 @@ export function generateMobilityData() {
   ];
   
   majorJunctions.forEach(junction => {
-    mobilityData.congestionPoints.push({
-      coordinates: junction.coordinates,
-      level: junction.level + Math.random() * 0.1,
-      radius: 0.01,
-      type: 'junction',
-      name: junction.name,
-      flow_count: Math.floor(30000 + Math.random() * 20000)
-    });
+    // Add multiple particles around each junction
+    for (let i = 0; i < 3; i++) {
+      mobilityData.congestionPoints.push({
+        coordinates: [
+          junction.coordinates[0] + (Math.random() - 0.5) * 0.005,
+          junction.coordinates[1] + (Math.random() - 0.5) * 0.005
+        ],
+        level: junction.level + Math.random() * 0.1,
+        radius: 0.01,
+        type: 'junction',
+        name: junction.name,
+        flow_count: Math.floor(30000 + Math.random() * 20000)
+      });
+    }
+  });
+  
+  // Add particles along major routes
+  mobilityData.routes.forEach(route => {
+    if (route.type === 'highway' || route.type === 'shinkansen' || route.congestion > 0.7) {
+      // Add particles along the route
+      const pointCount = Math.min(route.points.length - 1, 5);
+      for (let i = 0; i < pointCount; i++) {
+        const t = (i + 1) / (pointCount + 1);
+        const idx = Math.floor(t * (route.points.length - 1));
+        const nextIdx = Math.min(idx + 1, route.points.length - 1);
+        
+        // Interpolate between points
+        const lng = route.points[idx][0] + (route.points[nextIdx][0] - route.points[idx][0]) * (t - idx / (route.points.length - 1));
+        const lat = route.points[idx][1] + (route.points[nextIdx][1] - route.points[idx][1]) * (t - idx / (route.points.length - 1));
+        
+        mobilityData.congestionPoints.push({
+          coordinates: [lng, lat],
+          level: route.congestion * (0.8 + Math.random() * 0.2),
+          radius: 0.005,
+          type: 'route',
+          name: route.name,
+          flow_count: route.flow_count || Math.floor(10000 + Math.random() * 10000)
+        });
+      }
+    }
+  });
+  
+  // Add tourist area particles
+  const touristAreas = [
+    { name: '宮島', coordinates: [132.3196, 34.2960], level: 0.8 },
+    { name: '平和記念公園', coordinates: [132.4500, 34.3920], level: 0.85 },
+    { name: '原爆ドーム', coordinates: [132.4530, 34.3930], level: 0.85 },
+    { name: '広島城', coordinates: [132.4590, 34.4027], level: 0.7 },
+    { name: '鞆の浦', coordinates: [133.3833, 34.3833], level: 0.75 },
+    { name: '千光寺', coordinates: [133.2050, 34.4100], level: 0.7 },
+    { name: '大和ミュージアム', coordinates: [132.5550, 34.2410], level: 0.7 },
+    { name: 'しまなみ海道', coordinates: [133.2100, 34.3900], level: 0.65 },
+  ];
+  
+  touristAreas.forEach(area => {
+    // Add multiple particles around each tourist area
+    for (let i = 0; i < 4; i++) {
+      mobilityData.congestionPoints.push({
+        coordinates: [
+          area.coordinates[0] + (Math.random() - 0.5) * 0.003,
+          area.coordinates[1] + (Math.random() - 0.5) * 0.003
+        ],
+        level: area.level + Math.random() * 0.1,
+        radius: 0.006,
+        type: 'tourist',
+        name: area.name,
+        flow_count: Math.floor(15000 + Math.random() * 20000)
+      });
+    }
   });
   
   return mobilityData;
@@ -1389,33 +1479,125 @@ export function getHiroshimaPrefectureBounds() {
   };
 }
 
-// Convert mobility data to GeoJSON format for CyberFlowLayer
+// Convert mobility data to particles/flows format for CyberFlowLayer
 export function generateMobilityFlowsGeoJSON() {
   const mobilityData = generateMobilityData();
-  const features = [];
   
-  // Convert routes to LineString features
-  mobilityData.routes.forEach((route, idx) => {
-    features.push({
-      type: 'Feature',
-      geometry: {
-        type: 'LineString',
-        coordinates: route.points
-      },
-      properties: {
-        id: route.id,
-        name: route.name,
-        type: route.type, // 'commute', 'tourist', 'highway', etc.
-        flow_count: route.flow_count,
-        congestion: route.congestion,
-        flow_speed: route.flow_speed
-      }
-    });
+  // Convert congestion points to particles format with multiple particles per point
+  const particlesData = [];
+  
+  mobilityData.congestionPoints.forEach((point, idx) => {
+    // Generate multiple particles per congestion point based on flow_count
+    const particleCount = Math.max(10, Math.floor((point.flow_count || 10000) / 1000)); // 10-50 particles per point
+    
+    for (let i = 0; i < particleCount; i++) {
+      // Add small random offset to create particle cloud
+      const offset = 0.001;
+      const angle = (i / particleCount) * 2 * Math.PI;
+      const distance = Math.random() * offset;
+      
+      // For congestion points, create circular motion particles
+      const currentCoord = [
+        point.coordinates[0] + Math.cos(angle) * distance,
+        point.coordinates[1] + Math.sin(angle) * distance
+      ];
+      
+      particlesData.push({
+        coordinates: currentCoord,
+        id: `particle-${idx}-${i}`,
+        size: 3 + point.level * 5,
+        color: point.level > 0.7 ? '#FF6B6B' : point.level > 0.5 ? '#FFA726' : '#66BB6A',
+        speed: 0.3 + Math.random() * 0.4,
+        glowRadius: 15,
+        glowColor: point.level > 0.7 ? '#FF6B6B' : point.level > 0.5 ? '#FFA726' : '#66BB6A',
+        glowOpacityOuter: 0.3,
+        glowOpacityMiddle: 0.5,
+        coreColor: '#FFFFFF',
+        coreOpacity: 1,
+        type: 'congestion',
+        radius: 10,
+        particle_index: i,
+        // Add circular motion parameters
+        center_lon: point.coordinates[0],
+        center_lat: point.coordinates[1],
+        angle_offset: angle,
+        orbit_radius: distance,
+        is_circular: true,
+        ...point
+      });
+    }
   });
   
+  // Convert routes to flows format and generate particles for each flow
+  const flowsData = [];
+  
+  mobilityData.routes.forEach((route, routeIdx) => {
+    flowsData.push({
+      coordinates: route.points,
+      id: route.id || `flow-${routeIdx}`,
+      color: route.congestion > 0.8 ? '#FF5252' : route.congestion > 0.6 ? '#FFA726' : '#66BB6A',
+      width: 2 + route.congestion * 3,
+      showGlowingArc: route.congestion > 0.5,
+      currentOpacity: 1,
+      opacity: 1,
+      distanceKm: route.distanceKm || 10,
+      congestion: route.congestion || 0,
+      ...route
+    });
+    
+    // Generate particles along each flow
+    if (route.points.length >= 2) {
+      const particlesPerFlow = Math.max(20, Math.floor((route.flow_count || 20000) / 1000));
+      
+      for (let i = 0; i < particlesPerFlow; i++) {
+        const origin = route.points[0];
+        const destination = route.points[route.points.length - 1];
+        
+        particlesData.push({
+          coordinates: origin, // Starting position
+          id: `flow-particle-${routeIdx}-${i}`,
+          size: 2 + route.congestion * 3,
+          color: route.type === 'shinkansen' ? '#00FFFF' :
+                 route.type === 'highway' ? '#FF00FF' :
+                 route.type === 'tourist' ? '#FFFF00' : '#00FF00',
+          speed: 0.002 + Math.random() * 0.003,
+          flow_index: routeIdx,
+          particle_index: i,
+          origin_lon: origin[0],
+          origin_lat: origin[1],
+          destination_lon: destination[0],
+          destination_lat: destination[1],
+          type: 'flow',
+          flow_type: route.type
+        });
+      }
+    }
+  });
+  
+  // Helper function to create GeoJSON
+  const toGeoJSON = (data, geometryType) => {
+    return {
+      type: 'FeatureCollection',
+      features: data.map(item => ({
+        type: 'Feature',
+        geometry: {
+          type: geometryType,
+          coordinates: item.coordinates
+        },
+        properties: Object.keys(item).reduce((props, key) => {
+          if (key !== 'coordinates') {
+            props[key] = item[key];
+          }
+          return props;
+        }, {})
+      }))
+    };
+  };
+  
+  // Return particles/flows format matching other prefectures
   return {
-    type: 'FeatureCollection',
-    features: features
+    particles: toGeoJSON(particlesData, 'Point'),
+    flows: toGeoJSON(flowsData, 'LineString')
   };
 }
 
@@ -1426,7 +1608,7 @@ export function generateAllPrefectureData() {
   return {
     accommodation: generateAccommodationData(),
     consumption: generateConsumptionData(),
-    mobility: mobilityFlows, // Use GeoJSON format
+    mobility: mobilityFlows, // Now returns particles/flows format
     landmarks: generateLandmarkData(),
     events: generateEventData(),
     heatmap: generateSNSHeatmapData(),

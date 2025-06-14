@@ -16,7 +16,7 @@ const PlateauLayer = ({ map, enabled }) => {
       { id: 'h2', coordinates: [132.4590, 34.3939], height: 95, floors: 24, type: 'office', name: '広島ビジネスタワー' },
       { id: 'h3', coordinates: [132.4584, 34.3955], height: 85, floors: 21, type: 'hotel', name: 'リーガロイヤルホテル広島' },
       { id: 'h4', coordinates: [132.4571, 34.3946], height: 80, floors: 20, type: 'hotel', name: 'ANAクラウンプラザ広島' },
-      { id: 'h5', coordinates: [132.4625, 34.3946], height: 75, floors: 18, type: 'mixed', name: 'オリエンタルホテル広島' },
+      { id: 'h5', coordinates: [132.4625, 34.3946], height: 75, floors: 18, type: 'hotel', name: 'オリエンタルホテル広島' },
       { id: 'h6', coordinates: [132.4600, 34.3920], height: 70, floors: 17, type: 'office', name: '紙屋町ビル' },
       { id: 'h7', coordinates: [132.4610, 34.3935], height: 65, floors: 16, type: 'commercial', name: 'そごう広島店' },
       { id: 'h8', coordinates: [132.4550, 34.3910], height: 60, floors: 15, type: 'office', name: '広島合同庁舎' },
@@ -40,7 +40,7 @@ const PlateauLayer = ({ map, enabled }) => {
     ],
     
     fukuyama: [
-      { id: 'f1', coordinates: [133.3627, 34.4900], height: 65, floors: 16, type: 'mixed', name: '福山ニューキャッスルホテル' },
+      { id: 'f1', coordinates: [133.3627, 34.4900], height: 65, floors: 16, type: 'hotel', name: '福山ニューキャッスルホテル' },
       { id: 'f2', coordinates: [133.3635, 34.4882], height: 60, floors: 15, type: 'office', name: '福山駅前ビル' },
       { id: 'f3', coordinates: [133.3630, 34.4885], height: 55, floors: 14, type: 'hotel', name: 'リッチモンドホテル福山駅前' },
       { id: 'f4', coordinates: [133.3625, 34.4880], height: 50, floors: 12, type: 'commercial', name: 'イトーヨーカドー福山店' },

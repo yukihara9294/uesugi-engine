@@ -73,7 +73,7 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
         source: 'accommodation-source',
         paint: {
           'circle-radius': 50, // 固定サイズに簡略化
-          'circle-color': 'rgba(255, 193, 7, 0.5)', // 固定色に簡略化
+          'circle-color': 'rgba(76, 175, 80, 0.5)', // Green color for accommodation
           'circle-blur': 1.5,
           'circle-opacity': 0
         }
@@ -85,7 +85,7 @@ const RichAccommodationLayer = ({ map, data, visible }) => {
         type: 'fill-extrusion',
         source: 'accommodation-source',
         paint: {
-          'fill-extrusion-color': '#FFC107', // 固定色に簡略化
+          'fill-extrusion-color': '#4CAF50', // Green color for accommodation
           'fill-extrusion-height': 100, // 固定の高さに簡略化
           'fill-extrusion-base': 0,
           'fill-extrusion-opacity': 0.9 // より不透明に
