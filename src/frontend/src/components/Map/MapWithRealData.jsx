@@ -119,12 +119,23 @@ const MapWithRealData = ({
       console.log('Loaded transport data:', transportData);
       console.log('All loaded data:', { gtfsData, tourismData, accommodationData, mobilityData, eventData, transportData });
 
-      // データをマップに適用
+      // Set state data immediately (don't wait for map)
+      if (mobilityData) {
+        console.log('Setting real mobility data');
+        setRealMobilityData(mobilityData); // 実データを保存
+      }
+      if (transportData) {
+        console.log('Setting transport data:', transportData);
+        setTransportData(transportData); // Set transport data
+      }
+      
+      // データをマップに適用 (only for direct map operations)
       if (map.current && mapLoaded) {
         // APIデータを取得できた場合のみ更新
-        if (gtfsData && selectedPrefecture === '広島県') {
-          updateTransportLayer(gtfsData);
-        }
+        // Note: Transport layer is now handled by TransportLayer component, not updateTransportLayer
+        // if (gtfsData && selectedPrefecture === '広島県') {
+        //   updateTransportLayer(gtfsData);
+        // }
         
         // 他のAPIデータも取得できた場合のみ更新
         if (accommodationData) {
@@ -132,13 +143,6 @@ const MapWithRealData = ({
         }
         if (eventData) {
           updateEventLayer(eventData);
-        }
-        if (mobilityData) {
-          setRealMobilityData(mobilityData); // 実データを保存
-        }
-        if (transportData) {
-          console.log('Setting transport data:', transportData);
-          setTransportData(transportData); // Set transport data
         }
       }
     } catch (error) {
