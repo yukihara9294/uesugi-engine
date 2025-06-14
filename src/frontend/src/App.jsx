@@ -143,12 +143,12 @@ function App() {
   const [selectedPrefecture, setSelectedPrefecture] = useState('広島県');
   const [selectedArea, setSelectedArea] = useState('全域');
   const [layers, setLayers] = useState({
-    landmarks: true,  // Now includes building data (formerly PLATEAU)
-    accommodation: true,  // Changed from hotels to accommodation to match MapWithRealData
+    landmarks: false,  // Now includes building data (formerly PLATEAU)
+    accommodation: false,  // Changed from hotels to accommodation to match MapWithRealData
     mobility: true,
     consumption: false,
-    heatmap: true,
-    events: true,
+    heatmap: false,
+    events: false,
   });
   const [categoryFilter, setCategoryFilter] = useState(['観光', 'グルメ', 'イベント', 'ショッピング', '交通']);
   const [timeRange, setTimeRange] = useState({

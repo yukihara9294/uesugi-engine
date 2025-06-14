@@ -199,7 +199,7 @@ async def get_real_accommodation_data(prefecture: str, db: Session = Depends(get
         return {"type": "FeatureCollection", "features": []}
 
 @router.get("/mobility/real/{prefecture}")
-async def get_real_mobility_data(prefecture: str):
+async def get_real_mobility_data(prefecture: str, city_only: bool = False):
     """実際の人流データ（統計的推定モデルベース）"""
     try:
         from app.services.mobility_estimator import MobilityEstimator
@@ -220,63 +220,126 @@ async def get_real_mobility_data(prefecture: str):
         # パーティクルアニメーション用のデータ形式に変換
         # 広島県の主要地点（県全域をカバー）
         hiroshima_points = [
-            # 広島市中心部
-            {"name": "広島駅", "lat": 34.3974, "lon": 132.4753},
-            {"name": "紙屋町", "lat": 34.3954, "lon": 132.4572},
-            {"name": "八丁堀", "lat": 34.3936, "lon": 132.4636},
-            {"name": "平和記念公園", "lat": 34.3954, "lon": 132.4534},
-            {"name": "本通り", "lat": 34.3934, "lon": 132.4615},
-            {"name": "広島城", "lat": 34.4027, "lon": 132.4590},
-            {"name": "マツダスタジアム", "lat": 34.3933, "lon": 132.4845},
-            {"name": "宇品港", "lat": 34.3488, "lon": 132.4533},
-            {"name": "横川駅", "lat": 34.4107, "lon": 132.4525},
-            {"name": "西広島駅", "lat": 34.3747, "lon": 132.4385},
-            {"name": "広島大学", "lat": 34.4047, "lon": 132.7139},
-            {"name": "広島空港", "lat": 34.4361, "lon": 132.9194},
-            {"name": "広島市役所", "lat": 34.3853, "lon": 132.4553},
+            # 広島市中心部（人口: 約120万人）
+            {"name": "広島駅", "lat": 34.3974, "lon": 132.4753, "population": 140000},
+            {"name": "紙屋町", "lat": 34.3954, "lon": 132.4572, "population": 85000},
+            {"name": "八丁堀", "lat": 34.3936, "lon": 132.4636, "population": 75000},
+            {"name": "平和記念公園", "lat": 34.3954, "lon": 132.4534, "population": 30000},
+            {"name": "本通り", "lat": 34.3934, "lon": 132.4615, "population": 50000},
+            {"name": "広島城", "lat": 34.4027, "lon": 132.4590, "population": 5000},
+            {"name": "マツダスタジアム", "lat": 34.3933, "lon": 132.4845, "population": 32000},
+            {"name": "宇品港", "lat": 34.3488, "lon": 132.4533, "population": 15000},
+            {"name": "横川駅", "lat": 34.4107, "lon": 132.4525, "population": 35000},
+            {"name": "西広島駅", "lat": 34.3747, "lon": 132.4385, "population": 25000},
+            {"name": "広島大学", "lat": 34.4047, "lon": 132.7139, "population": 15000},
+            {"name": "広島空港", "lat": 34.4361, "lon": 132.9194, "population": 20000},
+            {"name": "広島市役所", "lat": 34.3853, "lon": 132.4553, "population": 10000},
             
-            # 東広島市
-            {"name": "西条駅", "lat": 34.4308, "lon": 132.7425},
-            {"name": "東広島市役所", "lat": 34.4283, "lon": 132.7467},
-            {"name": "広島大学東広島キャンパス", "lat": 34.4018, "lon": 132.7126},
+            # 広島市各区
+            {"name": "安佐南区中心", "lat": 34.4520, "lon": 132.4710, "population": 24000},
+            {"name": "安佐北区中心", "lat": 34.5180, "lon": 132.5080, "population": 14000},
+            {"name": "佐伯区中心", "lat": 34.3670, "lon": 132.3610, "population": 14000},
+            {"name": "安芸区中心", "lat": 34.3580, "lon": 132.5560, "population": 8000},
+            {"name": "南区中心", "lat": 34.3800, "lon": 132.4680, "population": 14000},
+            {"name": "東区中心", "lat": 34.3960, "lon": 132.4820, "population": 12000},
+            {"name": "西区中心", "lat": 34.3940, "lon": 132.4340, "population": 19000},
             
-            # 呉市
-            {"name": "呉駅", "lat": 34.2490, "lon": 132.5556},
-            {"name": "呉市役所", "lat": 34.2381, "lon": 132.5659},
-            {"name": "大和ミュージアム", "lat": 34.2415, "lon": 132.5552},
+            # 東広島市（人口: 約19万人）
+            {"name": "西条駅", "lat": 34.4308, "lon": 132.7425, "population": 30000},
+            {"name": "東広島市役所", "lat": 34.4283, "lon": 132.7467, "population": 10000},
+            {"name": "広島大学東広島キャンパス", "lat": 34.4018, "lon": 132.7126, "population": 20000},
+            {"name": "八本松駅", "lat": 34.4241, "lon": 132.6913, "population": 8000},
+            {"name": "高屋駅", "lat": 34.4483, "lon": 132.8061, "population": 5000},
+            {"name": "黒瀬", "lat": 34.3686, "lon": 132.6626, "population": 6000},
             
-            # 福山市
-            {"name": "福山駅", "lat": 34.4858, "lon": 133.3627},
-            {"name": "福山城", "lat": 34.4900, "lon": 133.3627},
-            {"name": "鞆の浦", "lat": 34.3833, "lon": 133.3883},
+            # 呉市（人口: 約21万人）
+            {"name": "呉駅", "lat": 34.2490, "lon": 132.5556, "population": 30000},
+            {"name": "呉市役所", "lat": 34.2381, "lon": 132.5659, "population": 8000},
+            {"name": "大和ミュージアム", "lat": 34.2415, "lon": 132.5552, "population": 10000},
+            {"name": "広駅", "lat": 34.2430, "lon": 132.5300, "population": 15000},
+            {"name": "安浦駅", "lat": 34.2770, "lon": 132.7550, "population": 5000},
+            {"name": "音戸", "lat": 34.1830, "lon": 132.5350, "population": 6000},
             
-            # 尾道市
-            {"name": "尾道駅", "lat": 34.4090, "lon": 133.1950},
-            {"name": "千光寺", "lat": 34.4097, "lon": 133.1989},
-            {"name": "しまなみ海道（尾道IC）", "lat": 34.4041, "lon": 133.1875},
+            # 福山市（人口: 約46万人）
+            {"name": "福山駅", "lat": 34.4858, "lon": 133.3627, "population": 60000},
+            {"name": "福山城", "lat": 34.4900, "lon": 133.3627, "population": 8000},
+            {"name": "鞆の浦", "lat": 34.3833, "lon": 133.3883, "population": 5000},
+            {"name": "松永駅", "lat": 34.4500, "lon": 133.2550, "population": 15000},
+            {"name": "新市駅", "lat": 34.5350, "lon": 133.2880, "population": 8000},
+            {"name": "神辺駅", "lat": 34.5430, "lon": 133.3900, "population": 10000},
+            {"name": "福山市役所", "lat": 34.4870, "lon": 133.3600, "population": 10000},
             
-            # 三原市
-            {"name": "三原駅", "lat": 34.3988, "lon": 133.0792},
-            {"name": "三原市役所", "lat": 34.3992, "lon": 133.0783},
+            # 尾道市（人口: 約13万人）
+            {"name": "尾道駅", "lat": 34.4090, "lon": 133.1950, "population": 20000},
+            {"name": "千光寺", "lat": 34.4097, "lon": 133.1989, "population": 8000},
+            {"name": "しまなみ海道（尾道IC）", "lat": 34.4041, "lon": 133.1875, "population": 10000},
+            {"name": "向島", "lat": 34.3890, "lon": 133.2150, "population": 6000},
+            {"name": "因島", "lat": 34.3100, "lon": 133.1650, "population": 5000},
+            {"name": "瀬戸田", "lat": 34.3050, "lon": 133.0870, "population": 3000},
             
-            # 廿日市市
-            {"name": "廿日市駅", "lat": 34.3483, "lon": 132.3317},
-            {"name": "宮島口駅", "lat": 34.3139, "lon": 132.3028},
-            {"name": "厳島神社", "lat": 34.2968, "lon": 132.3198},
+            # 三原市（人口: 約9万人）
+            {"name": "三原駅", "lat": 34.3988, "lon": 133.0792, "population": 15000},
+            {"name": "三原市役所", "lat": 34.3992, "lon": 133.0783, "population": 5000},
+            {"name": "本郷駅", "lat": 34.4370, "lon": 132.9890, "population": 8000},
+            {"name": "三原港", "lat": 34.3950, "lon": 133.0820, "population": 5000},
+            {"name": "須波", "lat": 34.3430, "lon": 133.0250, "population": 3000},
             
-            # 三次市（県北部）
-            {"name": "三次駅", "lat": 34.8056, "lon": 132.8528},
-            {"name": "三次市役所", "lat": 34.8053, "lon": 132.8522},
+            # 廿日市市（人口: 約12万人）
+            {"name": "廿日市駅", "lat": 34.3483, "lon": 132.3317, "population": 15000},
+            {"name": "宮島口駅", "lat": 34.3139, "lon": 132.3028, "population": 10000},
+            {"name": "厳島神社", "lat": 34.2968, "lon": 132.3198, "population": 20000},
+            {"name": "大野浦駅", "lat": 34.2870, "lon": 132.2750, "population": 5000},
+            {"name": "吉和", "lat": 34.5230, "lon": 132.0790, "population": 1000},
             
-            # 庄原市（県北東部）
-            {"name": "備後庄原駅", "lat": 34.8572, "lon": 133.0167},
-            {"name": "庄原市役所", "lat": 34.8569, "lon": 133.0169},
+            # 三次市（人口: 約5万人、県北部）
+            {"name": "三次駅", "lat": 34.8056, "lon": 132.8528, "population": 8000},
+            {"name": "三次市役所", "lat": 34.8053, "lon": 132.8522, "population": 3000},
+            {"name": "十日市", "lat": 34.7950, "lon": 132.8600, "population": 5000},
+            {"name": "君田", "lat": 34.8522, "lon": 132.8556, "population": 1500},
+            {"name": "作木", "lat": 34.8430, "lon": 132.7450, "population": 1200},
+            
+            # 庄原市（人口: 約3.5万人、県北東部）
+            {"name": "備後庄原駅", "lat": 34.8572, "lon": 133.0167, "population": 5000},
+            {"name": "庄原市役所", "lat": 34.8569, "lon": 133.0169, "population": 2000},
+            {"name": "東城", "lat": 34.8890, "lon": 133.2780, "population": 3000},
+            {"name": "西城", "lat": 34.9260, "lon": 132.9940, "population": 2000},
+            {"name": "高野", "lat": 35.0350, "lon": 132.8560, "population": 1000},
+            
+            # 大竹市（人口: 約2.7万人）
+            {"name": "大竹駅", "lat": 34.2380, "lon": 132.2220, "population": 8000},
+            {"name": "玖波駅", "lat": 34.2080, "lon": 132.2000, "population": 5000},
+            
+            # 竹原市（人口: 約2.5万人）
+            {"name": "竹原駅", "lat": 34.3420, "lon": 132.9070, "population": 8000},
+            {"name": "忠海駅", "lat": 34.3750, "lon": 132.9680, "population": 3000},
+            
+            # 江田島市（人口: 約2.3万人）
+            {"name": "小用港", "lat": 34.2230, "lon": 132.4710, "population": 3000},
+            {"name": "切串港", "lat": 34.1890, "lon": 132.4440, "population": 2000},
+            
+            # 府中市（人口: 約4万人）
+            {"name": "府中駅", "lat": 34.5680, "lon": 133.2370, "population": 5000},
+            {"name": "上下駅", "lat": 34.6780, "lon": 133.1820, "population": 2000},
+            
+            # 安芸高田市（人口: 約2.8万人）
+            {"name": "向原駅", "lat": 34.5590, "lon": 132.6850, "population": 3000},
+            {"name": "吉田", "lat": 34.6730, "lon": 132.7050, "population": 4000},
+            
+            # 安芸太田町（人口: 約6千人）
+            {"name": "加計", "lat": 34.5890, "lon": 132.3180, "population": 2000},
+            {"name": "戸河内IC", "lat": 34.6350, "lon": 132.1780, "population": 1000},
+            
+            # 北広島町（人口: 約1.8万人）
+            {"name": "千代田", "lat": 34.6730, "lon": 132.5510, "population": 3000},
+            {"name": "豊平", "lat": 34.6890, "lon": 132.4230, "population": 1500},
             
             # 主要IC・JCT
-            {"name": "広島IC", "lat": 34.3847, "lon": 132.4147},
-            {"name": "広島JCT", "lat": 34.3944, "lon": 132.3850},
-            {"name": "福山西IC", "lat": 34.5156, "lon": 133.2775},
-            {"name": "尾道IC", "lat": 34.4550, "lon": 133.1633}
+            {"name": "広島IC", "lat": 34.3847, "lon": 132.4147, "population": 10000},
+            {"name": "広島JCT", "lat": 34.3944, "lon": 132.3850, "population": 8000},
+            {"name": "福山西IC", "lat": 34.5156, "lon": 133.2775, "population": 5000},
+            {"name": "尾道IC", "lat": 34.4550, "lon": 133.1633, "population": 5000},
+            {"name": "東広島IC", "lat": 34.3910, "lon": 132.6740, "population": 3000},
+            {"name": "高田IC", "lat": 34.6210, "lon": 132.6930, "population": 2000}
         ]
         
         # 山口県の主要地点
@@ -299,9 +362,29 @@ async def get_real_mobility_data(prefecture: str):
         # OD行列の推定
         estimated_flows = estimator.estimate_od_matrix(points, prefecture)
         
-        # 上位の主要フローのみを抽出（視覚化のため）
-        estimated_flows.sort(key=lambda x: x["volume"], reverse=True)
-        major_flows = estimated_flows[:100] if prefecture == "広島県" else estimated_flows[:50]
+        # 段階的読み込み対応
+        if city_only and prefecture == "広島県":
+            # 広島市内のフローのみをフィルタリング
+            hiroshima_city_keywords = ['広島駅', '紙屋町', '八丁堀', '平和記念', '本通り', '広島城', 
+                                     'マツダスタジアム', '宇品', '横川', '西広島', '広島市役所',
+                                     '安佐南区', '安佐北区', '佐伯区', '安芸区', '南区', '東区', '西区', '中区',
+                                     '広島IC', '広島JCT']
+            
+            city_flows = []
+            for flow in estimated_flows:
+                origin_is_city = any(keyword in flow["origin"]["name"] for keyword in hiroshima_city_keywords)
+                dest_is_city = any(keyword in flow["destination"]["name"] for keyword in hiroshima_city_keywords)
+                if origin_is_city and dest_is_city:
+                    city_flows.append(flow)
+            
+            # 上位の主要フローのみを抽出
+            city_flows.sort(key=lambda x: x["volume"], reverse=True)
+            major_flows = city_flows[:500]  # 市内は500フローまで
+        else:
+            # 上位の主要フローのみを抽出（視覚化のため）
+            estimated_flows.sort(key=lambda x: x["volume"], reverse=True)
+            # 広島県は全フロー表示（最大2000まで）、山口県は100
+            major_flows = estimated_flows[:2000] if prefecture == "広島県" else estimated_flows[:100]
         
         mobility_data = {
             prefecture: {
@@ -339,8 +422,17 @@ async def get_real_mobility_data(prefecture: str):
             # リアルなパーティクル生成（統計モデルベース）
             # パーティクル数を適切に設定（パフォーマンスと表示品質のバランス）
             # 距離とフロー量に基づいて調整
-            base_particles = flow["volume"] // 1000  # 基本パーティクル数
-            num_particles = min(500, max(50, base_particles))  # 50～500個の範囲で調整
+            # フロー数が多いので、パーティクル数を調整
+            flow_index = flows.index(flow)
+            if flow_index < 100:  # 上位100フローは多めに
+                base_particles = flow["volume"] // 5000  # 基本パーティクル数を減らす
+                num_particles = min(30, max(10, base_particles))  # 10～30個の範囲
+            elif flow_index < 500:  # 次の400フローは中程度
+                base_particles = flow["volume"] // 10000
+                num_particles = min(15, max(5, base_particles))  # 5～15個の範囲
+            else:  # それ以降は少なめ
+                base_particles = flow["volume"] // 20000
+                num_particles = min(10, max(3, base_particles))  # 3～10個の範囲
             realistic_particles = estimator.generate_realistic_particles(flow, num_particles)
             
             for i, particle_data in enumerate(realistic_particles):

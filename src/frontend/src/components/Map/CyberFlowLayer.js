@@ -1,53 +1,55 @@
 /**
- * サイバーチックな人流可視化レイヤー（最適化版）
+ * サイバーチックな人流可視化レイヤー（シンプル版）
  */
 
 import React, { useEffect, useRef } from 'react';
 
 const CyberFlowLayer = ({ map, mobilityData, visible }) => {
   const animationRef = useRef(null);
-  const particlePositions = useRef({});
+  const particlesRef = useRef([]);
   const isInitialized = useRef(false);
   const currentDataRef = useRef(null);
 
   useEffect(() => {
     if (!map || !visible) return;
 
-    // Skip if already initialized and data hasn't changed significantly
-    if (isInitialized.current && currentDataRef.current === mobilityData) {
+    console.log('CyberFlowLayer effect triggered:', {
+      map: !!map,
+      visible,
+      mobilityData: !!mobilityData,
+      flowCount: mobilityData?.flows?.features?.length || 0,
+      particleCount: mobilityData?.particles?.features?.length || 0,
+      isInitialized: isInitialized.current,
+      currentData: !!currentDataRef.current
+    });
+
+    // Skip if already initialized with the same data
+    if (isInitialized.current && currentDataRef.current === mobilityData && mobilityData) {
+      console.log('CyberFlowLayer: Skipping update, same data');
       return;
     }
-
-    // mobilityDataの検証
-    console.log('=== CyberFlowLayer Debug ===');
-    console.log('Step A: mobilityData received:', mobilityData);
-    console.log('Step B: mobilityData type:', typeof mobilityData);
-    console.log('Step C: mobilityData keys:', mobilityData ? Object.keys(mobilityData) : 'null');
     
-    // 新しいデータ形式（flows/particles）と旧形式（features）の両方に対応
+    // Reset if data changed
+    if (currentDataRef.current !== mobilityData) {
+      console.log('CyberFlowLayer: Data changed, resetting layers');
+      isInitialized.current = false;
+      currentDataRef.current = mobilityData;
+    }
+
+    // データ形式の確認
     let flowsData, particlesData;
     
     if (mobilityData && mobilityData.flows && mobilityData.particles) {
-      // 新形式: flows と particles が分離されている
       flowsData = mobilityData.flows;
       particlesData = mobilityData.particles;
-      console.log('Step D: Using NEW data format');
-      console.log('Step E: Flows count:', flowsData?.features?.length);
-      console.log('Step F: Particles count:', particlesData?.features?.length);
-      console.log('Step G: First particle:', particlesData?.features?.[0]);
     } else if (mobilityData && mobilityData.features) {
-      // 旧形式: featuresのみ
       flowsData = mobilityData;
       particlesData = null;
-      console.log('Step D: Using LEGACY data format');
-      console.log('Step E: Features count:', flowsData?.features?.length);
     } else {
-      console.log('Step D: NO mobility data available');
       return;
     }
     
     if (!flowsData || !flowsData.features || flowsData.features.length === 0) {
-      console.log('No flow features available');
       return;
     }
 
@@ -57,7 +59,7 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
     const particleSourceId = 'cyber-particles-source';
     const particleLayerId = 'cyber-particles';
     
-    // 既存のレイヤーとソースを安全に削除
+    // 既存のレイヤーとソースを削除
     const cleanupLayers = () => {
       try {
         if (map.getLayer(particleLayerId)) map.removeLayer(particleLayerId);
@@ -69,18 +71,15 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         if (map.getSource(particleSourceId)) map.removeSource(particleSourceId);
         if (map.getSource(flowSourceId)) map.removeSource(flowSourceId);
       } catch (e) {
-        console.log('Cleanup error (ignored):', e);
+        // エラーを無視
       }
     };
     
-    // Only cleanup and reinitialize if not already initialized
-    if (!isInitialized.current) {
+    // データが変更された場合は既存レイヤーをクリーンアップ
+    if (!isInitialized.current || currentDataRef.current !== mobilityData) {
+      console.log('CyberFlowLayer: Cleaning up existing layers');
       cleanupLayers();
     }
-    
-    // 弧を描く軌跡データを生成
-    const arcFeatures = [];
-    const allParticles = [];
     
     // フロータイプごとの色設定
     const flowTypeColors = {
@@ -88,10 +87,13 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
       'tourist': '#FF00FF',     // マゼンタ（観光）
       'tourism': '#FF00FF',     // マゼンタ（観光）
       'general': '#FFFF00',     // イエロー（一般）
+      'shinkansen': '#00FFFF',  // シアン（新幹線）
+      'highway': '#FF00FF',     // マゼンタ（高速道路）
+      'inter-prefecture': '#FFFF00', // イエロー（県間）
       'default': '#00FF00'      // グリーン（その他）
     };
     
-    // 表示範囲内の最大・最小値を計算
+    // フローの最大・最小値を計算
     let minFlow = Infinity;
     let maxFlow = -Infinity;
     flowsData.features.forEach(feature => {
@@ -100,23 +102,25 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
       if (flowCount > maxFlow) maxFlow = flowCount;
     });
     
-    console.log(`Mobility flow range: ${minFlow} - ${maxFlow}`);
+    // フローラインとパーティクルの準備
+    const flowPaths = [];
+    const arcFeatures = [];
     
-    flowsData.features.forEach((feature, featureIndex) => {
+    
+    // フローラインごとに処理
+    flowsData.features.forEach((feature, index) => {
       const origin = feature.geometry.coordinates[0];
       const destination = feature.geometry.coordinates[1];
       const flowCount = feature.properties.flow_count || feature.properties.volume || feature.properties.intensity || 50;
       const flowType = feature.properties.type || feature.properties.flow_type || 'general';
       
-      // 正規化（0-1の範囲に）
+      // 正規化
       const normalized = (flowCount - minFlow) / (maxFlow - minFlow) || 0;
-      
-      // フロータイプに基づいて色を設定
       const color = flowTypeColors[flowType] || flowTypeColors['default'];
       
-      // 弧の座標を生成
+      // ベジエ曲線のパスを生成
       const points = [];
-      const steps = 50; // より滑らかな曲線のためステップ数を増やす
+      const steps = 30;
       
       for (let i = 0; i <= steps; i++) {
         const t = i / steps;
@@ -127,33 +131,28 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
           Math.pow(destination[0] - origin[0], 2) + 
           Math.pow(destination[1] - origin[1], 2)
         );
-        const height = Math.min(distance * 0.3, 0.1);
+        const height = Math.min(distance * 0.2, 0.05);
         
-        const cp1 = [origin[0], origin[1] + height * 0.3];
-        const cp2 = [midLng, midLat + height];
-        
-        const lng = Math.pow(1-t, 3) * origin[0] + 
-                   3 * Math.pow(1-t, 2) * t * cp1[0] + 
-                   3 * (1-t) * Math.pow(t, 2) * cp2[0] + 
-                   Math.pow(t, 3) * destination[0];
+        // 簡単な2次ベジエ曲線
+        const lng = Math.pow(1-t, 2) * origin[0] + 
+                   2 * (1-t) * t * (midLng + height) + 
+                   Math.pow(t, 2) * destination[0];
                    
-        const lat = Math.pow(1-t, 3) * origin[1] + 
-                   3 * Math.pow(1-t, 2) * t * cp1[1] + 
-                   3 * (1-t) * Math.pow(t, 2) * cp2[1] + 
-                   Math.pow(t, 3) * destination[1];
+        const lat = Math.pow(1-t, 2) * origin[1] + 
+                   2 * (1-t) * t * (midLat + height) + 
+                   Math.pow(t, 2) * destination[1];
         
         points.push([lng, lat]);
       }
       
-      // パーティクルの初期位置を設定
-      if (!particlePositions.current[featureIndex]) {
-        particlePositions.current[featureIndex] = {
-          position: 0,
-          direction: 1,
-          speed: 0.003 + Math.random() * 0.005, // 速度を遅く（約半分）
-          path: points
-        };
-      }
+      flowPaths.push({
+        index: index,
+        points: points,
+        flowCount: flowCount,
+        normalized: normalized,
+        color: color,
+        flowType: flowType
+      });
       
       arcFeatures.push({
         type: 'Feature',
@@ -162,17 +161,16 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
           coordinates: points
         },
         properties: {
-          ...feature.properties,
           flow_count: flowCount,
           color: color,
           type: flowType,
-          lineWidth: 0.5 + normalized * 1.5  // 1/3に縮小（1.5-6 → 0.5-2）
+          lineWidth: 0.5 + normalized * 1.5
         }
       });
     });
     
     try {
-      // 軌跡を追加
+      // フローラインソースを追加
       map.addSource(flowSourceId, {
         type: 'geojson',
         data: {
@@ -181,160 +179,121 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         }
       });
       
-      // グロー効果（線幅を1/3に）
+      // グロー効果
       map.addLayer({
         id: flowGlowLayerId,
         type: 'line',
         source: flowSourceId,
         paint: {
           'line-color': ['get', 'color'],
-          'line-width': ['get', 'lineWidth'], // 動的な線幅を使用
+          'line-width': ['get', 'lineWidth'],
           'line-blur': 1.5,
-          'line-opacity': 0  // 初期値を0に（アニメーションで制御）
+          'line-opacity': 0
         }
       });
       
-      // メインライン（線幅を1/3に）
+      // メインライン
       map.addLayer({
         id: flowLayerId,
         type: 'line',
         source: flowSourceId,
         paint: {
           'line-color': ['get', 'color'],
-          'line-width': ['*', ['get', 'lineWidth'], 0.6], // メインラインは少し細く
+          'line-width': ['*', ['get', 'lineWidth'], 0.6],
           'line-opacity': 0.8
         }
       });
       
-      // 初期パーティクルデータを生成
-      const createParticles = () => {
-        // APIから提供されたパーティクルデータを使用
-        console.log('Step H: Checking particle data...');
-        console.log('Step I: particlesData exists?', !!particlesData);
-        console.log('Step J: particlesData.features exists?', !!particlesData?.features);
-        console.log('Step K: particlesData.features length:', particlesData?.features?.length);
+      // パーティクルの初期化と生成
+      const initializeParticles = () => {
+        particlesRef.current = [];
         
-        if (particlesData && particlesData.features && particlesData.features.length > 0) {
-          console.log(`Step L: SUCCESS! Using ${particlesData.features.length} particles from API`);
-          // デバッグ: 最初の数個のパーティクルを表示
-          console.log('Step M: Sample particles:', particlesData.features.slice(0, 3));
-          // APIのパーティクルデータをそのまま使用
-          return particlesData.features.map(particle => {
-            // パーティクルの現在位置を計算（アニメーション用）
-            const flowIndex = particle.properties.flow_index || 0;
-            const particleInfo = particlePositions.current[`particle_${particle.properties.flow_index}_${particle.properties.particle_index}`];
-            
-            if (!particleInfo) {
-              // 初期化
-              const speed = particle.properties.speed || (0.003 + Math.random() * 0.005);
-              
-              if (particle.properties.is_circular) {
-                // 円運動パーティクル（渋滞ポイント周辺）
-                particlePositions.current[`particle_${particle.properties.flow_index}_${particle.properties.particle_index}`] = {
-                  angle: particle.properties.angle_offset || (Math.random() * Math.PI * 2),
-                  angleSpeed: speed * 2,
-                  center: [particle.properties.center_lon || particle.geometry.coordinates[0], 
-                          particle.properties.center_lat || particle.geometry.coordinates[1]],
-                  radius: particle.properties.orbit_radius || 0.001,
-                  is_circular: true
-                };
-              } else if (particle.properties.origin_lon && particle.properties.destination_lon) {
-                // フロー沿いのパーティクル
-                particlePositions.current[`particle_${particle.properties.flow_index}_${particle.properties.particle_index}`] = {
-                  position: Math.random(), // ランダムな開始位置
-                  speed: speed,
-                  origin: [particle.properties.origin_lon, particle.properties.origin_lat],
-                  destination: [particle.properties.destination_lon, particle.properties.destination_lat],
-                  control: [particle.properties.control_lon || (particle.properties.origin_lon + particle.properties.destination_lon) / 2,
-                           particle.properties.control_lat || (particle.properties.origin_lat + particle.properties.destination_lat) / 2]
-                };
-              } else {
-                // デフォルト（現在位置で静止）
-                particlePositions.current[`particle_${particle.properties.flow_index}_${particle.properties.particle_index}`] = {
-                  position: 0,
-                  speed: 0,
-                  origin: particle.geometry.coordinates,
-                  destination: particle.geometry.coordinates,
-                  control: particle.geometry.coordinates
-                };
-              }
-            }
-            
-            const info = particlePositions.current[`particle_${particle.properties.flow_index}_${particle.properties.particle_index}`];
-            
-            let x, y;
-            
-            if (info.is_circular) {
-              // 円運動の計算
-              x = info.center[0] + Math.cos(info.angle) * info.radius;
-              y = info.center[1] + Math.sin(info.angle) * info.radius;
-            } else {
-              // ベジエ曲線上の位置を計算
-              const t = info.position || 0;
-              const origin = info.origin;
-              const destination = info.destination;
-              const control = info.control;
-              
-              const x2 = Math.pow(1-t, 2) * origin[0] + 2 * (1-t) * t * control[0] + Math.pow(t, 2) * destination[0];
-              const y2 = Math.pow(1-t, 2) * origin[1] + 2 * (1-t) * t * control[1] + Math.pow(t, 2) * destination[1];
-              x = x2;
-              y = y2;
-            }
-            
-            return {
-              type: 'Feature',
-              geometry: {
-                type: 'Point',
-                coordinates: [x, y]
-              },
-              properties: {
-                ...particle.properties,
-                size: particle.properties.size || 2
-              }
-            };
-          });
+        // APIからパーティクルデータがある場合は使用しない（flow_indexが不正なため）
+        // 代わりに各フローに対してパーティクルを生成
+        if (false && particlesData && particlesData.features && particlesData.features.length > 0) {
+          // 使用しない
         } else {
-          // フォールバック: 各フローに1つのパーティクル（旧動作）
-          console.log('Step L: FALLBACK - No particle data from API, creating 1 particle per flow');
-          const particles = [];
-          
-          arcFeatures.forEach((arc, index) => {
-            const particleInfo = particlePositions.current[index];
-            if (!particleInfo) return;
+          // 各フローにパーティクルを生成
+          flowPaths.forEach((flowPath, index) => {
+            if (!flowPath.points || flowPath.points.length < 2) {
+              return;
+            }
             
-            // 現在の位置に基づいてパーティクルの座標を取得
-            const pointIndex = Math.floor(particleInfo.position * (particleInfo.path.length - 1));
-            if (pointIndex >= 0 && pointIndex < particleInfo.path.length) {
-              const coords = particleInfo.path[pointIndex];
+            // 通行量に基づいてパーティクル数を決定
+            const baseParticles = Math.max(5, Math.min(20, Math.floor(flowPath.normalized * 20)));
+            const numParticles = baseParticles;
+            
+            for (let i = 0; i < numParticles; i++) {
+              const particleData = {
+                id: particlesRef.current.length,
+                flowIndex: index,
+                position: (i / numParticles) + (Math.random() * 0.1),  // 少しランダムに分布
+                speed: 0.002 + Math.random() * 0.003,  // 速度を遅く
+                color: flowPath.color || '#00FFFF',
+                size: 2 + flowPath.normalized * 2,  // サイズを2-4の範囲に
+                flowPath: flowPath.points
+              };
               
-              particles.push({
-                type: 'Feature',
-                geometry: {
-                  type: 'Point',
-                  coordinates: coords
-                },
-                properties: {
-                  flowId: index,
-                  color: arc.properties.color,
-                  size: 1.5 + ((arc.properties.flow_count - minFlow) / (maxFlow - minFlow)) * 2,  // サイズを1/2に
-                  type: arc.properties.type
-                }
-              });
+              particlesRef.current.push(particleData);
             }
           });
-          
-          return particles;
         }
       };
       
-      // パーティクルソース
+      // パーティクルGeoJSONを生成
+      const createParticleGeoJSON = () => {
+        const features = [];
+        
+        particlesRef.current.forEach(particle => {
+          if (!particle.flowPath || particle.flowPath.length < 2) return;
+          
+          // パスに沿った位置を計算
+          const t = particle.position;
+          const pathIndex = Math.floor(t * (particle.flowPath.length - 1));
+          const pathT = (t * (particle.flowPath.length - 1)) % 1;
+          
+          let x, y;
+          if (pathIndex < particle.flowPath.length - 1) {
+            const p1 = particle.flowPath[pathIndex];
+            const p2 = particle.flowPath[pathIndex + 1];
+            x = p1[0] + (p2[0] - p1[0]) * pathT;
+            y = p1[1] + (p2[1] - p1[1]) * pathT;
+          } else {
+            const lastPoint = particle.flowPath[particle.flowPath.length - 1];
+            x = lastPoint[0];
+            y = lastPoint[1];
+          }
+          
+          features.push({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [x, y]
+            },
+            properties: {
+              color: particle.color || '#00FFFF',  // デフォルトはシアン
+              size: particle.size || 2
+            }
+          });
+        });
+        
+        return {
+          type: 'FeatureCollection',
+          features: features
+        };
+      };
+      
+      // パーティクルを初期化
+      initializeParticles();
+      const initialParticleData = createParticleGeoJSON();
+      
       map.addSource(particleSourceId, {
         type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: createParticles()
-        }
+        data: initialParticleData
       });
+      
+      // フローラインのフェードイン・フェードアウト用の変数
+      let flowOpacityPhase = 0;
       
       // パーティクルグローレイヤー（大きい光の表現）
       map.addLayer({
@@ -343,13 +302,16 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         source: particleSourceId,
         paint: {
           'circle-radius': [
-            '*',
-            ['get', 'size'],
-            5  // グローは5倍の大きさ
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, ['*', ['get', 'size'], 2],    // ズーム8: サイズ×2
+            11, ['*', ['get', 'size'], 5],   // ズーム11: サイズ×5
+            14, ['*', ['get', 'size'], 8]    // ズーム14: サイズ×8
           ],
           'circle-color': ['get', 'color'],
           'circle-blur': 1.5,  // 強いブラー
-          'circle-opacity': 0.1  // 外側を少し濃く
+          'circle-opacity': 0.05  // 薄く
         }
       });
       
@@ -360,13 +322,16 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         source: particleSourceId,
         paint: {
           'circle-radius': [
-            '*',
-            ['get', 'size'],
-            3  // 中間グローは3倍
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, ['*', ['get', 'size'], 1.5],  // ズーム8: サイズ×1.5
+            11, ['*', ['get', 'size'], 3],   // ズーム11: サイズ×3
+            14, ['*', ['get', 'size'], 5]    // ズーム14: サイズ×5
           ],
           'circle-color': ['get', 'color'],
           'circle-blur': 1,
-          'circle-opacity': 0.2  // 中間グローを濃く
+          'circle-opacity': 0.1  // 薄く
         }
       });
       
@@ -377,13 +342,16 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         source: particleSourceId,
         paint: {
           'circle-radius': [
-            '*',
-            ['get', 'size'],
-            1.5  // 内側グローは1.5倍
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, ['*', ['get', 'size'], 1],    // ズーム8: サイズ×1
+            11, ['*', ['get', 'size'], 1.5], // ズーム11: サイズ×1.5
+            14, ['*', ['get', 'size'], 2]    // ズーム14: サイズ×2
           ],
           'circle-color': ['get', 'color'],
           'circle-blur': 0.5,
-          'circle-opacity': 0.3  // 内側グローを濃く
+          'circle-opacity': 0.15  // 薄く
         }
       });
       
@@ -393,30 +361,34 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         type: 'circle',
         source: particleSourceId,
         paint: {
-          'circle-radius': ['/', ['get', 'size'], 2],  // サイズを1/2に
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, ['*', ['get', 'size'], 0.5],  // ズーム8: サイズ×0.5（小さく）
+            11, ['get', 'size'],             // ズーム11: 元のサイズ
+            14, ['*', ['get', 'size'], 1.5]  // ズーム14: サイズ×1.5
+          ],
           'circle-color': ['get', 'color'],
           'circle-blur': 0.2,  // 中心は少しシャープに
-          'circle-opacity': 0.8  // 中心部をもっと不透明に（はっきり見えるように）
+          'circle-opacity': 0.6  // 中心部の透明度を少し上げる（濃すぎたため）
         }
       });
       
-      // フローラインのフェードイン・フェードアウト用の変数
-      let flowOpacityPhase = 0;
-      
-      // パーティクルをフローラインに沿って移動させるアニメーション
+      // アニメーションループ
       const animate = () => {
-        if (!map || !map.getLayer(particleLayerId)) {
+        if (!map || typeof map.getLayer !== 'function' || !map.getLayer(particleLayerId)) {
           return;
         }
         
         // フローラインのフェードイン・フェードアウト
         flowOpacityPhase += 0.02;
-        const flowOpacity = Math.abs(Math.sin(flowOpacityPhase)) * 0.15; // 0-0.15の範囲でフェード
-        const glowOpacity = Math.abs(Math.sin(flowOpacityPhase)) * 0.08; // 0-0.08の範囲でフェード
+        const flowOpacity = Math.abs(Math.sin(flowOpacityPhase)) * 0.3;
+        const glowOpacity = Math.abs(Math.sin(flowOpacityPhase)) * 0.15;
         
         try {
           if (map.getLayer(flowLayerId)) {
-            map.setPaintProperty(flowLayerId, 'line-opacity', flowOpacity * 0.8);
+            map.setPaintProperty(flowLayerId, 'line-opacity', flowOpacity);
           }
           if (map.getLayer(flowGlowLayerId)) {
             map.setPaintProperty(flowGlowLayerId, 'line-opacity', glowOpacity);
@@ -425,61 +397,41 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
           // エラーを無視
         }
         
-        // 各パーティクルの位置を更新
-        Object.keys(particlePositions.current).forEach(key => {
-          const particle = particlePositions.current[key];
-          
-          if (particle.is_circular) {
-            // 円運動
-            particle.angle += particle.angleSpeed;
-            if (particle.angle >= Math.PI * 2) {
-              particle.angle -= Math.PI * 2;
-            }
-          } else if (particle.direction !== undefined) {
-            // 旧形式（往復アニメーション）
-            particle.position += particle.speed * particle.direction;
-            
-            // 端に到達したら方向を反転
-            if (particle.position >= 1) {
-              particle.position = 1;
-              particle.direction = -1;
-            } else if (particle.position <= 0) {
-              particle.position = 0;
-              particle.direction = 1;
-            }
-          } else if (particle.position !== undefined) {
-            // 新形式（一方向アニメーション）
-            particle.position += particle.speed;
-            if (particle.position >= 1) {
-              particle.position = 0; // 最初に戻る
-            }
+        // パーティクルの位置を更新
+        particlesRef.current.forEach(particle => {
+          particle.position += particle.speed;
+          if (particle.position >= 1) {
+            particle.position = 0;
           }
         });
         
-        // パーティクルの位置を更新
-        const newParticles = createParticles();
+        // 新しい位置でGeoJSONを再生成
+        const updatedParticleData = createParticleGeoJSON();
         
         try {
           const source = map.getSource(particleSourceId);
           if (source) {
-            source.setData({
-              type: 'FeatureCollection',
-              features: newParticles
-            });
+            source.setData(updatedParticleData);
           }
         } catch (e) {
           // エラーを無視
         }
         
-        animationRef.current = requestAnimationFrame(animate);
+        // FPSを20に制限（50ms = 1000ms / 20fps）
+        setTimeout(() => {
+          animationRef.current = requestAnimationFrame(animate);
+        }, 50);
       };
       
-      // アニメーションを一度だけ開始
-      if (!isInitialized.current) {
-        animate();
-        isInitialized.current = true;
+      // アニメーションを開始（既存のアニメーションは停止済み）
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
-      currentDataRef.current = mobilityData;
+      
+      console.log('CyberFlowLayer: Starting animation with', particlesRef.current.length, 'particles');
+      animate();
+      isInitialized.current = true;
       
     } catch (error) {
       console.error('Error adding flow layers:', error);
@@ -494,9 +446,10 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
       cleanupLayers();
       isInitialized.current = false;
       currentDataRef.current = null;
+      particlesRef.current = [];
     };
 
-  }, [map, visible]); // Remove mobilityData from dependencies
+  }, [map, visible, mobilityData]);
 
   return null;
 };

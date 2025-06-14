@@ -82,7 +82,7 @@ export const eventService = {
 // 実データサービス
 export const realDataService = {
   getAccommodation: (prefecture) => apiService.get(`/api/v1/real/accommodation/real/${prefecture}`),
-  getMobility: (prefecture) => apiService.get(`/api/v1/real/mobility/real/${prefecture}`),
+  getMobility: (prefecture, cityOnly = false) => apiService.get(`/api/v1/real/mobility/real/${prefecture}`, { params: { city_only: cityOnly } }),
   getEvents: (prefecture) => apiService.get(`/api/v1/real/events/real/${prefecture}`),
   getTransportGTFS: () => apiService.get('/api/v1/real/transport/gtfs/hiroshima'),
   getTourismFacilities: () => apiService.get('/api/v1/real/tourism/facilities/yamaguchi'),

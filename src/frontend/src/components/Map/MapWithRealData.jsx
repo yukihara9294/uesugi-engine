@@ -84,7 +84,7 @@ const MapWithRealData = ({
     
     try {
       // APIデータをタイムアウト付きで取得（バックグラウンド）
-      const loadWithTimeout = (promise, timeout = 10000) => {  // 10秒に延長
+      const loadWithTimeout = (promise, timeout = 60000) => {  // 60秒に延長（API処理に時間がかかるため）
         return Promise.race([
           promise,
           new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
@@ -96,7 +96,25 @@ const MapWithRealData = ({
         selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData()).catch(() => null) : Promise.resolve(null),
         selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData()).catch(() => null) : Promise.resolve(null),
         loadWithTimeout(loadRealAccommodationData(selectedPrefecture)).catch(() => null),
-        loadWithTimeout(loadRealMobilityData(selectedPrefecture), 30000).catch((error) => {  // 30秒に延長
+        // 最初は市内のみ読み込み（広島県の場合）
+        loadWithTimeout(
+          loadRealMobilityData(selectedPrefecture, selectedPrefecture === '広島県'), 
+          30000
+        ).then(data => {
+          console.log('loadRealMobilityData result (city only):', data);
+          // 段階的読み込み：市内データを先に設定
+          if (data && selectedPrefecture === '広島県') {
+            setRealMobilityData(data);
+            // 全県データを背景で読み込み
+            loadRealMobilityData(selectedPrefecture, false).then(fullData => {
+              console.log('Full prefecture data loaded:', fullData);
+              if (fullData) {
+                setRealMobilityData(fullData);
+              }
+            }).catch(err => console.error('Failed to load full data:', err));
+          }
+          return data;
+        }).catch((error) => {
           console.error('Failed to load mobility data:', error);
           return null;
         }),
@@ -1351,7 +1369,7 @@ const MapWithRealData = ({
       landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-glow', 'landmarks-labels', 'transport-stops', 'transport-labels', 'plateau-3d'],  // PLATEAU buildings now included with landmarks
       plateau: [],  // Deprecated - PLATEAU is now part of landmarks
       accommodation: ['accommodation-3d', 'accommodation-labels'],  // Changed from hotels to accommodation
-      mobility: ['mobility-particles-glow', 'mobility-particles', 'mobility-particles-shadow', 'mobility-flows'],
+      mobility: ['cyber-particles-glow', 'cyber-particles-mid-glow', 'cyber-particles-inner-glow', 'cyber-particles', 'cyber-flow-lines-glow', 'cyber-flow-lines'],
       heatmap: ['sns-heatmap'],
       events: ['event-impact', 'event-mid-glow', 'event-inner-glow', 'event-markers', 'event-labels'],
       consumption: ['consumption-3d']  // ラベルは削除

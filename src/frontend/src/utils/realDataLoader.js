@@ -104,12 +104,12 @@ export async function loadRealAccommodationData(prefecture) {
 }
 
 // 実際の人流データ（モバイル空間統計など）
-export async function loadRealMobilityData(prefecture) {
+export async function loadRealMobilityData(prefecture, cityOnly = false) {
   try {
-    console.log(`Loading real mobility data for ${prefecture}...`);
+    console.log(`Loading real mobility data for ${prefecture}... (cityOnly: ${cityOnly})`);
     
-    const response = await realDataService.getMobility(prefecture);
-    console.log('Mobility data loaded:', response);
+    const response = await realDataService.getMobility(prefecture, cityOnly);
+    console.log('Raw API response:', response);
     console.log('Response type:', typeof response);
     console.log('Has flows:', !!response?.flows);
     console.log('Has particles:', !!response?.particles);
@@ -126,6 +126,26 @@ export async function loadRealMobilityData(prefecture) {
       console.log('Returning new format mobility data:', result);
       console.log('Flows count:', data.flows.features?.length);
       console.log('Particles count:', data.particles.features?.length);
+      // 広島市内のフローを確認
+      const hiroshimaCityKeywords = ['広島', '紙屋町', '八丁堀', '平和記念', '本通り', '広島城', 
+                                      'マツダスタジアム', '宇品', '横川', '西広島', 
+                                      '安佐南区', '安佐北区', '佐伯区', '安芸区', '南区', '東区', '西区', '中区'];
+      const isHiroshimaCity = (name) => hiroshimaCityKeywords.some(keyword => name?.includes(keyword));
+      
+      const hiroshimaFlows = data.flows.features.filter(f => 
+        isHiroshimaCity(f.properties.origin_name) && 
+        isHiroshimaCity(f.properties.destination_name)
+      );
+      console.log('Hiroshima city flows:', hiroshimaFlows.length);
+      if (hiroshimaFlows.length > 0) {
+        console.log('Sample Hiroshima flow:', hiroshimaFlows[0]);
+      }
+      
+      // 最初の10フローを確認
+      console.log('First 10 flows origin->dest:');
+      data.flows.features.slice(0, 10).forEach((f, i) => {
+        console.log(`  ${i+1}. ${f.properties.origin_name} → ${f.properties.destination_name} (${f.properties.volume})`);
+      });
       return result;
     }
     // 古い形式（配列のflows）の場合
@@ -151,7 +171,10 @@ export async function loadRealMobilityData(prefecture) {
             }
           }))
         },
-        particles: null  // ダミーデータにフォールバック
+        particles: {
+          type: 'FeatureCollection',
+          features: []  // 空の配列にする（nullではなく）
+        }
       };
     }
     // 単一のGeoJSON FeatureCollectionの場合
