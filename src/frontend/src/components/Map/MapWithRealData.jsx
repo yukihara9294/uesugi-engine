@@ -1488,7 +1488,6 @@ const MapWithRealData = ({
                   map={map.current}
                   mobilityData={dataToUse}
                   visible={layers.mobility}
-                  key={dataKey}
                 />
               );
             }

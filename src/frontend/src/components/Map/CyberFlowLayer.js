@@ -7,9 +7,16 @@ import React, { useEffect, useRef } from 'react';
 const CyberFlowLayer = ({ map, mobilityData, visible }) => {
   const animationRef = useRef(null);
   const particlePositions = useRef({});
+  const isInitialized = useRef(false);
+  const currentDataRef = useRef(null);
 
   useEffect(() => {
     if (!map || !visible) return;
+
+    // Skip if already initialized and data hasn't changed significantly
+    if (isInitialized.current && currentDataRef.current === mobilityData) {
+      return;
+    }
 
     // mobilityDataの検証
     console.log('=== CyberFlowLayer Debug ===');
@@ -66,7 +73,10 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
       }
     };
     
-    cleanupLayers();
+    // Only cleanup and reinitialize if not already initialized
+    if (!isInitialized.current) {
+      cleanupLayers();
+    }
     
     // 弧を描く軌跡データを生成
     const arcFeatures = [];
@@ -464,7 +474,12 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         animationRef.current = requestAnimationFrame(animate);
       };
       
-      animate();
+      // アニメーションを一度だけ開始
+      if (!isInitialized.current) {
+        animate();
+        isInitialized.current = true;
+      }
+      currentDataRef.current = mobilityData;
       
     } catch (error) {
       console.error('Error adding flow layers:', error);
@@ -474,11 +489,14 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
       }
       cleanupLayers();
+      isInitialized.current = false;
+      currentDataRef.current = null;
     };
 
-  }, [map, mobilityData, visible]);
+  }, [map, visible]); // Remove mobilityData from dependencies
 
   return null;
 };
