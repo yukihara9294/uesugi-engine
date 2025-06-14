@@ -239,18 +239,14 @@ const MapWithRealData = ({
         data: gtfsData
       });
 
-      // 停留所マーカー
+      // 停留所マーカー（赤色に統一）
       map.current.addLayer({
         id: 'transport-stops',
         type: 'circle',
         source: sourceId,
         paint: {
           'circle-radius': 6,
-          'circle-color': [
-            'coalesce',
-            ['get', 'color'],
-            '#4A90E2'  // Default blue color
-          ],
+          'circle-color': '#FF6B6B',  // 交通データは赤色に統一
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff'
         }
@@ -614,31 +610,23 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['zoom'],
-            5, [  // ズームレベル5（日本全体）
-              '*',
-              [
-                'interpolate',
-                ['linear'],
-                ['coalesce', ['get', 'expected_visitors'], 30000],
-                10000, 0.5,    // 小規模イベント（ランドマークの0.5倍）
-                50000, 2,      // 中規模イベント（ランドマークの2倍）
-                100000, 4,     // 大規模イベント（ランドマークの4倍）
-                200000, 6      // 超大規模イベント（最大20倍の体積 = 半径2.7倍）
-              ],
-              5  // ズームレベル5の基準サイズ
+            8, [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', 'expected_visitors'], 30000],
+              10000, 10,    // ズームアウト時：小規模イベント
+              50000, 20,    // ズームアウト時：中規模イベント
+              100000, 30,   // ズームアウト時：大規模イベント
+              200000, 50    // ズームアウト時：超大規模イベント
             ],
-            12, [  // ズームレベル12以上
-              '*',
-              [
-                'interpolate',
-                ['linear'],
-                ['coalesce', ['get', 'expected_visitors'], 30000],
-                10000, 2,      // 小規模イベント（ランドマークの2倍）
-                50000, 4,      // 中規模イベント（ランドマークの4倍）
-                100000, 8,     // 大規模イベント（ランドマークの8倍）
-                200000, 12     // 超大規模イベント（ランドマークの12倍）
-              ],
-              40  // ズームレベル12の基準サイズ
+            14, [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', 'expected_visitors'], 30000],
+              10000, 90,    // ズームイン時：小規模イベント
+              50000, 180,   // ズームイン時：中規模イベント
+              100000, 270,  // ズームイン時：大規模イベント
+              200000, 360   // ズームイン時：超大規模イベント
             ]
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
@@ -702,11 +690,25 @@ const MapWithRealData = ({
           'circle-radius': [
             'interpolate',
             ['linear'],
-            ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 16,    // 小規模イベント
-            50000, 32,    // 中規模イベント
-            100000, 48,   // 大規模イベント
-            200000, 64    // 超大規模イベント
+            ['zoom'],
+            8, [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', 'expected_visitors'], 30000],
+              10000, 2,     // ズームアウト時：小規模イベント
+              50000, 4,     // ズームアウト時：中規模イベント
+              100000, 6,    // ズームアウト時：大規模イベント
+              200000, 10    // ズームアウト時：超大規模イベント
+            ],
+            14, [
+              'interpolate',
+              ['linear'],
+              ['coalesce', ['get', 'expected_visitors'], 30000],
+              10000, 16,    // ズームイン時：小規模イベント
+              50000, 32,    // ズームイン時：中規模イベント
+              100000, 48,   // ズームイン時：大規模イベント
+              200000, 64    // ズームイン時：超大規模イベント
+            ]
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 0.2,  // 中心はシャープに
@@ -1243,7 +1245,14 @@ const MapWithRealData = ({
         source: sourceId,
         paint: {
           'heatmap-weight': 0.5,
-          'heatmap-intensity': 0.8,
+          'heatmap-intensity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, 0.3,    // ズームアウト時は強度を下げる
+            11, 0.5,
+            14, 0.8    // ズームイン時は通常の強度
+          ],
           'heatmap-color': [
             'interpolate',
             ['linear'],
@@ -1256,7 +1265,14 @@ const MapWithRealData = ({
             0.8, 'rgb(255,170,0)',     // オレンジ
             1, 'rgb(255,0,0)'          // 赤
           ],
-          'heatmap-radius': 30,
+          'heatmap-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            8, 15,     // ズームアウト時は半径を小さく
+            11, 25,
+            14, 35     // ズームイン時は元のサイズ
+          ],
           'heatmap-opacity': 0.7
         }
       });
