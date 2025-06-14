@@ -160,7 +160,28 @@ class MobilityEstimator:
         """
         フローに沿ったリアルなパーティクル配置を生成
         ベジエ曲線を使用して自然な経路を作成
+        距離に応じてパーティクル数と速度を調整
         """
+        # 距離を計算
+        origin = flow["origin"]
+        dest = flow["destination"]
+        distance = self._calculate_distance(
+            (origin["lat"], origin["lon"]),
+            (dest["lat"], dest["lon"])
+        )
+        
+        # 距離に基づいてパーティクル数を調整
+        # 近距離（1-5km）: パーティクル数を増やす
+        # 中距離（5-20km）: 標準
+        # 遠距離（20km以上）: パーティクル数を減らす
+        if distance < 5:
+            particle_multiplier = 1.5  # 近距離は1.5倍
+        elif distance > 20:
+            particle_multiplier = 0.5  # 遠距離は0.5倍
+        else:
+            particle_multiplier = 1.0
+        
+        adjusted_num_particles = int(num_particles * particle_multiplier)
         particles = []
         
         # フロータイプに応じた色設定
@@ -186,7 +207,7 @@ class MobilityEstimator:
         control_lat = mid_lat + curve_factor
         control_lon = mid_lon - curve_factor
         
-        for i in range(num_particles):
+        for i in range(adjusted_num_particles):
             # パーティクルの初期位置（0-1の範囲でランダム）
             t = random.uniform(0, 1)
             
@@ -194,8 +215,19 @@ class MobilityEstimator:
             lat = (1-t)**2 * origin["lat"] + 2*(1-t)*t * control_lat + t**2 * dest["lat"]
             lon = (1-t)**2 * origin["lon"] + 2*(1-t)*t * control_lon + t**2 * dest["lon"]
             
-            # 速度の変動（速度を1/3に減らす）
-            base_speed = (0.3 + (flow["volume"] / 100000)) / 3
+            # 速度の変動（距離に応じて調整）
+            # 近距離: ゆっくり（基本速度の0.5倍）
+            # 中距離: 標準速度（基本速度の1/3）
+            # 遠距離: 速い（基本速度の0.8倍）
+            base_speed = 0.3 + (flow["volume"] / 100000)
+            if distance < 5:
+                speed_multiplier = 0.15  # 近距離はゆっくり
+            elif distance > 20:
+                speed_multiplier = 0.8  # 遠距離は速い
+            else:
+                speed_multiplier = 0.33  # 中距離は標準（1/3）
+            
+            base_speed = base_speed * speed_multiplier
             speed_variation = random.uniform(0.8, 1.2)
             
             particles.append({

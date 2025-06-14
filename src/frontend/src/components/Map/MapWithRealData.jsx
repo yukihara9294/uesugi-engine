@@ -650,7 +650,6 @@ const MapWithRealData = ({
             height: feature.properties?.height || 30  // デフォルト高さ設定
           }
         });
-        }
       }
     });
     
