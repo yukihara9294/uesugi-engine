@@ -368,14 +368,8 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         type: 'circle',
         source: particleSourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, ['*', ['get', 'size'], 2],    // ズーム8: サイズ×2
-            11, ['*', ['get', 'size'], 5],   // ズーム11: サイズ×5
-            14, ['*', ['get', 'size'], 8]    // ズーム14: サイズ×8
-          ],
+          // 固定サイズ - ズームに依存しない
+          'circle-radius': ['*', ['get', 'size'], 8],  // サイズ×8（固定）
           'circle-color': ['get', 'color'],
           'circle-blur': 1.5,  // 強いブラー
           'circle-opacity': 0.05  // 薄く
@@ -388,14 +382,8 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         type: 'circle',
         source: particleSourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, ['*', ['get', 'size'], 1.5],  // ズーム8: サイズ×1.5
-            11, ['*', ['get', 'size'], 3],   // ズーム11: サイズ×3
-            14, ['*', ['get', 'size'], 5]    // ズーム14: サイズ×5
-          ],
+          // 固定サイズ - ズームに依存しない
+          'circle-radius': ['*', ['get', 'size'], 5],  // サイズ×5（固定）
           'circle-color': ['get', 'color'],
           'circle-blur': 1,
           'circle-opacity': 0.1  // 薄く
@@ -408,14 +396,8 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         type: 'circle',
         source: particleSourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, ['*', ['get', 'size'], 1],    // ズーム8: サイズ×1
-            11, ['*', ['get', 'size'], 1.5], // ズーム11: サイズ×1.5
-            14, ['*', ['get', 'size'], 2]    // ズーム14: サイズ×2
-          ],
+          // 固定サイズ - ズームに依存しない
+          'circle-radius': ['*', ['get', 'size'], 2],  // サイズ×2（固定）
           'circle-color': ['get', 'color'],
           'circle-blur': 0.5,
           'circle-opacity': 0.15  // 薄く
@@ -428,14 +410,8 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         type: 'circle',
         source: particleSourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, ['*', ['get', 'size'], 0.5],  // ズーム8: サイズ×0.5（小さく）
-            11, ['get', 'size'],             // ズーム11: 元のサイズ
-            14, ['*', ['get', 'size'], 1.5]  // ズーム14: サイズ×1.5
-          ],
+          // 固定サイズ - ズームに依存しない
+          'circle-radius': ['get', 'size'],  // 元のサイズ（固定）
           'circle-color': ['get', 'color'],
           'circle-blur': 0.2,  // 中心は少しシャープに
           'circle-opacity': 0.6  // 中心部の透明度を少し上げる（濃すぎたため）

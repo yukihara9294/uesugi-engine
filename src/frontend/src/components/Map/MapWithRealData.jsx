@@ -486,16 +486,8 @@ const MapWithRealData = ({
           type: 'circle',
           source: particleSourceId,
           paint: {
-            'circle-radius': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              8, 8,
-              10, 12,
-              12, 16,
-              14, 20,
-              16, 24
-            ],
+            // 固定サイズ - ズームに依存しない
+            'circle-radius': 20,  // 固定値
             'circle-color': [
               'coalesce',
               ['get', 'color'],
@@ -520,16 +512,8 @@ const MapWithRealData = ({
           type: 'circle',
           source: particleSourceId,
           paint: {
-            'circle-radius': [
-              'interpolate',
-              ['linear'],
-              ['zoom'],
-              8, 1,    // ズームレベル8で1px
-              10, 2,   // ズームレベル10で2px
-              12, 3,   // ズームレベル12で3px
-              14, 4,   // ズームレベル14で4px
-              16, 6    // ズームレベル16で6px
-            ],
+            // 固定サイズ - ズームに依存しない
+            'circle-radius': 3,  // 固定値（3px）
             'circle-color': [
               'coalesce',
               ['get', 'color'],
@@ -610,10 +594,10 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 20,    // 小規模イベント
-            50000, 40,    // 中規模イベント
-            100000, 60,   // 大規模イベント
-            200000, 80    // 超大規模イベント
+            10000, 10,    // 小規模イベント (最小)
+            50000, 30,    // 中規模イベント (3倍)
+            100000, 60,   // 大規模イベント (6倍)
+            200000, 120   // 超大規模イベント (最大) - 12倍の差
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 1.5,
@@ -631,10 +615,10 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 15,    // 小規模イベント
-            50000, 30,    // 中規模イベント
-            100000, 45,   // 大規模イベント
-            200000, 60    // 超大規模イベント
+            10000, 8,     // 小規模イベント (最小)
+            50000, 24,    // 中規模イベント (3倍)
+            100000, 48,   // 大規模イベント (6倍)
+            200000, 96    // 超大規模イベント (最大) - 12倍の差
           ],
           'circle-color': '#FF6B6B',
           'circle-blur': 1.2,
@@ -652,10 +636,10 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 10,    // 小規模イベント
-            50000, 20,    // 中規模イベント
-            100000, 30,   // 大規模イベント
-            200000, 40    // 超大規模イベント
+            10000, 6,     // 小規模イベント (最小)
+            50000, 18,    // 中規模イベント (3倍)
+            100000, 36,   // 大規模イベント (6倍)
+            200000, 72    // 超大規模イベント (最大) - 12倍の差
           ],
           'circle-color': '#FF6B6B',
           'circle-blur': 1,
@@ -673,10 +657,10 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 8,     // 小規模イベント
-            50000, 16,    // 中規模イベント
-            100000, 24,   // 大規模イベント
-            200000, 32    // 超大規模イベント
+            10000, 4,     // 小規模イベント (最小)
+            50000, 12,    // 中規模イベント (3倍)
+            100000, 24,   // 大規檀イベント (6倍)
+            200000, 48    // 超大規模イベント (最大) - 12倍の差
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 0.2,  // 中心はシャープに
@@ -1213,7 +1197,7 @@ const MapWithRealData = ({
         source: sourceId,
         paint: {
           'heatmap-weight': 0.5,
-          'heatmap-intensity': 0.6,  // 固定値
+          'heatmap-intensity': 0.6,  // 完全固定値
           'heatmap-color': [
             'interpolate',
             ['linear'],
@@ -1226,7 +1210,7 @@ const MapWithRealData = ({
             0.8, 'rgb(255,170,0)',     // オレンジ
             1, 'rgb(255,0,0)'          // 赤
           ],
-          'heatmap-radius': 20,  // 固定値
+          'heatmap-radius': 25,  // 完全固定値
           'heatmap-opacity': 0.7
         }
       });
