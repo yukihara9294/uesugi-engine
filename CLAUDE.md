@@ -2,7 +2,7 @@
 
 最終更新: 2025-06-14  
 更新者: Claude Code
-更新内容: 人流データ表示の完全修正、市区町村内移動の改善、MDファイル統合
+更新内容: 公共交通機関レイヤー実装、3Dレイヤーエラー修正
 
 **重要：このファイルは作業完了時に必ず更新すること**
 
@@ -813,3 +813,34 @@
 - ズームイン・アウトしても表現が一切変わらない
 - イベント規模の差が明確に12倍で視認可能
 - 可視化の意味が保持される
+
+## 2025-06-14 Session 2: 公共交通機関レイヤー実装と3Dエラー修正
+
+### 実施内容
+1. **公共交通機関レイヤー（TransportLayer）の実装**
+   - TransportLayer.jsコンポーネント作成
+   - GTFSデータ用のAPIエンドポイント実装（/api/v1/transport/gtfs）
+   - transportDataLoader.jsサービス作成
+   - App.jsxのlayers状態にtransport追加
+   - LeftSidebarに公共交通トグル追加（アイコン: DirectionsBus、色: #3B82F6）
+   - MapWithRealDataへの統合完了
+
+2. **3Dレイヤーエラーの解消**
+   - 未使用のPlateauLayer.js削除（React Leafletとの互換性問題）
+   - updatePlateauLayer関数にエラーハンドリング追加
+   - イベントリスナーの重複登録防止（off→on）
+   - クリックイベントのnullチェック強化
+
+### 技術詳細
+- TransportLayerはバス停・駅をcircleとsymbolレイヤーで表示
+- 路線データはlineレイヤーで実装
+- GTFSデータから最大500停留所、50路線を取得
+- サンプルデータフォールバック機能実装
+
+### コミット
+- feat: Implement Public Transportation Layer with GTFS data
+- fix: Improve 3D layer error handling and remove unused PlateauLayer
+
+### 次のタスク
+- 岡山データ統合準備
+- 6地域統一フォーマット設計

@@ -680,16 +680,17 @@ const MapWithRealData = ({
   const updatePlateauLayer = () => {
     const sourceId = 'plateau-buildings';
     
-    // PointデータをPolygonに変換する関数
-    const createBuildingPolygon = (center, size = 0.0008) => {
-      return [[
-        [center[0] - size/2, center[1] - size/2],
-        [center[0] + size/2, center[1] - size/2],
-        [center[0] + size/2, center[1] + size/2],
-        [center[0] - size/2, center[1] + size/2],
-        [center[0] - size/2, center[1] - size/2]
-      ]];
-    };
+    try {
+      // PointデータをPolygonに変換する関数
+      const createBuildingPolygon = (center, size = 0.0008) => {
+        return [[
+          [center[0] - size/2, center[1] - size/2],
+          [center[0] + size/2, center[1] - size/2],
+          [center[0] + size/2, center[1] + size/2],
+          [center[0] - size/2, center[1] + size/2],
+          [center[0] - size/2, center[1] - size/2]
+        ]];
+      };
     
     // PLATEAU 3D building data for Hiroshima - Office and Commercial buildings only
     // Hotels are moved to accommodation layer, cultural landmarks to landmarks layer
@@ -739,23 +740,37 @@ const MapWithRealData = ({
         }
       });
 
+      // Remove existing click event listener before adding new one
+      map.current.off('click', 'plateau-3d');
+      
       // Add popup functionality for PLATEAU buildings
       map.current.on('click', 'plateau-3d', (e) => {
-        const coordinates = e.features[0].geometry.coordinates[0][0];
-        const properties = e.features[0].properties;
+        if (!e.features || e.features.length === 0) return;
+        
+        const feature = e.features[0];
+        if (!feature.geometry || !feature.geometry.coordinates) return;
+        
+        const coordinates = feature.geometry.coordinates[0];
+        const properties = feature.properties || {};
         
         // Calculate center of polygon
-        const bounds = coordinates.reduce((bounds, coord) => {
-          return [
-            [Math.min(bounds[0][0], coord[0]), Math.min(bounds[0][1], coord[1])],
-            [Math.max(bounds[1][0], coord[0]), Math.max(bounds[1][1], coord[1])]
+        let center;
+        if (Array.isArray(coordinates) && coordinates.length > 0) {
+          const bounds = coordinates.reduce((bounds, coord) => {
+            return [
+              [Math.min(bounds[0][0], coord[0]), Math.min(bounds[0][1], coord[1])],
+              [Math.max(bounds[1][0], coord[0]), Math.max(bounds[1][1], coord[1])]
+            ];
+          }, [[Infinity, Infinity], [-Infinity, -Infinity]]);
+          
+          center = [
+            (bounds[0][0] + bounds[1][0]) / 2,
+            (bounds[0][1] + bounds[1][1]) / 2
           ];
-        }, [[Infinity, Infinity], [-Infinity, -Infinity]]);
-        
-        const center = [
-          (bounds[0][0] + bounds[1][0]) / 2,
-          (bounds[0][1] + bounds[1][1]) / 2
-        ];
+        } else {
+          // Fallback to click location
+          center = e.lngLat.toArray();
+        }
         
         const popupContent = `
           <div style="
@@ -794,6 +809,10 @@ const MapWithRealData = ({
           .addTo(map.current);
       });
       
+      // Remove existing event listeners before adding new ones
+      map.current.off('mouseenter', 'plateau-3d');
+      map.current.off('mouseleave', 'plateau-3d');
+      
       // Change cursor on hover
       map.current.on('mouseenter', 'plateau-3d', () => {
         map.current.getCanvas().style.cursor = 'pointer';
@@ -802,6 +821,9 @@ const MapWithRealData = ({
       map.current.on('mouseleave', 'plateau-3d', () => {
         map.current.getCanvas().style.cursor = '';
       });
+    }
+    } catch (error) {
+      console.error('Error updating PLATEAU layer:', error);
     }
   };
 
