@@ -46,8 +46,7 @@ const LeftSidebar = ({
 }) => {
   // 現実世界のデータレイヤー
   const realWorldLayers = [
-    { id: 'landmarks', label: 'ランドマーク', icon: <Place />, color: '#FFD700', description: '主要観光地・施設' },
-    { id: 'plateau', label: 'PLATEAU 3D建物', icon: <LocationCity />, color: '#9C27B0', description: '3D建物データ' },
+    { id: 'landmarks', label: 'ランドマーク・建物データ', icon: <Place />, color: '#FFD700', description: '主要観光地・施設・3D建物' },
     { id: 'mobility', label: '人流データ', icon: <DirectionsCar />, color: '#00FFFF', description: 'リアルタイム移動情報' },
     { id: 'consumption', label: '消費データ', icon: <ShoppingCart />, color: '#FF69B4', description: '購買・消費動向' },
     { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#4CAF50', description: '稼働率・空室状況' },

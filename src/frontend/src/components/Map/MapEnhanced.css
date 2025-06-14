@@ -36,12 +36,45 @@
   color: #fff !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
-  padding: 15px !important;
+  padding: 0 !important;
   border-radius: 8px !important;
+  overflow: hidden;
 }
 
 .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
   border-top-color: rgba(10, 10, 10, 0.95) !important;
+}
+
+/* PLATEAU building popup specific styles */
+.plateau-popup .mapboxgl-popup-content {
+  border-color: #9B59B6 !important;
+  box-shadow: 0 4px 20px rgba(155, 89, 182, 0.3) !important;
+}
+
+.plateau-popup .mapboxgl-popup-close-button {
+  color: #9B59B6 !important;
+  font-size: 20px !important;
+  padding: 8px !important;
+}
+
+.plateau-popup .mapboxgl-popup-close-button:hover {
+  background: rgba(155, 89, 182, 0.1) !important;
+}
+
+/* Landmark popup specific styles */
+.landmark-popup .mapboxgl-popup-content {
+  border-color: #FFD700 !important;
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3) !important;
+}
+
+.landmark-popup .mapboxgl-popup-close-button {
+  color: #FFD700 !important;
+  font-size: 20px !important;
+  padding: 8px !important;
+}
+
+.landmark-popup .mapboxgl-popup-close-button:hover {
+  background: rgba(255, 215, 0, 0.1) !important;
 }
 
 /* Loading overlay */

@@ -43,19 +43,11 @@ const MapLegend = ({ selectedLayers, position = 'bottom-left' }) => {
     },
     {
       id: 'landmarks',
-      label: 'ランドマーク',
+      label: 'ランドマーク・建物',
       icon: <Place />,
       color: '#FFD700',
-      description: '主要観光地・施設',
+      description: '主要観光地・施設・3D建物データ',
       visual: 'circle',
-    },
-    {
-      id: 'plateau',
-      label: '3D建物',
-      icon: <LocationCity />,
-      color: '#9C27B0',
-      description: 'PLATEAU 3Dデータ',
-      visual: 'box',
     },
     {
       id: 'mobility',

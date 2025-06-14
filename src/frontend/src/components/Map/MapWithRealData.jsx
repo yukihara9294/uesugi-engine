@@ -113,8 +113,7 @@ const MapWithRealData = ({
         const heatmapData = prefectureData?.heatmap || generateHeatmapData(selectedPrefecture);
         updateHeatmapLayer(heatmapData);
 
-        // PLATEAU 3D建物データ
-        updatePlateauLayer();
+        // PLATEAU buildings are now handled with landmarks layer
 
         setRealDataLoaded(true);
         console.log('Real data loaded successfully');
@@ -276,7 +275,7 @@ const MapWithRealData = ({
     const sourceId = 'accommodation';
     
     // PointデータをPolygonに変換
-    const createPolygon = (center, size = 0.0005) => {
+    const createPolygon = (center, size = 0.0005 / 3) => {  // 面積を1/3に
       const coords = [[
         [center[0] - size/2, center[1] - size/2],
         [center[0] + size/2, center[1] - size/2],
@@ -321,9 +320,13 @@ const MapWithRealData = ({
         paint: {
           'fill-extrusion-color': '#4A90E2',
           'fill-extrusion-height': [
-            'coalesce',
-            ['get', 'height'],
-            40  // Default height
+            '*',
+            [
+              'coalesce',
+              ['get', 'capacity'],
+              100
+            ],
+            0.3  // 収容人数に応じた高さ
           ],
           'fill-extrusion-base': 0,
           'fill-extrusion-opacity': 0.5  // ダミーデータ時と同じ透明度50%
@@ -531,28 +534,83 @@ const MapWithRealData = ({
         data: eventData
       });
 
-      // イベント影響範囲
+      // イベント影響範囲（オーブ風の表現）
       map.current.addLayer({
         id: 'event-impact',
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': 20,
-          'circle-color': '#FF6B6B',
-          'circle-opacity': 0.1
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 30,
+            14, 60,
+            16, 100
+          ],
+          'circle-color': [
+            'match',
+            ['get', 'category'],
+            'festival', '#9C27B0',  // イベントカテゴリと同じ紫色
+            'sports', '#2196F3',    // スポーツは青系
+            'cultural', '#4CAF50',  // 文化は緑系
+            '#9C27B0'  // デフォルトはイベント色
+          ],
+          'circle-blur': 1,
+          'circle-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 0.15,
+            14, 0.1,
+            16, 0.05
+          ]
         }
       });
 
-      // イベントマーカー
+      // イベントマーカー（中心の光）
       map.current.addLayer({
         id: 'event-markers',
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': 10,
-          'circle-color': '#FF6B6B',
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#ffffff'
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 8,
+            14, 12,
+            16, 16
+          ],
+          'circle-color': [
+            'match',
+            ['get', 'category'],
+            'festival', '#9C27B0',
+            'sports', '#2196F3',
+            'cultural', '#4CAF50',
+            '#9C27B0'
+          ],
+          'circle-blur': 0.5,
+          'circle-opacity': 0.9
+        }
+      });
+
+      // イベント中心部の明るい点
+      map.current.addLayer({
+        id: 'event-center',
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, 3,
+            14, 5,
+            16, 7
+          ],
+          'circle-color': '#ffffff',
+          'circle-opacity': 0.8
         }
       });
 
@@ -582,6 +640,9 @@ const MapWithRealData = ({
 
   const updateLandmarksLayer = (landmarksData) => {
     const sourceId = 'landmarks';
+    
+    // Also update PLATEAU buildings when landmarks are updated
+    updatePlateauLayer();
     
     console.log('updateLandmarksLayer called with:', {
       hasData: !!landmarksData,
@@ -642,14 +703,14 @@ const MapWithRealData = ({
         data: pointData
       });
 
-      // ランドマークのポイントレイヤー（ダミーデータ時の表現）
+      // ランドマークのポイントレイヤー（黄色に統一）
       map.current.addLayer({
         id: 'landmarks-points',
         type: 'circle',
         source: sourceId,
         paint: {
           'circle-radius': 6,
-          'circle-color': '#FF6B6B',
+          'circle-color': '#FFD700',  // 黄色に統一
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
           'circle-stroke-opacity': 1,
@@ -674,17 +735,7 @@ const MapWithRealData = ({
         type: 'fill-extrusion',
         source: landmarks3dSourceId,
         paint: {
-          'fill-extrusion-color': [
-            'match',
-            ['get', 'category'],
-            'temple', '#D4AF37',
-            'castle', '#8B4513',
-            'park', '#228B22',
-            'museum', '#4169E1',
-            '超高層建築', '#667eea',
-            '高層建築', '#764ba2',
-            '#FF6B6B'  // デフォルトはランドマーク色
-          ],
+          'fill-extrusion-color': '#FFD700',  // 黄色に統一
           'fill-extrusion-height': [
             'coalesce',
             ['get', 'height'],
@@ -717,6 +768,61 @@ const MapWithRealData = ({
           'text-halo-width': 1
         },
         minzoom: 12
+      });
+      
+      // Add popup functionality for landmarks
+      map.current.on('click', 'landmarks-points', (e) => {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const properties = e.features[0].properties;
+        
+        // Ensure that if the map is zoomed out such that multiple
+        // copies of the feature are visible, the popup appears
+        // over the copy being pointed to.
+        while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+          coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+        }
+        
+        const popupContent = `
+          <div style="
+            min-width: 180px;
+            padding: 12px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid #FFD700;
+            border-radius: 8px;
+            font-family: 'DIN Pro Medium', 'Arial Unicode MS Regular', sans-serif;
+          ">
+            <h3 style="margin: 0 0 8px 0; color: #FFD700; font-size: 16px;">${properties.name || 'ランドマーク'}</h3>
+            ${properties.category ? `
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                <span style="color: #aaa; font-size: 14px;">カテゴリ:</span>
+                <span style="color: #fff; font-size: 14px;">${properties.category}</span>
+              </div>
+            ` : ''}
+            ${properties.description ? `
+              <div style="color: #ccc; font-size: 13px; margin-top: 8px;">
+                ${properties.description}
+              </div>
+            ` : ''}
+          </div>
+        `;
+        
+        new mapboxgl.Popup({
+          closeButton: true,
+          closeOnClick: true,
+          className: 'landmark-popup'
+        })
+          .setLngLat(coordinates)
+          .setHTML(popupContent)
+          .addTo(map.current);
+      });
+      
+      // Change cursor on hover
+      map.current.on('mouseenter', 'landmarks-points', () => {
+        map.current.getCanvas().style.cursor = 'pointer';
+      });
+      
+      map.current.on('mouseleave', 'landmarks-points', () => {
+        map.current.getCanvas().style.cursor = '';
       });
     }
   };
@@ -796,36 +902,68 @@ const MapWithRealData = ({
         }
       });
 
-      // PLATEAU建物の詳細情報ラベル
-      map.current.addLayer({
-        id: 'plateau-labels',
-        type: 'symbol',
-        source: sourceId,
-        layout: {
-          'text-field': [
-            'concat',
-            ['get', 'name'],
-            '\n',
-            '階数: ', ['to-string', ['get', 'floors']], 'F',
-            '\n',
-            '種別: ', ['get', 'type'],
-            '\n',
-            '高さ: ', ['to-string', ['get', 'height']], 'm'
-          ],
-          'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
-          'text-size': 11,
-          'text-offset': [0, -3],
-          'text-anchor': 'bottom',
-          'text-max-width': 10,
-          'text-line-height': 1.2
-        },
-        paint: {
-          'text-color': '#ffffff',
-          'text-halo-color': '#9B59B6',
-          'text-halo-width': 2,
-          'text-halo-blur': 1
-        },
-        minzoom: 13
+      // Add popup functionality for PLATEAU buildings
+      map.current.on('click', 'plateau-3d', (e) => {
+        const coordinates = e.features[0].geometry.coordinates[0][0];
+        const properties = e.features[0].properties;
+        
+        // Calculate center of polygon
+        const bounds = coordinates.reduce((bounds, coord) => {
+          return [
+            [Math.min(bounds[0][0], coord[0]), Math.min(bounds[0][1], coord[1])],
+            [Math.max(bounds[1][0], coord[0]), Math.max(bounds[1][1], coord[1])]
+          ];
+        }, [[Infinity, Infinity], [-Infinity, -Infinity]]);
+        
+        const center = [
+          (bounds[0][0] + bounds[1][0]) / 2,
+          (bounds[0][1] + bounds[1][1]) / 2
+        ];
+        
+        const popupContent = `
+          <div style="
+            min-width: 200px;
+            padding: 12px;
+            background: rgba(20, 20, 20, 0.95);
+            border: 1px solid #9B59B6;
+            border-radius: 8px;
+            font-family: 'DIN Pro Medium', 'Arial Unicode MS Regular', sans-serif;
+          ">
+            <h3 style="margin: 0 0 8px 0; color: #9B59B6; font-size: 16px;">${properties.name || '建物'}</h3>
+            <div style="display: grid; gap: 6px; font-size: 14px;">
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #aaa;">種別:</span>
+                <span style="color: #fff;">${properties.type || '-'}</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #aaa;">階数:</span>
+                <span style="color: #fff;">${properties.floors || '-'}F</span>
+              </div>
+              <div style="display: flex; justify-content: space-between;">
+                <span style="color: #aaa;">高さ:</span>
+                <span style="color: #fff;">${properties.height || '-'}m</span>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        new mapboxgl.Popup({
+          closeButton: true,
+          closeOnClick: true,
+          className: 'plateau-popup'
+        })
+          .setLngLat(center)
+          .setHTML(popupContent)
+          .addTo(map.current);
+      });
+      
+      // Change cursor on hover
+      map.current.on('mouseenter', 'plateau-3d', () => {
+        map.current.getCanvas().style.cursor = 'pointer';
+      });
+      
+      map.current.on('mouseleave', 'plateau-3d', () => {
+        map.current.getCanvas().style.cursor = '';
       });
     }
   };
@@ -1103,8 +1241,8 @@ const MapWithRealData = ({
     console.log('Updating layer visibility:', layers);
 
     const layerMapping = {
-      landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-labels', 'transport-stops', 'transport-labels'],
-      plateau: ['plateau-3d', 'plateau-labels'],  // PLATEAU 3D buildings
+      landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-labels', 'transport-stops', 'transport-labels', 'plateau-3d', 'plateau-labels'],  // PLATEAU buildings now included with landmarks
+      plateau: [],  // Deprecated - PLATEAU is now part of landmarks
       accommodation: ['accommodation-3d', 'accommodation-labels'],  // Changed from hotels to accommodation
       mobility: ['mobility-particles', 'mobility-particles-shadow', 'mobility-flows'],
       heatmap: ['sns-heatmap'],

@@ -143,8 +143,7 @@ function App() {
   const [selectedPrefecture, setSelectedPrefecture] = useState('広島県');
   const [selectedArea, setSelectedArea] = useState('全域');
   const [layers, setLayers] = useState({
-    landmarks: true,
-    plateau: false,  // PLATEAU 3D buildings layer
+    landmarks: true,  // Now includes building data (formerly PLATEAU)
     accommodation: true,  // Changed from hotels to accommodation to match MapWithRealData
     mobility: true,
     consumption: false,
