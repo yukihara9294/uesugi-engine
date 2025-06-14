@@ -171,17 +171,18 @@ class MobilityEstimator:
         )
         
         # 距離に基づいてパーティクル数を調整
-        # 近距離（1-5km）: パーティクル数を増やす
+        # 近距離（1-5km）: 同じ市内レベル、パーティクル数を減らす
         # 中距離（5-20km）: 標準
-        # 遠距離（20km以上）: パーティクル数を減らす
+        # 遠距離（20km以上）: パーティクル数を大幅に増やす
         if distance < 5:
-            particle_multiplier = 1.5  # 近距離は1.5倍
+            particle_multiplier = 0.3  # 近距離は少なく
         elif distance > 20:
-            particle_multiplier = 0.5  # 遠距離は0.5倍
+            particle_multiplier = 2.0  # 遠距離は2倍（約20個）
         else:
             particle_multiplier = 1.0
         
-        adjusted_num_particles = int(num_particles * particle_multiplier)
+        # 全体的に10倍に増やす
+        adjusted_num_particles = int(num_particles * particle_multiplier * 10)
         particles = []
         
         # フロータイプに応じた色設定

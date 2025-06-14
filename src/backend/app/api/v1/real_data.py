@@ -159,7 +159,10 @@ async def get_real_accommodation_data(prefecture: str, db: Session = Depends(get
                 {"name": "ホテルグランヴィア広島", "lat": 34.3974, "lon": 132.4753, "capacity": 407},
                 {"name": "シェラトングランドホテル広島", "lat": 34.3976, "lon": 132.4759, "capacity": 238},
                 {"name": "リーガロイヤルホテル広島", "lat": 34.3954, "lon": 132.4534, "capacity": 491},
-                {"name": "ANAクラウンプラザホテル広島", "lat": 34.3936, "lon": 132.4572, "capacity": 409}
+                {"name": "ANAクラウンプラザホテル広島", "lat": 34.3936, "lon": 132.4572, "capacity": 409},
+                {"name": "クレイトンベイホテル", "lat": 34.2415, "lon": 132.5552, "capacity": 280},
+                {"name": "福山ニューキャッスルホテル", "lat": 34.4900, "lon": 133.3627, "capacity": 325},
+                {"name": "君田温泉森の泉", "lat": 34.8522, "lon": 132.8556, "capacity": 50}
             ],
             "山口県": [
                 {"name": "下関グランドホテル", "lat": 33.9507, "lon": 130.9239, "capacity": 188},

@@ -429,8 +429,8 @@ const MapWithRealData = ({
               50, 4,
               100, 6
             ],
-            'line-opacity': 0.15,  // より透明に
-            'line-blur': 1  // ぼかし効果
+            'line-opacity': 0.2,  // 初期透明度
+            'line-blur': 1.5  // ぼかし効果強化
           }
         });
       }
@@ -446,6 +446,40 @@ const MapWithRealData = ({
         map.current.addSource(particleSourceId, {
           type: 'geojson',
           data: particlesData
+        });
+
+        // パーティクルグロー（大きい光の表現）
+        map.current.addLayer({
+          id: 'mobility-particles-glow',
+          type: 'circle',
+          source: particleSourceId,
+          paint: {
+            'circle-radius': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              8, 8,
+              10, 12,
+              12, 16,
+              14, 20,
+              16, 24
+            ],
+            'circle-color': [
+              'coalesce',
+              ['get', 'color'],
+              '#00FFFF'
+            ],
+            'circle-opacity': [
+              '*',
+              [
+                'coalesce',
+                ['get', 'opacity'],
+                0.8
+              ],
+              0.3  // グローの基本透明度
+            ],
+            'circle-blur': 1.5
+          }
         });
 
         // パーティクル本体
@@ -472,9 +506,9 @@ const MapWithRealData = ({
             'circle-opacity': [
               'coalesce',
               ['get', 'opacity'],
-              0.8
+              1
             ],
-            'circle-blur': 0.5,
+            'circle-blur': 0.5,  // 中心部はシャープに
             'circle-pitch-alignment': 'map',  // 3D表示のため
             'circle-pitch-scale': 'map'
           }
@@ -679,12 +713,13 @@ const MapWithRealData = ({
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': 6,
+          'circle-radius': 8,
           'circle-color': '#FFD700',  // 黄色に統一
           'circle-stroke-width': 2,
           'circle-stroke-color': '#ffffff',
           'circle-stroke-opacity': 1,
-          'circle-opacity': 0.8
+          'circle-opacity': 0.9,
+          'circle-blur': 0.8  // 光の表現を追加
         },
         minzoom: 15  // 3Dが表示されるズームレベルより大きく設定
       });
@@ -713,10 +748,38 @@ const MapWithRealData = ({
             50  // デフォルト高さ
           ],
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.8
+          'fill-extrusion-opacity': 0.95  // より明るく光る表現
         },
         minzoom: 12  // より広いズームレベルで表示
       });
+
+      // ランドマークの光の表現（グローレイヤー）
+      map.current.addLayer({
+        id: 'landmarks-glow',
+        type: 'circle',
+        source: sourceId,
+        paint: {
+          'circle-radius': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 20,
+            14, 30,
+            16, 40
+          ],
+          'circle-color': '#FFD700',
+          'circle-opacity': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            12, 0.2,
+            14, 0.15,
+            16, 0.1
+          ],
+          'circle-blur': 1.5  // 強いブラーで光の表現
+        },
+        minzoom: 12
+      }, 'landmarks-3d');  // 3Dレイヤーの下に配置
 
       // ランドマークラベル
       map.current.addLayer({
@@ -812,27 +875,15 @@ const MapWithRealData = ({
       ]];
     };
     
-    // PLATEAU 3D building data for Hiroshima
+    // PLATEAU 3D building data for Hiroshima - Office and Commercial buildings only
+    // Hotels are moved to accommodation layer, cultural landmarks to landmarks layer
     const plateauPointData = {
       type: 'FeatureCollection',
       features: [
-        // Hiroshima City Center
+        // Office buildings only
         { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4553, 34.3853] }, properties: { height: 120, floors: 30, name: '広島センタービル', type: 'office' }},
         { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4590, 34.3939] }, properties: { height: 95, floors: 24, name: '広島ビジネスタワー', type: 'office' }},
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4584, 34.3955] }, properties: { height: 85, floors: 21, name: 'リーガロイヤルホテル広島', type: 'hotel' }},
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4757, 34.3972] }, properties: { height: 110, floors: 28, name: 'シェラトングランドホテル広島', type: 'hotel' }},
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4758, 34.3979] }, properties: { height: 105, floors: 26, name: 'ホテルグランヴィア広島', type: 'hotel' }},
         { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4610, 34.3935] }, properties: { height: 65, floors: 16, name: 'そごう広島店', type: 'commercial' }},
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4590, 34.4027] }, properties: { height: 39, floors: 5, name: '広島城', type: 'cultural' }},
-        // Add more buildings based on prefecture
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4520, 34.3915] }, properties: { height: 25, floors: 3, name: '広島平和記念資料館', type: 'cultural' }},
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.4530, 34.3930] }, properties: { height: 20, floors: 4, name: '原爆ドーム', type: 'cultural' }},
-        // Fukuyama
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [133.3627, 34.4900] }, properties: { height: 65, floors: 16, name: '福山ニューキャッスルホテル', type: 'mixed' }},
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [133.3627, 34.4900] }, properties: { height: 30, floors: 5, name: '福山城', type: 'cultural' }},
-        // Kure
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.5552, 34.2415] }, properties: { height: 55, floors: 14, name: 'クレイトンベイホテル', type: 'hotel' }},
-        { type: 'Feature', geometry: { type: 'Point', coordinates: [132.5550, 34.2410] }, properties: { height: 30, floors: 4, name: '大和ミュージアム', type: 'cultural' }},
       ]
     };
     
@@ -856,20 +907,20 @@ const MapWithRealData = ({
         data: plateauData
       });
 
-      // PLATEAU 3D建物（宿泊施設と同じ表現、紫色）
+      // PLATEAU 3D建物（グレー色のオフィスビル）
       map.current.addLayer({
         id: 'plateau-3d',
         type: 'fill-extrusion',
         source: sourceId,
         paint: {
-          'fill-extrusion-color': '#9B59B6',  // 紫色
+          'fill-extrusion-color': '#808080',  // グレー色（オフィスビル）
           'fill-extrusion-height': [
             'coalesce',
             ['get', 'height'],
             50  // Default height
           ],
           'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.8
+          'fill-extrusion-opacity': 0.6  // やや透明に
         }
       });
 
@@ -896,11 +947,11 @@ const MapWithRealData = ({
             min-width: 200px;
             padding: 12px;
             background: rgba(20, 20, 20, 0.95);
-            border: 1px solid #9B59B6;
+            border: 1px solid #808080;
             border-radius: 8px;
             font-family: 'DIN Pro Medium', 'Arial Unicode MS Regular', sans-serif;
           ">
-            <h3 style="margin: 0 0 8px 0; color: #9B59B6; font-size: 16px;">${properties.name || '建物'}</h3>
+            <h3 style="margin: 0 0 8px 0; color: #808080; font-size: 16px;">${properties.name || '建物'}</h3>
             <div style="display: grid; gap: 6px; font-size: 14px;">
               <div style="display: flex; justify-content: space-between;">
                 <span style="color: #aaa;">種別:</span>
@@ -1126,10 +1177,10 @@ const MapWithRealData = ({
       progress += 0.001; // よりスローなアニメーション
       if (progress > 1) progress = 0;
       
-      // フローラインのフェードアニメーション
-      flowOpacityPhase += 0.02;
+      // フローラインのフェードアニメーション（より強調）
+      flowOpacityPhase += 0.03;
       if (map.current.getLayer('mobility-flows')) {
-        const opacity = 0.2 + Math.sin(flowOpacityPhase) * 0.15;
+        const opacity = 0.1 + Math.abs(Math.sin(flowOpacityPhase)) * 0.3; // フェードイン・フェードアウト強化
         map.current.setPaintProperty('mobility-flows', 'line-opacity', opacity);
       }
 
@@ -1212,10 +1263,10 @@ const MapWithRealData = ({
     console.log('Updating layer visibility:', layers);
 
     const layerMapping = {
-      landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-labels', 'transport-stops', 'transport-labels', 'plateau-3d', 'plateau-labels'],  // PLATEAU buildings now included with landmarks
+      landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-glow', 'landmarks-labels', 'transport-stops', 'transport-labels', 'plateau-3d'],  // PLATEAU buildings now included with landmarks
       plateau: [],  // Deprecated - PLATEAU is now part of landmarks
       accommodation: ['accommodation-3d', 'accommodation-labels'],  // Changed from hotels to accommodation
-      mobility: ['mobility-particles', 'mobility-particles-shadow', 'mobility-flows'],
+      mobility: ['mobility-particles-glow', 'mobility-particles', 'mobility-particles-shadow', 'mobility-flows'],
       heatmap: ['sns-heatmap'],
       events: ['event-impact', 'event-markers', 'event-labels'],
       consumption: ['consumption-3d']  // ラベルは削除
