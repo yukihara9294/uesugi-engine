@@ -19,7 +19,7 @@
 - TECHNICAL_DETAILS.md: 技術仕様・バグ情報
 - CLAUDE.md: 作業履歴・セッション引き継ぎ情報
 - README.md: 外部向け説明
-- DESIGN_REFERENCE.md: ダミーデータ時のデザイン仕様
+- DESIGN_REFERENCE.md: ダミーデータ時のデザイン仕様（視覚表現の基準）
 
 **重要：新しいMDファイルは絶対に作らない。**
 - 作業記録 → CLAUDE.mdに追記
