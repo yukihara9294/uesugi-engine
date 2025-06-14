@@ -73,9 +73,13 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
           const glowLayerId = `${flowGlowLayerId}-${groupName}`;
           const sourceId = `${flowSourceId}-${groupName}`;
           
-          if (map.getLayer(layerId)) map.removeLayer(layerId);
-          if (map.getLayer(glowLayerId)) map.removeLayer(glowLayerId);
-          if (map.getSource(sourceId)) map.removeSource(sourceId);
+          try {
+            if (map.getLayer(layerId)) map.removeLayer(layerId);
+            if (map.getLayer(glowLayerId)) map.removeLayer(glowLayerId);
+            if (map.getSource(sourceId)) map.removeSource(sourceId);
+          } catch (e) {
+            // エラーを無視
+          }
         });
         
         // 旧バージョンのレイヤーも削除（互換性のため）
@@ -216,6 +220,12 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
         const sourceId = `${flowSourceId}-${groupName}`;
         const layerId = `${flowLayerId}-${groupName}`;
         const glowLayerId = `${flowGlowLayerId}-${groupName}`;
+        
+        // 既存のソースがあるか確認
+        if (map.getSource(sourceId)) {
+          console.warn(`Source ${sourceId} already exists, skipping...`);
+          return;
+        }
         
         // ソースを追加
         map.addSource(sourceId, {

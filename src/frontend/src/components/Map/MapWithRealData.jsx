@@ -609,25 +609,11 @@ const MapWithRealData = ({
           'circle-radius': [
             'interpolate',
             ['linear'],
-            ['zoom'],
-            8, [
-              'interpolate',
-              ['linear'],
-              ['coalesce', ['get', 'expected_visitors'], 30000],
-              10000, 10,    // ズームアウト時：小規模イベント
-              50000, 20,    // ズームアウト時：中規模イベント
-              100000, 30,   // ズームアウト時：大規模イベント
-              200000, 50    // ズームアウト時：超大規模イベント
-            ],
-            14, [
-              'interpolate',
-              ['linear'],
-              ['coalesce', ['get', 'expected_visitors'], 30000],
-              10000, 90,    // ズームイン時：小規模イベント
-              50000, 180,   // ズームイン時：中規模イベント
-              100000, 270,  // ズームイン時：大規模イベント
-              200000, 360   // ズームイン時：超大規模イベント
-            ]
+            ['coalesce', ['get', 'expected_visitors'], 30000],
+            10000, 20,    // 小規模イベント
+            50000, 40,    // 中規模イベント
+            100000, 60,   // 大規模イベント
+            200000, 80    // 超大規模イベント
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 1.5,
@@ -642,17 +628,13 @@ const MapWithRealData = ({
         source: sourceId,
         paint: {
           'circle-radius': [
-            '*',
-            [
-              'interpolate',
-              ['linear'],
-              ['coalesce', ['get', 'expected_visitors'], 30000],
-              10000, 2,     // 小規模イベント
-              50000, 4,     // 中規模イベント
-              100000, 6,    // 大規模イベント
-              200000, 8     // 超大規模イベント
-            ],
-            40  // 固定サイズ
+            'interpolate',
+            ['linear'],
+            ['coalesce', ['get', 'expected_visitors'], 30000],
+            10000, 15,    // 小規模イベント
+            50000, 30,    // 中規模イベント
+            100000, 45,   // 大規模イベント
+            200000, 60    // 超大規模イベント
           ],
           'circle-color': '#FF6B6B',
           'circle-blur': 1.2,
@@ -670,10 +652,10 @@ const MapWithRealData = ({
             'interpolate',
             ['linear'],
             ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 40,    // 小規模イベント
-            50000, 80,    // 中規模イベント
-            100000, 120,  // 大規模イベント
-            200000, 160   // 超大規模イベント
+            10000, 10,    // 小規模イベント
+            50000, 20,    // 中規模イベント
+            100000, 30,   // 大規模イベント
+            200000, 40    // 超大規模イベント
           ],
           'circle-color': '#FF6B6B',
           'circle-blur': 1,
@@ -690,25 +672,11 @@ const MapWithRealData = ({
           'circle-radius': [
             'interpolate',
             ['linear'],
-            ['zoom'],
-            8, [
-              'interpolate',
-              ['linear'],
-              ['coalesce', ['get', 'expected_visitors'], 30000],
-              10000, 2,     // ズームアウト時：小規模イベント
-              50000, 4,     // ズームアウト時：中規模イベント
-              100000, 6,    // ズームアウト時：大規模イベント
-              200000, 10    // ズームアウト時：超大規模イベント
-            ],
-            14, [
-              'interpolate',
-              ['linear'],
-              ['coalesce', ['get', 'expected_visitors'], 30000],
-              10000, 16,    // ズームイン時：小規模イベント
-              50000, 32,    // ズームイン時：中規模イベント
-              100000, 48,   // ズームイン時：大規模イベント
-              200000, 64    // ズームイン時：超大規模イベント
-            ]
+            ['coalesce', ['get', 'expected_visitors'], 30000],
+            10000, 8,     // 小規模イベント
+            50000, 16,    // 中規模イベント
+            100000, 24,   // 大規模イベント
+            200000, 32    // 超大規模イベント
           ],
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 0.2,  // 中心はシャープに
@@ -1245,14 +1213,7 @@ const MapWithRealData = ({
         source: sourceId,
         paint: {
           'heatmap-weight': 0.5,
-          'heatmap-intensity': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, 0.3,    // ズームアウト時は強度を下げる
-            11, 0.5,
-            14, 0.8    // ズームイン時は通常の強度
-          ],
+          'heatmap-intensity': 0.6,  // 固定値
           'heatmap-color': [
             'interpolate',
             ['linear'],
@@ -1265,14 +1226,7 @@ const MapWithRealData = ({
             0.8, 'rgb(255,170,0)',     // オレンジ
             1, 'rgb(255,0,0)'          // 赤
           ],
-          'heatmap-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            8, 15,     // ズームアウト時は半径を小さく
-            11, 25,
-            14, 35     // ズームイン時は元のサイズ
-          ],
+          'heatmap-radius': 20,  // 固定値
           'heatmap-opacity': 0.7
         }
       });
