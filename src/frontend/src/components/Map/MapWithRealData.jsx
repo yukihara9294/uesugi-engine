@@ -19,6 +19,7 @@ import {
 } from '../../utils/dataGenerator';
 import { realDataService } from '../../services/api';
 import CyberFlowLayer from './CyberFlowLayer';
+import { debugMapLayers, monitorLayerChanges, interceptLayerAdditions } from '../../utils/debugMapLayers';
 
 // Mapbox token
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
@@ -61,9 +62,9 @@ const MapWithRealData = ({
     console.log('Loading real data for', selectedPrefecture);
     console.log('Prefecture data available:', !!prefectureData, prefectureData);
     
-    // ローカルデータを先に設定（即時表示）
+    // ローカルデータを先に設定（即時表示）- 但し人流データは除く
     if (prefectureData && map.current && mapLoaded) {
-      // ローカルデータを即座に適用
+      // ローカルデータを即座に適用（人流データ以外）
       updateLandmarksLayer(prefectureData.landmarks || generateLandmarks(selectedPrefecture));
       updateAccommodationLayer(prefectureData.hotels || generateHotels(selectedPrefecture));
       updateEventLayer(prefectureData.events || prefectureData.eventData || generateEventData(selectedPrefecture));
@@ -71,15 +72,12 @@ const MapWithRealData = ({
       updateHeatmapLayer(prefectureData.heatmap || generateHeatmapData(selectedPrefecture));
       updatePlateauLayer();
       
-      // 人流データも即座に表示（ダミーデータで初期化）
-      if (prefectureData.mobility) {
-        console.log('Initializing with dummy mobility data:', prefectureData.mobility);
-        console.log('Dummy data has particles?', !!prefectureData.mobility.particles);
-        console.log('Dummy data has flows?', !!prefectureData.mobility.flows);
-      }
+      // 人流データは実データが来るまで表示しない（ダミーデータを表示しない）
+      // setRealMobilityData(null) を設定して、CyberFlowLayerがダミーデータを表示しないようにする
+      setRealMobilityData(null);
       
       setRealDataLoaded(true);
-      console.log('Local data applied immediately');
+      console.log('Local data applied immediately (except mobility)');
     }
     
     try {
@@ -185,6 +183,9 @@ const MapWithRealData = ({
         bearing: 0,
         antialias: true
       });
+      
+      // Install layer interceptor to debug layer additions
+      interceptLayerAdditions(map.current);
 
       map.current.on('load', () => {
         console.log('Map loaded successfully!');
@@ -212,6 +213,15 @@ const MapWithRealData = ({
         } catch (error) {
           console.error('Error adding 3D features:', error);
         }
+        
+        // Debug layers after map loads
+        setTimeout(() => {
+          debugMapLayers(map.current);
+          
+          // Monitor specific layers for changes
+          monitorLayerChanges(map.current, 'sns-heatmap', 'heatmap-radius');
+          monitorLayerChanges(map.current, 'event-markers', 'circle-radius');
+        }, 2000); // Wait for layers to be added
       });
 
       map.current.on('error', (e) => {
@@ -689,6 +699,9 @@ const MapWithRealData = ({
           'text-halo-width': 1
         }
       });
+      
+      console.log('Event layers created with fixed radius based on visitor count');
+      debugMapLayers(map.current);
     }
   };
 
@@ -817,23 +830,9 @@ const MapWithRealData = ({
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            12, 20,
-            14, 30,
-            16, 40
-          ],
+          'circle-radius': 30,  // 固定サイズ
           'circle-color': '#FFD700',
-          'circle-opacity': [
-            'interpolate',
-            ['linear'],
-            ['zoom'],
-            12, 0.2,
-            14, 0.15,
-            16, 0.1
-          ],
+          'circle-opacity': 0.15,  // 固定透明度
           'circle-blur': 1.5  // 強いブラーで光の表現
         },
         minzoom: 12
@@ -1214,6 +1213,9 @@ const MapWithRealData = ({
           'heatmap-opacity': 0.7
         }
       });
+      
+      console.log('SNS heatmap layer created with fixed radius:', 25);
+      debugMapLayers(map.current);
     }
   };
 
@@ -1434,9 +1436,10 @@ const MapWithRealData = ({
           />
           {/* CyberFlowLayer for mobility visualization */}
           {(() => {
-            const shouldShowCyberFlow = mapLoaded && map.current && (realMobilityData || prefectureData?.mobility);
-            const dataToUse = realMobilityData || prefectureData?.mobility;
-            const dataKey = realMobilityData ? 'real' : 'dummy';
+            // 実データのみ表示（ダミーデータは表示しない）
+            const shouldShowCyberFlow = mapLoaded && map.current && realMobilityData;
+            const dataToUse = realMobilityData; // 実データのみ使用
+            const dataKey = realMobilityData ? 'real' : 'no-data';
             
             console.log('=== CyberFlowLayer Render Check ===');
             console.log('mapLoaded:', mapLoaded);
