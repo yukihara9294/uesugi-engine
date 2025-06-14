@@ -7,13 +7,19 @@ export const debugMapLayers = (map) => {
 
   console.log('=== DEBUGGING MAP LAYERS ===');
   
-  // Check SNS heatmap layer
+  // Check SNS heatmap layer (now using circle layers)
   const heatmapLayer = map.getLayer('sns-heatmap');
   if (heatmapLayer) {
     console.log('SNS Heatmap Layer Found:');
     console.log('- Type:', heatmapLayer.type);
-    console.log('- Paint properties:', map.getPaintProperty('sns-heatmap', 'heatmap-radius'));
-    console.log('- Intensity:', map.getPaintProperty('sns-heatmap', 'heatmap-intensity'));
+    if (heatmapLayer.type === 'circle') {
+      console.log('- Circle radius:', map.getPaintProperty('sns-heatmap', 'circle-radius'));
+      console.log('- Circle color:', map.getPaintProperty('sns-heatmap', 'circle-color'));
+      console.log('- Circle opacity:', map.getPaintProperty('sns-heatmap', 'circle-opacity'));
+    } else if (heatmapLayer.type === 'heatmap') {
+      console.log('- Heatmap radius:', map.getPaintProperty('sns-heatmap', 'heatmap-radius'));
+      console.log('- Heatmap intensity:', map.getPaintProperty('sns-heatmap', 'heatmap-intensity'));
+    }
     console.log('- Full paint:', heatmapLayer.paint);
   } else {
     console.log('SNS Heatmap Layer NOT found');
@@ -58,12 +64,20 @@ export const monitorLayerChanges = (map, layerId, property) => {
   const checkProperty = () => {
     if (!map.getLayer(layerId)) return;
     
-    const currentValue = map.getPaintProperty(layerId, property);
-    const currentValueStr = JSON.stringify(currentValue);
-    
-    if (lastValue !== currentValueStr) {
-      console.log(`[LAYER CHANGE] ${layerId}.${property} changed:`, currentValue);
-      lastValue = currentValueStr;
+    try {
+      const currentValue = map.getPaintProperty(layerId, property);
+      const currentValueStr = JSON.stringify(currentValue);
+      
+      if (lastValue !== currentValueStr) {
+        console.log(`[LAYER CHANGE] ${layerId}.${property} changed:`, currentValue);
+        lastValue = currentValueStr;
+      }
+    } catch (e) {
+      // Property doesn't exist for this layer type
+      if (lastValue !== 'error') {
+        console.log(`[LAYER CHANGE] ${layerId}.${property} - property not found (layer type may have changed)`);
+        lastValue = 'error';
+      }
     }
   };
   

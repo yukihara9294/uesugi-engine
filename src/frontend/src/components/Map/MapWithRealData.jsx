@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import './MapEnhanced.css';
@@ -13,21 +13,14 @@ import {
   generateHeatmapData,
   generateLandmarks,
   generateHotels,
-  generateMobilityData,
   generateEventData,
   generateConsumptionData
 } from '../../utils/dataGenerator';
-import { realDataService } from '../../services/api';
 import CyberFlowLayer from './CyberFlowLayer';
-import { debugMapLayers, monitorLayerChanges, interceptLayerAdditions } from '../../utils/debugMapLayers';
 
 // Mapbox token
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
-if (!MAPBOX_TOKEN) {
-  console.error('Mapbox token is not set. Please check your .env.local file.');
-  console.error('Looking for REACT_APP_MAPBOX_TOKEN in environment variables.');
-} else {
-  console.log('Mapbox token found, length:', MAPBOX_TOKEN.length);
+if (MAPBOX_TOKEN) {
   mapboxgl.accessToken = MAPBOX_TOKEN;
 }
 
@@ -45,8 +38,7 @@ const MapWithRealData = ({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [realDataLoaded, setRealDataLoaded] = useState(false);
   const [realMobilityData, setRealMobilityData] = useState(null); // 実際のモビリティデータを保存
-  const layersInitialized = useRef(false);
-  const animationFrame = useRef(null);
+  // Remove unused refs
 
   // 都道府県ごとの初期座標
   const prefectureCoordinates = {
@@ -59,8 +51,6 @@ const MapWithRealData = ({
 
   // 実データの読み込み（ダミーデータへのフォールバック付き）
   const loadRealData = useCallback(async () => {
-    console.log('Loading real data for', selectedPrefecture);
-    console.log('Prefecture data available:', !!prefectureData, prefectureData);
     
     // ローカルデータを先に設定（即時表示）- 但し人流データは除く
     if (prefectureData && map.current && mapLoaded) {
@@ -77,7 +67,6 @@ const MapWithRealData = ({
       setRealMobilityData(null);
       
       setRealDataLoaded(true);
-      console.log('Local data applied immediately (except mobility)');
     }
     
     try {
@@ -138,22 +127,8 @@ const MapWithRealData = ({
           updateEventLayer(eventData);
         }
         if (mobilityData) {
-          console.log('Step 1: Mobility data received:', mobilityData);
-          console.log('Step 2: Has flows:', !!mobilityData.flows);
-          console.log('Step 3: Has particles:', !!mobilityData.particles);
-          if (mobilityData.particles) {
-            console.log('Step 4: Particle count:', mobilityData.particles.features?.length);
-          }
-          console.log('Step 5: Setting realMobilityData state...');
           setRealMobilityData(mobilityData); // 実データを保存
-          
-          // 即座にCyberFlowLayerを更新（データが存在することを確認）
-          setTimeout(() => {
-            console.log('Step 6: Verifying realMobilityData was set:', !!realMobilityData);
-          }, 100);
         }
-        
-        console.log('API data updates completed');
       }
     } catch (error) {
       console.error('Failed to load real data:', error);
@@ -162,17 +137,10 @@ const MapWithRealData = ({
 
   // マップ初期化
   const initializeMap = useCallback(() => {
-    console.log('initializeMap called', {
-      hasContainer: !!mapContainer.current,
-      hasMap: !!map.current,
-      hasToken: !!MAPBOX_TOKEN
-    });
-    
     if (!mapContainer.current || map.current) return;
 
     try {
       const coords = prefectureCoordinates[selectedPrefecture];
-      console.log('Creating map with coordinates:', coords);
 
       map.current = new mapboxgl.Map({
         container: mapContainer.current,
@@ -184,11 +152,8 @@ const MapWithRealData = ({
         antialias: true
       });
       
-      // Install layer interceptor to debug layer additions
-      interceptLayerAdditions(map.current);
 
       map.current.on('load', () => {
-        console.log('Map loaded successfully!');
         setMapLoaded(true);
         
         try {
@@ -209,19 +174,10 @@ const MapWithRealData = ({
             'space-color': 'rgb(10, 10, 20)',
             'star-intensity': 0.6
           });
-          console.log('3D terrain and fog added successfully');
         } catch (error) {
           console.error('Error adding 3D features:', error);
         }
         
-        // Debug layers after map loads
-        setTimeout(() => {
-          debugMapLayers(map.current);
-          
-          // Monitor specific layers for changes
-          monitorLayerChanges(map.current, 'sns-heatmap', 'heatmap-radius');
-          monitorLayerChanges(map.current, 'event-markers', 'circle-radius');
-        }, 2000); // Wait for layers to be added
       });
 
       map.current.on('error', (e) => {
@@ -287,31 +243,6 @@ const MapWithRealData = ({
     }
   };
 
-  const updateTourismLayer = (tourismData) => {
-    const sourceId = 'tourism-facilities';
-    
-    if (map.current.getSource(sourceId)) {
-      map.current.getSource(sourceId).setData(tourismData);
-    } else {
-      map.current.addSource(sourceId, {
-        type: 'geojson',
-        data: tourismData
-      });
-
-      // 3D観光施設
-      map.current.addLayer({
-        id: 'tourism-3d',
-        type: 'fill-extrusion',
-        source: sourceId,
-        paint: {
-          'fill-extrusion-color': '#FFD700',
-          'fill-extrusion-height': 50,
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.8
-        }
-      });
-    }
-  };
 
   const updateAccommodationLayer = (accommodationData) => {
     const sourceId = 'accommodation';
@@ -400,198 +331,59 @@ const MapWithRealData = ({
     }
   };
 
-  const updateMobilityLayer = (mobilityData) => {
-    // GeoJSON形式のデータとparticles/flows形式の両方に対応
-    let flowsData, particlesData;
-    
-    console.log('updateMobilityLayer called with:', mobilityData);
-    
-    if (!mobilityData) {
-      console.warn('No mobility data provided');
-      return;
-    }
-    
-    if (mobilityData.type === 'FeatureCollection') {
-      // GeoJSON形式の場合（旧形式）
-      flowsData = mobilityData;
-      // パーティクルデータは生成しない（フローのみ表示）
-    } else if (mobilityData.flows || mobilityData.particles) {
-      // particles/flows形式の場合（実データAPIおよびダミーデータ）
-      flowsData = mobilityData.flows;
-      particlesData = mobilityData.particles;
-      
-      // Validate flow data
-      if (flowsData && (!flowsData.type || flowsData.type !== 'FeatureCollection')) {
-        console.warn('Invalid flows data format, expected FeatureCollection:', flowsData);
-        flowsData = null;
-      }
-      
-      // Validate particle data
-      if (particlesData && (!particlesData.type || particlesData.type !== 'FeatureCollection')) {
-        console.warn('Invalid particles data format, expected FeatureCollection:', particlesData);
-        particlesData = null;
-      }
-    } else {
-      console.warn('Unknown mobility data format:', mobilityData);
-      return;
-    }
-    
-    console.log('Processing mobility data - flows:', !!flowsData, 'particles:', !!particlesData);
-    
-    // フロー
-    if (flowsData) {
-      const flowSourceId = 'mobility-flows';
-      
-      if (map.current.getSource(flowSourceId)) {
-        map.current.getSource(flowSourceId).setData(flowsData);
-      } else {
-        map.current.addSource(flowSourceId, {
-          type: 'geojson',
-          data: flowsData
-        });
-
-        map.current.addLayer({
-          id: 'mobility-flows',
-          type: 'line',
-          source: flowSourceId,
-          paint: {
-            'line-color': [
-              'interpolate',
-              ['linear'],
-              ['get', 'intensity'],
-              0, '#00FF00',
-              50, '#FFFF00',
-              100, '#FF0000'
-            ],
-            'line-width': [
-              'interpolate',
-              ['linear'],
-              ['get', 'intensity'],
-              0, 2,
-              50, 4,
-              100, 6
-            ],
-            'line-opacity': 0.2,  // 初期透明度
-            'line-blur': 1.5  // ぼかし効果強化
-          }
-        });
-      }
-    }
-    
-    // パーティクル（ダミーデータの場合のみ）
-    if (particlesData) {
-      const particleSourceId = 'mobility-particles';
-      
-      if (map.current.getSource(particleSourceId)) {
-        map.current.getSource(particleSourceId).setData(particlesData);
-      } else {
-        map.current.addSource(particleSourceId, {
-          type: 'geojson',
-          data: particlesData
-        });
-
-        // パーティクルグロー（大きい光の表現）
-        map.current.addLayer({
-          id: 'mobility-particles-glow',
-          type: 'circle',
-          source: particleSourceId,
-          paint: {
-            // 固定サイズ - ズームに依存しない
-            'circle-radius': 20,  // 固定値
-            'circle-color': [
-              'coalesce',
-              ['get', 'color'],
-              '#00FFFF'
-            ],
-            'circle-opacity': [
-              '*',
-              [
-                'coalesce',
-                ['get', 'opacity'],
-                0.8
-              ],
-              0.3  // グローの基本透明度
-            ],
-            'circle-blur': 1.5
-          }
-        });
-
-        // パーティクル本体
-        map.current.addLayer({
-          id: 'mobility-particles',
-          type: 'circle',
-          source: particleSourceId,
-          paint: {
-            // 固定サイズ - ズームに依存しない
-            'circle-radius': 3,  // 固定値（3px）
-            'circle-color': [
-              'coalesce',
-              ['get', 'color'],
-              '#00FFFF'
-            ],
-            'circle-opacity': [
-              'coalesce',
-              ['get', 'opacity'],
-              1
-            ],
-            'circle-blur': 0.5,  // 中心部はシャープに
-            'circle-pitch-alignment': 'map',  // 3D表示のため
-            'circle-pitch-scale': 'map'
-          }
-        });
-        
-        // パーティクルの影（高さを表現）
-        try {
-          map.current.addLayer({
-            id: 'mobility-particles-shadow',
-            type: 'circle',
-            source: particleSourceId,
-            paint: {
-              'circle-radius': 3,
-              'circle-color': '#000000',
-              'circle-opacity': 0.2,
-              'circle-blur': 2,
-              'circle-translate': [0, 0],  // 影のオフセット
-              'circle-translate-anchor': 'map'
-            }
-          }, 'mobility-particles');  // パーティクルの下に配置
-        } catch (error) {
-          console.warn('Failed to add mobility-particles-shadow layer:', error);
-          // Try adding without the beforeId parameter
-          try {
-            map.current.addLayer({
-              id: 'mobility-particles-shadow',
-              type: 'circle',
-              source: particleSourceId,
-              paint: {
-                'circle-radius': 3,
-                'circle-color': '#000000',
-                'circle-opacity': 0.2,
-                'circle-blur': 2,
-                'circle-translate': [0, 0],  // 影のオフセット
-                'circle-translate-anchor': 'map'
-              }
-            });
-          } catch (retryError) {
-            console.error('Failed to add mobility-particles-shadow layer even without beforeId:', retryError);
-          }
-        }
-      }
-      
-      // パーティクルがある場合のみアニメーション開始
-      startMobilityAnimation();
-    }
-  };
+  // Mobility layer is now handled by CyberFlowLayer component
 
   const updateEventLayer = (eventData) => {
     const sourceId = 'events';
     
+    // 各イベントに固定サイズを事前計算して追加
+    const processedEventData = {
+      ...eventData,
+      features: eventData.features.map(feature => {
+        const visitors = feature.properties.expected_visitors || 30000;
+        let impactRadius, midRadius, innerRadius, markerRadius;
+        
+        if (visitors <= 10000) {
+          impactRadius = 10;
+          midRadius = 8;
+          innerRadius = 6;
+          markerRadius = 4;
+        } else if (visitors <= 50000) {
+          impactRadius = 30;
+          midRadius = 24;
+          innerRadius = 18;
+          markerRadius = 12;
+        } else if (visitors <= 100000) {
+          impactRadius = 60;
+          midRadius = 48;
+          innerRadius = 36;
+          markerRadius = 24;
+        } else {
+          impactRadius = 120;
+          midRadius = 96;
+          innerRadius = 72;
+          markerRadius = 48;
+        }
+        
+        return {
+          ...feature,
+          properties: {
+            ...feature.properties,
+            impact_radius: impactRadius,
+            mid_radius: midRadius,
+            inner_radius: innerRadius,
+            marker_radius: markerRadius
+          }
+        };
+      })
+    };
+    
     if (map.current.getSource(sourceId)) {
-      map.current.getSource(sourceId).setData(eventData);
+      map.current.getSource(sourceId).setData(processedEventData);
     } else {
       map.current.addSource(sourceId, {
         type: 'geojson',
-        data: eventData
+        data: processedEventData
       });
 
       // イベント大グロー（最外周の光）
@@ -600,15 +392,7 @@ const MapWithRealData = ({
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 10,    // 小規模イベント (最小)
-            50000, 30,    // 中規模イベント (3倍)
-            100000, 60,   // 大規模イベント (6倍)
-            200000, 120   // 超大規模イベント (最大) - 12倍の差
-          ],
+          'circle-radius': ['get', 'impact_radius'],  // Pre-calculated fixed values
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 1.5,
           'circle-opacity': 0.08  // 固定の透明度
@@ -621,15 +405,7 @@ const MapWithRealData = ({
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 8,     // 小規模イベント (最小)
-            50000, 24,    // 中規模イベント (3倍)
-            100000, 48,   // 大規模イベント (6倍)
-            200000, 96    // 超大規模イベント (最大) - 12倍の差
-          ],
+          'circle-radius': ['get', 'mid_radius'],  // Pre-calculated fixed values
           'circle-color': '#FF6B6B',
           'circle-blur': 1.2,
           'circle-opacity': 0.15  // 固定の透明度
@@ -642,15 +418,7 @@ const MapWithRealData = ({
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 6,     // 小規模イベント (最小)
-            50000, 18,    // 中規模イベント (3倍)
-            100000, 36,   // 大規模イベント (6倍)
-            200000, 72    // 超大規模イベント (最大) - 12倍の差
-          ],
+          'circle-radius': ['get', 'inner_radius'],  // Pre-calculated fixed values
           'circle-color': '#FF6B6B',
           'circle-blur': 1,
           'circle-opacity': 0.25  // 固定の透明度
@@ -663,15 +431,7 @@ const MapWithRealData = ({
         type: 'circle',
         source: sourceId,
         paint: {
-          'circle-radius': [
-            'interpolate',
-            ['linear'],
-            ['coalesce', ['get', 'expected_visitors'], 30000],
-            10000, 4,     // 小規模イベント (最小)
-            50000, 12,    // 中規模イベント (3倍)
-            100000, 24,   // 大規檀イベント (6倍)
-            200000, 48    // 超大規模イベント (最大) - 12倍の差
-          ],
+          'circle-radius': ['get', 'marker_radius'],  // Pre-calculated fixed values
           'circle-color': '#FF6B6B',  // イベント情報の色に統一
           'circle-blur': 0.2,  // 中心はシャープに
           'circle-opacity': 0.05  // 中心部をさらに透明に（ほぼ透明）
@@ -700,8 +460,6 @@ const MapWithRealData = ({
         }
       });
       
-      console.log('Event layers created with fixed radius based on visitor count');
-      debugMapLayers(map.current);
     }
   };
 
@@ -711,12 +469,6 @@ const MapWithRealData = ({
     // Also update PLATEAU buildings when landmarks are updated
     updatePlateauLayer();
     
-    console.log('updateLandmarksLayer called with:', {
-      hasData: !!landmarksData,
-      type: landmarksData?.type,
-      featuresCount: landmarksData?.features?.length,
-      firstFeature: landmarksData?.features?.[0]
-    });
     
     // Convert Point data to Polygon for 3D buildings that have height
     const createLandmarkPolygon = (center, radius = 0.0003) => {
@@ -1153,11 +905,6 @@ const MapWithRealData = ({
   const updateHeatmapLayer = (heatmapData) => {
     const sourceId = 'sns-heatmap';
     
-    console.log('updateHeatmapLayer called:', {
-      hasData: !!heatmapData,
-      featuresCount: heatmapData?.features?.length,
-      categoryFilter: categoryFilter
-    });
     
     // カテゴリフィルタリング
     // 重要: categoryFilterが空配列の場合は非表示（データなし）
@@ -1177,26 +924,38 @@ const MapWithRealData = ({
       };
     }
     
-    console.log('Filtered heatmap data:', {
-      featuresCount: filteredData?.features?.length,
-      isFiltered: categoryFilter && categoryFilter.length > 0
-    });
+    
+    // Remove existing layer
+    if (map.current.getLayer('sns-heatmap')) {
+      map.current.removeLayer('sns-heatmap');
+    }
     
     if (map.current.getSource(sourceId)) {
       map.current.getSource(sourceId).setData(filteredData);
+      
+      // レイヤーが削除されている場合は再作成
+      if (!map.current.getLayer('sns-heatmap')) {
+        createHeatmapLayers();
+      }
     } else {
       map.current.addSource(sourceId, {
         type: 'geojson',
         data: filteredData
       });
-
+      createHeatmapLayers();
+    }
+    
+    function createHeatmapLayers() {
+      // ダミーデータ時と同じheatmapタイプを使用
       map.current.addLayer({
         id: 'sns-heatmap',
         type: 'heatmap',
         source: sourceId,
         paint: {
           'heatmap-weight': 0.5,
-          'heatmap-intensity': 0.6,  // 完全固定値
+          'heatmap-intensity': {
+            stops: [[11, 1], [15, 3]]
+          },
           'heatmap-color': [
             'interpolate',
             ['linear'],
@@ -1209,136 +968,39 @@ const MapWithRealData = ({
             0.8, 'rgb(255,170,0)',     // オレンジ
             1, 'rgb(255,0,0)'          // 赤
           ],
-          'heatmap-radius': 25,  // 完全固定値
-          'heatmap-opacity': 0.7
+          'heatmap-radius': {
+            stops: [[11, 20], [15, 30]]
+          },
+          'heatmap-opacity': 0.9
         }
       });
       
-      console.log('SNS heatmap layer created with fixed radius:', 25);
-      debugMapLayers(map.current);
     }
   };
 
-  // 人流アニメーション
-  const startMobilityAnimation = () => {
-    if (animationFrame.current) {
-      cancelAnimationFrame(animationFrame.current);
-    }
-
-    let progress = 0;
-    let flowOpacityPhase = 0;
-    
-    const animate = () => {
-      if (!map.current || !map.current.getSource('mobility-particles')) {
-        return;
-      }
-
-      progress += 0.001; // よりスローなアニメーション
-      if (progress > 1) progress = 0;
-      
-      // フローラインのフェードアニメーション（より強調）
-      flowOpacityPhase += 0.04;
-      if (map.current.getLayer('mobility-flows')) {
-        const opacity = 0.05 + Math.abs(Math.sin(flowOpacityPhase)) * 0.4; // より大きな変化幅
-        map.current.setPaintProperty('mobility-flows', 'line-opacity', opacity);
-      }
-
-      // パーティクルの位置を更新
-      const source = map.current.getSource('mobility-particles');
-      if (source && source._data && source._data.features) {
-        const updatedFeatures = source._data.features.map(feature => {
-          if (!feature || !feature.geometry || !feature.geometry.coordinates || !feature.properties) {
-            return feature;
-          }
-          
-          const props = feature.properties;
-          const speed = props.speed || 0.5;
-          
-          // 各パーティクルの個別の進捗を計算
-          const particleProgress = (progress * speed + props.particle_index * 0.1) % 1;
-          
-          // 起点から終点への移動（弧を描く）
-          if (props.origin_lon !== undefined && props.destination_lon !== undefined) {
-            // ダミーデータ時と同じベジエ曲線計算
-            const start = [props.origin_lon, props.origin_lat];
-            const end = [props.destination_lon, props.destination_lat];
-            const midpoint = [
-              (start[0] + end[0]) / 2,
-              (start[1] + end[1]) / 2
-            ];
-            
-            // 距離を計算（弧の高さの基準）
-            const distance = Math.sqrt(
-              Math.pow(end[0] - start[0], 2) + 
-              Math.pow(end[1] - start[1], 2)
-            );
-            
-            // ベジエ曲線上の位置を計算
-            const t = particleProgress;
-            const x = start[0] * (1 - t) * (1 - t) + 2 * midpoint[0] * (1 - t) * t + end[0] * t * t;
-            const y = start[1] * (1 - t) * (1 - t) + 2 * midpoint[1] * (1 - t) * t + end[1] * t * t;
-            
-            // 弧の高さ（中央で最大）- ダミーデータ時と同じ計算
-            const height = 0.1;  // ダミーデータ時のデフォルト高さ
-            const arcHeight = Math.sin(t * Math.PI) * height * distance;
-            
-            // 北向きに迂回（Y座標に正のオフセット）
-            feature.geometry.coordinates = [
-              x,
-              y + arcHeight * 0.5  // ダミーデータ時と同じオフセット
-            ];
-            
-            // 3D表現用の高さ情報
-            feature.properties.elevation = Math.sin(particleProgress * Math.PI);
-            
-            // フェードイン・フェードアウトアニメーション
-            const fadeIn = Math.min(1, particleProgress * 3);  // 最初の1/3でフェードイン
-            const fadeOut = Math.min(1, (1 - particleProgress) * 3);  // 最後の1/3でフェードアウト
-            feature.properties.opacity = Math.min(fadeIn, fadeOut) * 0.8;
-          }
-          
-          return feature;
-        });
-
-        source.setData({
-          type: 'FeatureCollection',
-          features: updatedFeatures
-        });
-      }
-
-      animationFrame.current = requestAnimationFrame(animate);
-    };
-
-    animate();
-  };
+  // Mobility animation is now handled by CyberFlowLayer component
 
   // レイヤー表示/非表示の更新
   const updateLayerVisibility = useCallback(() => {
     if (!map.current || !mapLoaded) {
-      console.log('Map not ready for layer visibility update');
       return;
     }
     
-    console.log('Updating layer visibility:', layers);
 
     const layerMapping = {
-      landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-glow', 'landmarks-labels', 'transport-stops', 'transport-labels', 'plateau-3d'],  // PLATEAU buildings now included with landmarks
-      plateau: [],  // Deprecated - PLATEAU is now part of landmarks
-      accommodation: ['accommodation-3d', 'accommodation-labels'],  // Changed from hotels to accommodation
+      landmarks: ['landmarks-points', 'landmarks-3d', 'landmarks-glow', 'landmarks-labels', 'transport-stops', 'transport-labels', 'plateau-3d'],
+      accommodation: ['accommodation-3d', 'accommodation-labels'],
       mobility: ['cyber-particles-glow', 'cyber-particles-mid-glow', 'cyber-particles-inner-glow', 'cyber-particles', 'cyber-flow-lines-glow', 'cyber-flow-lines'],
       heatmap: ['sns-heatmap'],
       events: ['event-impact', 'event-mid-glow', 'event-inner-glow', 'event-markers', 'event-labels'],
-      consumption: ['consumption-3d']  // ラベルは削除
+      consumption: ['consumption-3d']
     };
 
     Object.entries(layerMapping).forEach(([key, layerIds]) => {
       const visibility = layers[key] ? 'visible' : 'none';
       layerIds.forEach(layerId => {
         if (map.current.getLayer(layerId)) {
-          console.log(`Setting ${layerId} visibility to ${visibility}`);
           map.current.setLayoutProperty(layerId, 'visibility', visibility);
-        } else {
-          console.log(`Layer ${layerId} not found yet`);
         }
       });
     });
@@ -1352,9 +1014,6 @@ const MapWithRealData = ({
     }
 
     return () => {
-      if (animationFrame.current) {
-        cancelAnimationFrame(animationFrame.current);
-      }
       if (map.current) {
         map.current.remove();
         map.current = null;
@@ -1376,22 +1035,6 @@ const MapWithRealData = ({
     }
   }, [layers, updateLayerVisibility, realDataLoaded]);
   
-  // Log when realMobilityData changes
-  useEffect(() => {
-    if (realMobilityData) {
-      console.log('=== realMobilityData State Updated ===');
-      console.log('Step 7: realMobilityData has been set:', realMobilityData);
-      console.log('Step 8: Flows count:', realMobilityData.flows?.features?.length);
-      console.log('Step 9: Particles count:', realMobilityData.particles?.features?.length);
-      
-      // Force re-render of CyberFlowLayer
-      if (mapLoaded && map.current) {
-        console.log('Step 10: Force updating CyberFlowLayer with new data');
-      }
-    } else {
-      console.log('=== realMobilityData is null ===');
-    }
-  }, [realMobilityData, mapLoaded]);
 
   useEffect(() => {
     if (map.current && mapLoaded) {
@@ -1441,21 +1084,6 @@ const MapWithRealData = ({
             const dataToUse = realMobilityData; // 実データのみ使用
             const dataKey = realMobilityData ? 'real' : 'no-data';
             
-            console.log('=== CyberFlowLayer Render Check ===');
-            console.log('mapLoaded:', mapLoaded);
-            console.log('map.current:', !!map.current);
-            console.log('realMobilityData:', !!realMobilityData);
-            console.log('prefectureData?.mobility:', !!prefectureData?.mobility);
-            console.log('Should show:', !!shouldShowCyberFlow);
-            console.log('Data type:', dataKey);
-            if (dataToUse) {
-              console.log('Data structure:', {
-                type: dataToUse.type,
-                hasFeatures: !!dataToUse.features,
-                hasFlows: !!dataToUse.flows,
-                hasParticles: !!dataToUse.particles
-              });
-            }
             
             if (shouldShowCyberFlow) {
               return (
