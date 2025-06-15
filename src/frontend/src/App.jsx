@@ -20,6 +20,7 @@ import AIAnalysisModal from './components/AIAnalysis/AIAnalysisModal';
 
 // 新機能コンポーネント
 import IntegratedDashboard from './components/IntegratedDashboard';
+import HelpDialog from './components/HelpDialog';
 
 // Import global styles
 import './styles/global.css';
@@ -138,6 +139,7 @@ function App() {
   const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
   const [integratedDashboardOpen, setIntegratedDashboardOpen] = useState(false);
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
 
   // データ選択状態
   const [selectedPrefecture, setSelectedPrefecture] = useState('山口県');
@@ -300,6 +302,7 @@ function App() {
           onPrefectureSelect={setSelectedPrefecture}
           onMenuClick={() => {}}
           onAIAnalysisClick={() => setAiAnalysisOpen(true)}
+          onHelpClick={() => setHelpDialogOpen(true)}
           weatherData={dataCache.current.weather}
           dataUpdateTime={dataCache.current.lastUpdate}
           timeRange={timeRange}
@@ -467,6 +470,13 @@ function App() {
           }}
           timeRange="24h"
           currentPrefecture={selectedPrefecture}
+        />
+
+        {/* ヘルプダイアログ */}
+        <HelpDialog
+          open={helpDialogOpen}
+          onClose={() => setHelpDialogOpen(false)}
+          selectedPrefecture={selectedPrefecture}
         />
 
         {/* 統合ダッシュボード */}

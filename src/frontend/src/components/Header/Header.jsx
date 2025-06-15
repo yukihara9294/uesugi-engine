@@ -19,6 +19,7 @@ import {
   TrendingUp,
   AutoAwesome,
   ArrowDropDown,
+  HelpOutline,
 } from '@mui/icons-material';
 import DatePeriodSelector from './DatePeriodSelector';
 
@@ -28,7 +29,8 @@ const Header = ({
   onTimeRangeChange,
   onPrefectureSelect,
   currentPrefecture = '広島県',
-  onAIAnalysisClick
+  onAIAnalysisClick,
+  onHelpClick
 }) => {
   const [anchorEl, setAnchorEl] = useState(null);
 
@@ -142,6 +144,23 @@ const Header = ({
             timeRange={timeRange}
             onTimeRangeChange={onTimeRangeChange}
           />
+          
+          <Button
+            startIcon={<HelpOutline />}
+            variant="text"
+            size="small"
+            onClick={onHelpClick}
+            sx={{
+              color: 'rgba(255, 255, 255, 0.7)',
+              textTransform: 'none',
+              '&:hover': {
+                color: '#667eea',
+                background: 'rgba(102, 126, 234, 0.1)'
+              }
+            }}
+          >
+            ヘルプ
+          </Button>
           
           <Button
             startIcon={<AutoAwesome />}
