@@ -67,6 +67,31 @@ class MobilityEstimator:
         
         # 地域（市区町村）を判定するヘルパー関数
         def get_city_area(location_name):
+            # 山口県の場合
+            if prefecture == "山口県":
+                if any(word in location_name for word in ["山口駅", "山口市役所", "県庁", "香山公園", "山口大学", "湯田温泉", "新山口駅", "小郡"]):
+                    return "山口市"
+                elif any(word in location_name for word in ["下関駅", "唐戸", "関門", "門司港", "海響館", "彦島", "新下関"]):
+                    return "下関市"
+                elif any(word in location_name for word in ["宇部", "ときわ公園", "山口宇部空港"]):
+                    return "宇部市"
+                elif any(word in location_name for word in ["徳山", "周南市役所", "新南陽", "櫛ヶ浜"]):
+                    return "周南市"
+                elif any(word in location_name for word in ["岩国駅", "錦帯橋", "岩国空港", "岩国市役所"]):
+                    return "岩国市"
+                elif any(word in location_name for word in ["防府駅", "防府天満宮", "防府市役所"]):
+                    return "防府市"
+                elif any(word in location_name for word in ["萩", "東萩駅", "萩城下町"]):
+                    return "萩市"
+                elif any(word in location_name for word in ["光駅", "光市役所"]):
+                    return "光市"
+                elif any(word in location_name for word in ["長門市駅", "仙崎"]):
+                    return "長門市"
+                elif any(word in location_name for word in ["柳井駅", "柳井港"]):
+                    return "柳井市"
+                else:
+                    return "その他"
+            
             # 広島市関連（広い範囲で判定）
             hiroshima_keywords = [
                 "広島駅", "紙屋町", "八丁堀", "平和記念", "本通り", "広島城", 
@@ -137,41 +162,88 @@ class MobilityEstimator:
                 # 基本流動量
                 base_flow = (origin_attraction * dest_attraction) / (distance ** 1.5)
                 
-                # 同じ市内の移動は増幅（市内移動は多い）
+                # 同じ市内の移動は増幅（市内移動は多い）- 増幅率を大幅に引き上げ
                 if is_same_city:
-                    # 市内移動は人口規模に応じて増幅
-                    if origin_city == "広島市":
-                        base_flow = base_flow * 3.0  # 広島市内は特に多い
-                    elif origin_city in ["福山市", "呉市"]:
-                        base_flow = base_flow * 2.5  # 中核都市は多め
-                    elif origin_city in ["東広島市", "尾道市", "三原市", "廿日市市"]:
-                        base_flow = base_flow * 2.2  # 中規模都市
+                    # 市内移動は人口規模に応じて増幅（全体的に2倍に引き上げ）
+                    if prefecture == "山口県":
+                        # 山口県の市内移動
+                        if origin_city == "下関市":
+                            base_flow = base_flow * 6.0  # 下関市は人口最多（3.0→6.0）
+                        elif origin_city in ["山口市", "宇部市"]:
+                            base_flow = base_flow * 5.6  # 県庁所在地と宇部市（2.8→5.6）
+                        elif origin_city in ["周南市", "岩国市", "防府市"]:
+                            base_flow = base_flow * 5.0  # 中規模都市（2.5→5.0）
+                        else:
+                            base_flow = base_flow * 4.4  # その他の市（2.2→4.4）
                     else:
-                        base_flow = base_flow * 2.0  # その他の市
+                        # 広島県の市内移動
+                        if origin_city == "広島市":
+                            base_flow = base_flow * 6.0  # 広島市内は特に多い（3.0→6.0）
+                        elif origin_city in ["福山市", "呉市"]:
+                            base_flow = base_flow * 5.0  # 中核都市は多め（2.5→5.0）
+                        elif origin_city in ["東広島市", "尾道市", "三原市", "廿日市市"]:
+                            base_flow = base_flow * 4.4  # 中規模都市（2.2→4.4）
+                        else:
+                            base_flow = base_flow * 4.0  # その他の市（2.0→4.0）
                     
                     # 特に短距離（5km未満）の市内移動はさらに増幅
                     if distance < 5:
-                        base_flow = base_flow * 1.5
+                        base_flow = base_flow * 3.0  # 1.5→3.0に増幅
                     # 中距離（5-10km）の市内移動も少し増幅
-                    elif distance < 10 and origin_city in ["福山市", "呉市", "東広島市"]:
-                        base_flow = base_flow * 1.2
+                    elif distance < 10:
+                        base_flow = base_flow * 1.8  # 1.2→1.8に増幅、対象都市も拡大
+                    
+                    # 特別処理：市の中心部への/からの移動をさらに増幅
+                    city_center_keywords = {
+                        "山口市": ["山口駅", "県庁", "山口市役所", "湯田温泉"],
+                        "下関市": ["下関駅", "唐戸", "下関市役所"],
+                        "広島市": ["広島駅", "紙屋町", "八丁堀", "本通り", "広島市役所"],
+                        "福山市": ["福山駅", "福山市役所"],
+                        "呉市": ["呉駅", "呉市役所"],
+                    }
+                    
+                    # 起点または終点が市の中心部の場合はさらに増幅
+                    if origin_city in city_center_keywords:
+                        if any(keyword in origin["name"] for keyword in city_center_keywords[origin_city]) or \
+                           any(keyword in destination["name"] for keyword in city_center_keywords[origin_city]):
+                            base_flow = base_flow * 1.5  # 市中心部への/からの移動は追加で1.5倍
                 
                 # 時間帯補正
                 flow_volume = int(base_flow * time_factor)
                 
                 # 最小閾値を設定（ノイズ除去）
-                # 市内移動の場合は閾値を下げて、より多くの移動を表示
-                # 人口規模に応じて閾値を調整
-                if is_same_city and origin_city == "広島市":
-                    min_threshold = 50  # 広島市内は特に低い閾値
-                elif is_same_city and origin_city in ["福山市", "呉市", "東広島市"]:
-                    min_threshold = 60  # 中規模都市は低めの閾値
-                elif is_same_city and origin_city in ["尾道市", "三原市", "廿日市市"]:
-                    min_threshold = 70  # 小規模都市も適度に表示
+                # 短距離（5km未満）の閾値を100に設定
+                # 市内移動の場合は距離に応じて閾値を調整
+                if distance < 5:
+                    min_threshold = 100  # 短距離は一律100
                 elif is_same_city:
-                    min_threshold = 80  # その他の市内移動（三次市、庄原市など）
+                    # 市内の中距離移動（5-10km）も閾値を下げる
+                    if prefecture == "山口県":
+                        # 山口県の市内中距離移動
+                        if origin_city == "下関市":
+                            min_threshold = 120  # 下関市内
+                        elif origin_city in ["山口市", "宇部市"]:
+                            min_threshold = 130  # 主要都市
+                        elif origin_city in ["周南市", "岩国市", "防府市"]:
+                            min_threshold = 140  # 中規模都市
+                        else:
+                            min_threshold = 150  # その他の市内移動
+                    else:
+                        # 広島県の市内中距離移動
+                        if origin_city == "広島市":
+                            min_threshold = 120  # 広島市内
+                        elif origin_city in ["福山市", "呉市", "東広島市"]:
+                            min_threshold = 130  # 中規模都市
+                        elif origin_city in ["尾道市", "三原市", "廿日市市"]:
+                            min_threshold = 140  # 小規模都市
+                        else:
+                            min_threshold = 150  # その他の市内移動
                 else:
-                    min_threshold = 200  # 市外への移動
+                    # 市外への移動
+                    if prefecture == "山口県":
+                        min_threshold = 180  # 山口県の市外移動
+                    else:
+                        min_threshold = 200  # 広島県の市外移動
                 if flow_volume > min_threshold:
                     flow_type = self._classify_flow_type(origin["name"], destination["name"])
                     flows.append({
@@ -205,8 +277,8 @@ class MobilityEstimator:
         
         # 人口データがある場合は、それを基本スコアとする
         if base_population > 0:
-            # 人口を基にした基本スコア（人口の10%程度を基本とする）
-            base_score = base_population * 0.1
+            # 人口を基にした基本スコア（人口の1%程度を基本とする）
+            base_score = base_population * 0.01
             
             # 施設タイプによる補正係数
             if "駅" in location_name:

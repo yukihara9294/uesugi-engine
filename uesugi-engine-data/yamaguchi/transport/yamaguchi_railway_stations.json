@@ -1,0 +1,853 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.2194,
+          34.1666
+        ]
+      },
+      "properties": {
+        "name": "岩国駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.2072,
+          34.1472
+        ]
+      },
+      "properties": {
+        "name": "南岩国駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.1867,
+          34.1347
+        ]
+      },
+      "properties": {
+        "name": "藤生駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.1625,
+          34.1181
+        ]
+      },
+      "properties": {
+        "name": "通津駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.1317,
+          34.0572
+        ]
+      },
+      "properties": {
+        "name": "由宇駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.1111,
+          34.0403
+        ]
+      },
+      "properties": {
+        "name": "神代駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.0858,
+          34.0217
+        ]
+      },
+      "properties": {
+        "name": "大畠駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.1156,
+          33.9719
+        ]
+      },
+      "properties": {
+        "name": "柳井港駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.1014,
+          33.9639
+        ]
+      },
+      "properties": {
+        "name": "柳井駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.0375,
+          33.9569
+        ]
+      },
+      "properties": {
+        "name": "田布施駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.9956,
+          33.9456
+        ]
+      },
+      "properties": {
+        "name": "岩田駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.9472,
+          33.9353
+        ]
+      },
+      "properties": {
+        "name": "島田駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.9428,
+          33.9625
+        ]
+      },
+      "properties": {
+        "name": "光駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.8706,
+          34.0156
+        ]
+      },
+      "properties": {
+        "name": "下松駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.8453,
+          34.0281
+        ]
+      },
+      "properties": {
+        "name": "櫛ヶ浜駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.8053,
+          34.0522
+        ]
+      },
+      "properties": {
+        "name": "徳山駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.7408,
+          34.0556
+        ]
+      },
+      "properties": {
+        "name": "新南陽駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.7089,
+          34.0472
+        ]
+      },
+      "properties": {
+        "name": "福川駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.6764,
+          34.0381
+        ]
+      },
+      "properties": {
+        "name": "戸田駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.6422,
+          34.0322
+        ]
+      },
+      "properties": {
+        "name": "富海駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.5631,
+          34.0517
+        ]
+      },
+      "properties": {
+        "name": "防府駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.5142,
+          34.0358
+        ]
+      },
+      "properties": {
+        "name": "大道駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.4731,
+          34.0236
+        ]
+      },
+      "properties": {
+        "name": "四辻駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.3996,
+          34.0004
+        ]
+      },
+      "properties": {
+        "name": "新山口駅",
+        "line": "山陽本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          132.1992,
+          34.1494
+        ]
+      },
+      "properties": {
+        "name": "新岩国駅",
+        "line": "山陽新幹線",
+        "type": "shinkansen",
+        "transport_type": "shinkansen"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.8053,
+          34.0522
+        ]
+      },
+      "properties": {
+        "name": "徳山駅",
+        "line": "山陽新幹線",
+        "type": "shinkansen",
+        "transport_type": "shinkansen"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.3996,
+          34.0004
+        ]
+      },
+      "properties": {
+        "name": "新山口駅",
+        "line": "山陽新幹線",
+        "type": "shinkansen",
+        "transport_type": "shinkansen"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.4208,
+          33.5898
+        ]
+      },
+      "properties": {
+        "name": "博多駅",
+        "line": "山陽新幹線",
+        "type": "shinkansen",
+        "transport_type": "shinkansen"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.9761,
+          34.1953
+        ]
+      },
+      "properties": {
+        "name": "小串駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.9233,
+          34.1444
+        ]
+      },
+      "properties": {
+        "name": "川棚温泉駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.8994,
+          34.1133
+        ]
+      },
+      "properties": {
+        "name": "黒井村駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.8711,
+          34.0764
+        ]
+      },
+      "properties": {
+        "name": "梅ヶ峠駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.8483,
+          34.0572
+        ]
+      },
+      "properties": {
+        "name": "吉見駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.8222,
+          34.0267
+        ]
+      },
+      "properties": {
+        "name": "福江駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.8803,
+          34.0069
+        ]
+      },
+      "properties": {
+        "name": "安岡駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.9303,
+          34.0131
+        ]
+      },
+      "properties": {
+        "name": "梶栗郷台地駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.9186,
+          34.0061
+        ]
+      },
+      "properties": {
+        "name": "綾羅木駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.9356,
+          33.9847
+        ]
+      },
+      "properties": {
+        "name": "幡生駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          130.9239,
+          33.95
+        ]
+      },
+      "properties": {
+        "name": "下関駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.1822,
+          34.3733
+        ]
+      },
+      "properties": {
+        "name": "長門市駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.1889,
+          34.3892
+        ]
+      },
+      "properties": {
+        "name": "仙崎駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.3989,
+          34.4083
+        ]
+      },
+      "properties": {
+        "name": "萩駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.4147,
+          34.4203
+        ]
+      },
+      "properties": {
+        "name": "東萩駅",
+        "line": "山陰本線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.3996,
+          34.0004
+        ]
+      },
+      "properties": {
+        "name": "新山口駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.3761,
+          33.9906
+        ]
+      },
+      "properties": {
+        "name": "上嘉川駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.3536,
+          33.9844
+        ]
+      },
+      "properties": {
+        "name": "深溝駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.3181,
+          33.9817
+        ]
+      },
+      "properties": {
+        "name": "周防佐山駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.2978,
+          33.9758
+        ]
+      },
+      "properties": {
+        "name": "岩鼻駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.2744,
+          33.9703
+        ]
+      },
+      "properties": {
+        "name": "阿知須駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.2239,
+          33.9583
+        ]
+      },
+      "properties": {
+        "name": "床波駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.1822,
+          33.9561
+        ]
+      },
+      "properties": {
+        "name": "常盤駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.1656,
+          33.9517
+        ]
+      },
+      "properties": {
+        "name": "草江駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          131.2517,
+          33.9531
+        ]
+      },
+      "properties": {
+        "name": "宇部新川駅",
+        "line": "宇部線",
+        "type": "local",
+        "transport_type": "rail"
+      }
+    }
+  ]
+}

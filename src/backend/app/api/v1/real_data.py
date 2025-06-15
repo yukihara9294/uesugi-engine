@@ -13,7 +13,12 @@ from app.core.database import get_db
 router = APIRouter()
 
 # データディレクトリ
-DATA_DIR = Path("/app/uesugi-engine-data")
+import os
+if os.path.exists("/app/uesugi-engine-data"):
+    DATA_DIR = Path("/app/uesugi-engine-data")
+else:
+    # Development environment path
+    DATA_DIR = Path("/home/yukihara9294/projects/uesugi-engine/uesugi-engine-data")
 GTFS_DIR = DATA_DIR / "hiroshima" / "transport" / "bus" / "gtfs_extracted"
 YAMAGUCHI_DIR = DATA_DIR / "yamaguchi"
 
@@ -98,19 +103,34 @@ async def get_hiroshima_gtfs_data(db: Session = Depends(get_db)):
 
 @router.get("/transport/gtfs/yamaguchi")
 async def get_yamaguchi_gtfs_data(db: Session = Depends(get_db)):
-    """山口県GTFSデータを取得（岩国市・光市）"""
+    """山口県公共交通データを取得（バス・鉄道）"""
     try:
-        # 山口県のGTFSディレクトリ
+        all_features = []
+        all_routes = []
+        
+        # ログ: 利用可能なデータソースを記録
+        print("=== 山口県交通データ読み込み開始 ===")
+        
+        # 1. バスデータ（GTFS）の読み込み
         yamaguchi_gtfs_dirs = [
             YAMAGUCHI_DIR / "transport" / "352080_gtfs-jp",  # 岩国市
             YAMAGUCHI_DIR / "transport" / "hikari_GTFS_20250401_"  # 光市
         ]
         
-        all_features = []
+        total_bus_stop_count = 0
+        total_bus_route_count = 0
         
         for gtfs_dir in yamaguchi_gtfs_dirs:
+            if not gtfs_dir.exists():
+                print(f"警告: GTFSディレクトリが存在しません: {gtfs_dir}")
+                continue
+                
+            print(f"GTFSデータ読み込み: {gtfs_dir.name}")
+            
+            # 停留所データの読み込み
             stops_file = gtfs_dir / "stops.txt"
             if stops_file.exists():
+                stop_count = 0
                 with open(stops_file, 'r', encoding='utf-8-sig') as f:
                     lines = f.readlines()
                     headers = lines[0].strip().split(',')
@@ -132,19 +152,171 @@ async def get_yamaguchi_gtfs_data(db: Session = Depends(get_db)):
                                         "stop_name": data[2] if data[2] else "バス停",
                                         "stop_code": data[1] if data[1] else "",
                                         "type": "bus_stop",
-                                        "color": "#3B82F6"
+                                        "transport_type": "bus",
+                                        "color": "#3B82F6",  # Blue for bus
+                                        "source": gtfs_dir.name
                                     }
                                 })
+                                stop_count += 1
                             except ValueError:
                                 continue
+                print(f"  - {stop_count}個のバス停を読み込みました")
+                total_bus_stop_count += stop_count
+            
+            # 実際のGTFS shapes.txtからルート形状を読み込み
+            shapes_file = gtfs_dir / "shapes.txt"
+            routes_file = gtfs_dir / "routes.txt"
+            
+            if shapes_file.exists() and routes_file.exists():
+                print(f"  - shapes.txtからルート形状を読み込み中...")
+                
+                # まずroutes.txtを読んでルート情報を取得
+                route_info = {}
+                with open(routes_file, 'r', encoding='utf-8-sig') as f:
+                    lines = f.readlines()
+                    if len(lines) > 1:
+                        headers = lines[0].strip().split(',')
+                        route_id_idx = headers.index('route_id') if 'route_id' in headers else 0
+                        route_name_idx = headers.index('route_short_name') if 'route_short_name' in headers else 2
+                        route_type_idx = headers.index('route_type') if 'route_type' in headers else 4
+                        
+                        for line in lines[1:]:
+                            data = line.strip().split(',')
+                            if len(data) > max(route_id_idx, route_name_idx, route_type_idx):
+                                route_id = data[route_id_idx]
+                                route_info[route_id] = {
+                                    'name': data[route_name_idx] if data[route_name_idx] else route_id,
+                                    'type': int(data[route_type_idx]) if data[route_type_idx].isdigit() else 3
+                                }
+                
+                # shapes.txtを読んでルート形状を構築
+                shape_points = {}
+                with open(shapes_file, 'r', encoding='utf-8-sig') as f:
+                    lines = f.readlines()
+                    if len(lines) > 1:
+                        headers = lines[0].strip().split(',')
+                        shape_id_idx = headers.index('shape_id') if 'shape_id' in headers else 0
+                        lat_idx = headers.index('shape_pt_lat') if 'shape_pt_lat' in headers else 1
+                        lon_idx = headers.index('shape_pt_lon') if 'shape_pt_lon' in headers else 2
+                        seq_idx = headers.index('shape_pt_sequence') if 'shape_pt_sequence' in headers else 3
+                        
+                        for line in lines[1:]:
+                            data = line.strip().split(',')
+                            if len(data) > max(shape_id_idx, lat_idx, lon_idx, seq_idx):
+                                shape_id = data[shape_id_idx]
+                                try:
+                                    lat = float(data[lat_idx])
+                                    lon = float(data[lon_idx])
+                                    seq = int(data[seq_idx])
+                                    
+                                    if shape_id not in shape_points:
+                                        shape_points[shape_id] = []
+                                    shape_points[shape_id].append((seq, [lon, lat]))
+                                except ValueError:
+                                    continue
+                
+                # ルート形状を作成
+                route_count = 0
+                for shape_id, points in shape_points.items():
+                    if len(points) >= 2:
+                        # シーケンス番号でソート
+                        points.sort(key=lambda x: x[0])
+                        coordinates = [p[1] for p in points]
+                        
+                        # 対応するルート情報を探す
+                        route_name = shape_id
+                        route_type = 3  # デフォルトはバス
+                        for route_id, info in route_info.items():
+                            if route_id in shape_id or shape_id in route_id:
+                                route_name = info['name']
+                                route_type = info['type']
+                                break
+                        
+                        all_routes.append({
+                            "type": "Feature",
+                            "geometry": {
+                                "type": "LineString",
+                                "coordinates": coordinates
+                            },
+                            "properties": {
+                                "route_id": shape_id,
+                                "route_name": route_name,
+                                "route_type": route_type,
+                                "transport_type": "bus",
+                                "color": "#3B82F6",
+                                "source": gtfs_dir.name
+                            }
+                        })
+                        route_count += 1
+                
+                print(f"  - {route_count}個のバスルートを読み込みました")
+                total_bus_route_count += route_count
+            else:
+                print(f"  - shapes.txtが見つかりません。ルート形状データなし")
+        
+        # 2. 鉄道データの読み込み（駅のみ、ルートは作成しない）
+        railway_station_count = 0
+        railway_file = YAMAGUCHI_DIR / "transport" / "yamaguchi_railway_stations.json"
+        if railway_file.exists():
+            print(f"鉄道駅データ読み込み: {railway_file.name}")
+            with open(railway_file, 'r', encoding='utf-8') as f:
+                railway_data = json.load(f)
+                for feature in railway_data.get("features", []):
+                    props = feature["properties"]
+                    # 新幹線と在来線で色分け
+                    if props.get("transport_type") == "shinkansen":
+                        color = "#FFD700"  # Gold for Shinkansen
+                    else:
+                        color = "#FF4500"  # Orange red for local trains
+                    
+                    all_features.append({
+                        "type": "Feature",
+                        "geometry": feature["geometry"],
+                        "properties": {
+                            "stop_id": f"rail_{props['name']}",
+                            "stop_name": props["name"],
+                            "line": props["line"],
+                            "type": "station",
+                            "transport_type": props["transport_type"],
+                            "color": color,
+                            "source": "yamaguchi_railway_stations.json"
+                        }
+                    })
+                    railway_station_count += 1
+            print(f"  - {railway_station_count}個の鉄道駅を読み込みました")
+        
+        # 3. 鉄道路線データは正確なジオメトリがないため読み込まない
+        print("注意: 鉄道路線の正確なジオメトリデータがないため、路線は表示されません")
+        
+        # 4. サマリー情報
+        print(f"\n=== データ読み込み完了 ===")
+        print(f"合計バス停数: {total_bus_stop_count}")
+        print(f"合計バスルート数: {total_bus_route_count}")
+        print(f"合計鉄道駅数: {railway_station_count}")
+        print(f"合計地物数: {len(all_features)}")
+        print(f"合計ルート数: {len(all_routes)}")
         
         return {
             "type": "FeatureCollection",
-            "features": all_features[:300]  # 最大300停留所
+            "features": all_features[:500],  # 最大500停留所/駅
+            "routes": all_routes,
+            "metadata": {
+                "bus_stops": total_bus_stop_count,
+                "bus_routes": total_bus_route_count,
+                "railway_stations": railway_station_count,
+                "total_features": len(all_features),
+                "total_routes": len(all_routes),
+                "data_sources": [
+                    "岩国市GTFS (352080_gtfs-jp)",
+                    "光市GTFS (hikari_GTFS_20250401_)",
+                    "山口県鉄道駅データ (yamaguchi_railway_stations.json)"
+                ],
+                "note": "鉄道路線は正確なジオメトリデータがないため表示されません"
+            }
         }
         
     except Exception as e:
-        print(f"Yamaguchi GTFS data error: {e}")
+        print(f"Yamaguchi transport data error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/tourism/facilities/yamaguchi")
@@ -216,9 +388,59 @@ async def get_real_accommodation_data(prefecture: str, db: Session = Depends(get
                 {"name": "君田温泉森の泉", "lat": 34.8522, "lon": 132.8556, "capacity": 50}
             ],
             "山口県": [
+                # 下関市 (Shimonoseki)
                 {"name": "下関グランドホテル", "lat": 33.9507, "lon": 130.9239, "capacity": 188},
+                {"name": "ドーミーインPREMIUM下関", "lat": 33.9523, "lon": 130.9251, "capacity": 146},
+                {"name": "東京第一ホテル下関", "lat": 33.9485, "lon": 130.9234, "capacity": 162},
+                {"name": "ヴィアイン下関", "lat": 33.9498, "lon": 130.9242, "capacity": 120},
+                {"name": "プラザホテル下関", "lat": 33.9575, "lon": 130.9412, "capacity": 95},
+                {"name": "川棚グランドホテル", "lat": 34.0189, "lon": 130.9564, "capacity": 110},
+                
+                # 山口市 (Yamaguchi City)
                 {"name": "山口グランドホテル", "lat": 34.1858, "lon": 131.4714, "capacity": 120},
-                {"name": "ホテルかめ福", "lat": 34.1858, "lon": 131.4705, "capacity": 80}
+                {"name": "ホテルかめ福", "lat": 34.1858, "lon": 131.4705, "capacity": 80},
+                {"name": "松田屋ホテル", "lat": 34.1645, "lon": 131.4580, "capacity": 150},
+                {"name": "湯田温泉 西の雅 常盤", "lat": 34.1636, "lon": 131.4583, "capacity": 180},
+                {"name": "国際ホテル山口", "lat": 34.1852, "lon": 131.4718, "capacity": 110},
+                {"name": "湯田温泉 梅乃屋", "lat": 34.1640, "lon": 131.4585, "capacity": 65},
+                {"name": "新山口ターミナルホテル", "lat": 34.0412, "lon": 131.4088, "capacity": 98},
+                
+                # 宇部市 (Ube)
+                {"name": "ANAクラウンプラザホテル宇部", "lat": 33.9518, "lon": 131.2468, "capacity": 140},
+                {"name": "国際ホテル宇部", "lat": 33.9530, "lon": 131.2440, "capacity": 102},
+                {"name": "宇部72アジススパホテル", "lat": 33.9475, "lon": 131.2515, "capacity": 85},
+                {"name": "東横イン新山口駅新幹線口", "lat": 34.0405, "lon": 131.4092, "capacity": 156},
+                
+                # 岩国市 (Iwakuni)
+                {"name": "岩国国際観光ホテル", "lat": 34.1667, "lon": 132.1778, "capacity": 95},
+                {"name": "岩国プラザホテル", "lat": 34.1660, "lon": 132.2195, "capacity": 78},
+                {"name": "半月庵", "lat": 34.1686, "lon": 132.1790, "capacity": 60},
+                {"name": "グリーンリッチホテル岩国駅前", "lat": 34.1658, "lon": 132.2193, "capacity": 135},
+                
+                # 周南市 (Shunan)
+                {"name": "ホテルサンルート徳山", "lat": 34.0520, "lon": 131.8055, "capacity": 142},
+                {"name": "東横イン徳山駅新幹線口", "lat": 34.0516, "lon": 131.8052, "capacity": 168},
+                {"name": "ビジネスホテルみやこ", "lat": 34.0525, "lon": 131.8060, "capacity": 72},
+                
+                # 萩市 (Hagi)
+                {"name": "萩本陣", "lat": 34.4083, "lon": 131.3989, "capacity": 200},
+                {"name": "萩観光ホテル", "lat": 34.4167, "lon": 131.3833, "capacity": 85},
+                {"name": "萩の宿 常茂恵", "lat": 34.4090, "lon": 131.3985, "capacity": 120},
+                {"name": "北門屋敷", "lat": 34.4170, "lon": 131.3835, "capacity": 75},
+                
+                # 防府市 (Hofu)
+                {"name": "ホテルルートイン防府駅前", "lat": 34.0518, "lon": 131.5635, "capacity": 156},
+                {"name": "アパホテル山口防府", "lat": 34.0520, "lon": 131.5640, "capacity": 141},
+                
+                # 光市 (Hikari)
+                {"name": "ホテル松原屋", "lat": 33.9625, "lon": 131.9420, "capacity": 68},
+                
+                # 長門市 (Nagato)
+                {"name": "大谷山荘", "lat": 34.3712, "lon": 131.1830, "capacity": 250},
+                {"name": "湯本観光ホテル西京", "lat": 34.3250, "lon": 131.1678, "capacity": 115},
+                
+                # 美祢市 (Mine)
+                {"name": "秋芳ロイヤルホテル秋芳館", "lat": 34.2278, "lon": 131.3056, "capacity": 95}
             ]
         }
         
@@ -461,20 +683,6 @@ async def get_real_mobility_data(prefecture: str, city_only: bool = False):
             {"name": "高田IC", "lat": 34.6210, "lon": 132.6930, "population": 2000}
         ]
         
-        # 山口県の主要地点
-        yamaguchi_points = [
-            {"name": "下関駅", "lat": 33.9507, "lon": 130.9239},
-            {"name": "唐戸市場", "lat": 33.9567, "lon": 130.9444},
-            {"name": "山口駅", "lat": 34.1858, "lon": 131.4714},
-            {"name": "県庁", "lat": 34.1786, "lon": 131.4738},
-            {"name": "新山口駅", "lat": 34.0328, "lon": 131.0828},
-            {"name": "防府駅", "lat": 34.0511, "lon": 131.5639},
-            {"name": "徳山駅", "lat": 34.0520, "lon": 131.8058},
-            {"name": "岩国駅", "lat": 34.1658, "lon": 132.2200},
-            {"name": "萩市", "lat": 34.4083, "lon": 131.3989},
-            {"name": "宇部空港", "lat": 33.9301, "lon": 131.2788}
-        ]
-        
         # 統計的推定モデルを使用してリアルなフローを生成
         points = hiroshima_points if prefecture == "広島県" else yamaguchi_points
         
@@ -502,8 +710,8 @@ async def get_real_mobility_data(prefecture: str, city_only: bool = False):
         else:
             # 上位の主要フローのみを抽出（視覚化のため）
             estimated_flows.sort(key=lambda x: x["volume"], reverse=True)
-            # 広島県は全フロー表示（最大2000まで）、山口県は100
-            major_flows = estimated_flows[:2000] if prefecture == "広島県" else estimated_flows[:100]
+            # 広島県は全フロー表示（最大2000まで）、山口県は300に増加
+            major_flows = estimated_flows[:2000] if prefecture == "広島県" else estimated_flows[:300]
         
         mobility_data = {
             prefecture: {
@@ -668,4 +876,98 @@ async def get_real_event_data(prefecture: str, db: Session = Depends(get_db)):
         
     except Exception as e:
         print(f"Event data error: {e}")
+        return {"type": "FeatureCollection", "features": []}
+
+
+@router.get("/consumption/real/{prefecture}")
+async def get_real_consumption_data(prefecture: str, db: Session = Depends(get_db)):
+    """実際の消費データを取得"""
+    try:
+        # 都道府県別の主要商業エリアの消費データ
+        consumption_data = {
+            "広島県": [
+                # 広島市中心部
+                {"name": "紙屋町商店街", "lat": 34.3954, "lon": 132.4572, "amount": 25000, "area": "広島市中区", "category": "shopping"},
+                {"name": "本通り商店街", "lat": 34.3934, "lon": 132.4615, "amount": 22000, "area": "広島市中区", "category": "shopping"},
+                {"name": "広島駅前商業施設", "lat": 34.3974, "lon": 132.4753, "amount": 28000, "area": "広島市南区", "category": "shopping"},
+                {"name": "そごう広島店", "lat": 34.3952, "lon": 132.4574, "amount": 18000, "area": "広島市中区", "category": "department"},
+                {"name": "広島三越", "lat": 34.3931, "lon": 132.4616, "amount": 16000, "area": "広島市中区", "category": "department"},
+                {"name": "広島パルコ", "lat": 34.3935, "lon": 132.4618, "amount": 15000, "area": "広島市中区", "category": "fashion"},
+                {"name": "エディオン広島本店", "lat": 34.3953, "lon": 132.4577, "amount": 12000, "area": "広島市中区", "category": "electronics"},
+                {"name": "フジグラン広島", "lat": 34.3668, "lon": 132.4711, "amount": 14000, "area": "広島市中区", "category": "supermarket"},
+                {"name": "イオンモール広島府中", "lat": 34.3989, "lon": 132.4983, "amount": 20000, "area": "府中町", "category": "mall"},
+                {"name": "ゆめタウン広島", "lat": 34.3856, "lon": 132.4889, "amount": 19000, "area": "広島市南区", "category": "mall"},
+                {"name": "アルパーク", "lat": 34.3747, "lon": 132.4385, "amount": 17000, "area": "広島市西区", "category": "mall"},
+                {"name": "マリーナホップ", "lat": 34.3453, "lon": 132.4142, "amount": 11000, "area": "広島市西区", "category": "outlet"},
+                {"name": "横川商店街", "lat": 34.4107, "lon": 132.4525, "amount": 8000, "area": "広島市西区", "category": "shopping"},
+                {"name": "可部商店街", "lat": 34.5189, "lon": 132.5078, "amount": 7000, "area": "広島市安佐北区", "category": "shopping"},
+                {"name": "五日市商店街", "lat": 34.3712, "lon": 132.3603, "amount": 9000, "area": "広島市佐伯区", "category": "shopping"}
+            ],
+            "山口県": [
+                # 下関市
+                {"name": "シーモール下関", "lat": 33.9507, "lon": 130.9239, "amount": 15000, "area": "下関市", "category": "mall"},
+                {"name": "下関大丸", "lat": 33.9506, "lon": 130.9235, "amount": 12000, "area": "下関市", "category": "department"},
+                {"name": "唐戸市場", "lat": 33.9567, "lon": 130.9417, "amount": 10000, "area": "下関市", "category": "market"},
+                {"name": "リピエ下関", "lat": 33.9505, "lon": 130.9238, "amount": 8000, "area": "下関市", "category": "shopping"},
+                {"name": "ゆめシティ", "lat": 34.0162, "lon": 130.9456, "amount": 14000, "area": "下関市", "category": "mall"},
+                
+                # 山口市
+                {"name": "山口井筒屋", "lat": 34.1858, "lon": 131.4714, "amount": 11000, "area": "山口市", "category": "department"},
+                {"name": "ゆめタウン山口", "lat": 34.1461, "lon": 131.4782, "amount": 13000, "area": "山口市", "category": "mall"},
+                {"name": "コープ山口", "lat": 34.1856, "lon": 131.4712, "amount": 7000, "area": "山口市", "category": "supermarket"},
+                {"name": "アルク山口", "lat": 34.1635, "lon": 131.4585, "amount": 6000, "area": "山口市", "category": "supermarket"},
+                {"name": "湯田温泉商店街", "lat": 34.1636, "lon": 131.4583, "amount": 8000, "area": "山口市", "category": "shopping"},
+                
+                # 宇部市
+                {"name": "フジグラン宇部", "lat": 33.9661, "lon": 131.2704, "amount": 12000, "area": "宇部市", "category": "mall"},
+                {"name": "ゆめタウン宇部", "lat": 33.9825, "lon": 131.2431, "amount": 11000, "area": "宇部市", "category": "mall"},
+                {"name": "宇部井筒屋", "lat": 33.9530, "lon": 131.2440, "amount": 9000, "area": "宇部市", "category": "department"},
+                {"name": "常盤町商店街", "lat": 33.9533, "lon": 131.2439, "amount": 7000, "area": "宇部市", "category": "shopping"},
+                
+                # 周南市
+                {"name": "ゆめタウン徳山", "lat": 34.0669, "lon": 131.8223, "amount": 12000, "area": "周南市", "category": "mall"},
+                {"name": "イオンタウン周南", "lat": 34.0265, "lon": 131.8361, "amount": 10000, "area": "周南市", "category": "mall"},
+                {"name": "徳山駅前商店街", "lat": 34.0520, "lon": 131.8055, "amount": 8000, "area": "周南市", "category": "shopping"},
+                
+                # 岩国市
+                {"name": "フジグラン岩国", "lat": 34.1425, "lon": 132.1957, "amount": 11000, "area": "岩国市", "category": "mall"},
+                {"name": "ゆめタウン南岩国", "lat": 34.1306, "lon": 132.2023, "amount": 10000, "area": "岩国市", "category": "mall"},
+                {"name": "岩国駅前商店街", "lat": 34.1660, "lon": 132.2195, "amount": 7000, "area": "岩国市", "category": "shopping"}
+            ]
+        }
+        
+        stores = consumption_data.get(prefecture, [])
+        features = []
+        
+        for store in stores:
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [store["lon"], store["lat"]]
+                },
+                "properties": {
+                    "name": store["name"],
+                    "amount": store["amount"],
+                    "transactions": int(store["amount"] / 50),  # 仮の取引数
+                    "area": store["area"],
+                    "category": store["category"]
+                }
+            })
+        
+        return {
+            "type": "FeatureCollection",
+            "features": features,
+            "area_summary": {
+                "広島市中区": {"total_amount": 120000, "transaction_count": 2400},
+                "広島市西区": {"total_amount": 35000, "transaction_count": 700},
+                "広島市南区": {"total_amount": 47000, "transaction_count": 940},
+                "山口市": {"total_amount": 45000, "transaction_count": 900},
+                "下関市": {"total_amount": 59000, "transaction_count": 1180},
+                "宇部市": {"total_amount": 39000, "transaction_count": 780}
+            }
+        }
+        
+    except Exception as e:
+        print(f"Consumption data error: {e}")
         return {"type": "FeatureCollection", "features": []}

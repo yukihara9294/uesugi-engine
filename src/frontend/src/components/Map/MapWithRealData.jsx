@@ -7,7 +7,8 @@ import {
   loadYamaguchiTourismData,
   loadRealAccommodationData,
   loadRealMobilityData,
-  loadRealEventData
+  loadRealEventData,
+  loadConsumptionData
 } from '../../utils/realDataLoader';
 import { loadTransportData } from '../../services/transportDataLoader';
 import { 
@@ -19,6 +20,10 @@ import {
 } from '../../utils/dataGenerator';
 import CyberFlowLayer from './CyberFlowLayer';
 import TransportLayer from './TransportLayer';
+import TransportLegend from './TransportLegend';
+import MedicalLayer from './MedicalLayer';
+import EducationLayer from './EducationLayer';
+import DisasterLayer from './DisasterLayer';
 
 // Mapbox token
 const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN;
@@ -33,7 +38,8 @@ const MapWithRealData = ({
   leftSidebarOpen,
   rightSidebarOpen,
   loading,
-  prefectureData = null
+  prefectureData = null,
+  onDataCountUpdate
 }) => {
   console.log('MapWithRealData layers prop:', layers);
   const mapContainer = useRef(null);
@@ -52,6 +58,70 @@ const MapWithRealData = ({
     '大阪府': { center: [135.5202, 34.6863], zoom: 11 },
     '東京都': { center: [139.6917, 35.6895], zoom: 11 }
   };
+
+  // Create test data with large markers for Yamaguchi
+  const createTestData = useCallback(() => {
+    const yamaguchiCenter = [131.4714, 34.1858]; // Yamaguchi city center
+    
+    // Test accommodation data - large green 3D buildings
+    const testAccommodationData = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [yamaguchiCenter[0] - 0.01, yamaguchiCenter[1] + 0.01] },
+          properties: { name: 'テスト宿泊施設1', capacity: 500, height: 200 }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [yamaguchiCenter[0] + 0.01, yamaguchiCenter[1] + 0.01] },
+          properties: { name: 'テスト宿泊施設2', capacity: 300, height: 150 }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [yamaguchiCenter[0], yamaguchiCenter[1] - 0.01] },
+          properties: { name: 'テスト宿泊施設3', capacity: 400, height: 180 }
+        }
+      ]
+    };
+    
+    // Test consumption data - large purple markers
+    const testConsumptionData = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [yamaguchiCenter[0] - 0.015, yamaguchiCenter[1]] },
+          properties: { name: 'テスト消費ポイント1', amount: 50000 }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [yamaguchiCenter[0] + 0.015, yamaguchiCenter[1]] },
+          properties: { name: 'テスト消費ポイント2', amount: 30000 }
+        },
+        {
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [yamaguchiCenter[0], yamaguchiCenter[1] + 0.015] },
+          properties: { name: 'テスト消費ポイント3', amount: 40000 }
+        }
+      ]
+    };
+    
+    return {
+      accommodation: testAccommodationData,
+      consumption: testConsumptionData
+    };
+  }, []);
+
+  // データ数を報告する関数
+  const reportDataCounts = useCallback((dataType, count) => {
+    if (onDataCountUpdate) {
+      onDataCountUpdate(prev => ({
+        ...prev,
+        [dataType]: count
+      }));
+    }
+  }, [onDataCountUpdate]);
 
   // 実データの読み込み（ダミーデータへのフォールバック付き）
   const loadRealData = useCallback(async () => {
@@ -99,7 +169,7 @@ const MapWithRealData = ({
       };
       
       // 並列でデータ読み込み（タイムアウト付き）
-      const [gtfsData, tourismData, accommodationData, mobilityData, eventData, transportData] = await Promise.all([
+      const [gtfsData, tourismData, accommodationData, mobilityData, eventData, transportData, consumptionData] = await Promise.all([
         selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData(), 90000, 'GTFS data').catch(() => null) : Promise.resolve(null),
         selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData(), 90000, 'Tourism data').catch(() => null) : Promise.resolve(null),
         loadWithTimeout(loadRealAccommodationData(selectedPrefecture), 90000, 'Accommodation data').catch(() => null),
@@ -137,6 +207,10 @@ const MapWithRealData = ({
         loadWithTimeout(loadTransportData(selectedPrefecture), 90000, 'Transport data').catch((err) => {
           console.error('Failed to load transport data:', err);
           return null;
+        }),
+        loadWithTimeout(loadConsumptionData(selectedPrefecture), 90000, 'Consumption data').catch((err) => {
+          console.error('Failed to load consumption data:', err);
+          return null;
         })
       ]);
       
@@ -151,14 +225,48 @@ const MapWithRealData = ({
       if (mobilityData) {
         console.log(`[${new Date().toISOString()}] Setting real mobility data`);
         setRealMobilityData(mobilityData); // 実データを保存
+        // Report mobility data count
+        if (mobilityData.flows?.features) {
+          reportDataCounts('mobility', mobilityData.flows.features.length);
+        }
       } else {
         console.log(`[${new Date().toISOString()}] No mobility data to set`);
       }
       if (transportData) {
         console.log(`[${new Date().toISOString()}] Setting transport data:`, transportData);
         setTransportData(transportData); // Set transport data
+        // Report transport data count
+        const stopCount = transportData.features?.length || 0;
+        const routeCount = transportData.routes?.length || 0;
+        reportDataCounts('transport', stopCount + routeCount);
       } else {
         console.log(`[${new Date().toISOString()}] No transport data to set`);
+      }
+      
+      // Report accommodation data count
+      if (accommodationData) {
+        const accommodationCount = accommodationData.features?.length || 0;
+        reportDataCounts('accommodation', accommodationCount);
+      } else if (selectedPrefecture === '山口県') {
+        const testData = createTestData();
+        const testAccommodationCount = testData.accommodation.features?.length || 0;
+        reportDataCounts('accommodation', testAccommodationCount);
+      }
+      
+      // Report event data count
+      if (eventData) {
+        const eventCount = eventData.features?.length || 0;
+        reportDataCounts('events', eventCount);
+      }
+      
+      // Report consumption data count
+      if (consumptionData) {
+        const consumptionCount = consumptionData.features?.length || 0;
+        reportDataCounts('consumption', consumptionCount);
+      } else if (selectedPrefecture === '山口県') {
+        const testData = createTestData();
+        const testConsumptionCount = testData.consumption.features?.length || 0;
+        reportDataCounts('consumption', testConsumptionCount);
       }
       
       // データをマップに適用 (only for direct map operations)
@@ -170,11 +278,27 @@ const MapWithRealData = ({
         // }
         
         // 他のAPIデータも取得できた場合のみ更新
+        // APIが失敗した場合はテストデータを使用
+        const testData = createTestData();
+        
         if (accommodationData) {
           updateAccommodationLayer(accommodationData);
+        } else if (selectedPrefecture === '山口県') {
+          // 404/504エラー時にテストデータを使用
+          console.log('Using test accommodation data due to API failure');
+          updateAccommodationLayer(testData.accommodation);
         }
+        
         if (eventData) {
           updateEventLayer(eventData);
+        }
+        
+        if (consumptionData) {
+          updateConsumptionLayer(consumptionData);
+        } else if (selectedPrefecture === '山口県') {
+          // 404/504エラー時にテストデータを使用
+          console.log('Using test consumption data due to API failure');
+          updateConsumptionLayer(testData.consumption);
         }
       }
     } catch (error) {
@@ -202,12 +326,21 @@ const MapWithRealData = ({
         zoom: coords.zoom,
         pitch: 45,
         bearing: 0,
-        antialias: true
+        antialias: true,
+        language: 'ja'  // Set Japanese language
       });
       
 
       map.current.on('load', () => {
         setMapLoaded(true);
+        
+        // Set map labels to Japanese
+        const layers = map.current.getStyle().layers;
+        for (const layer of layers) {
+          if (layer.id.includes('label')) {
+            map.current.setLayoutProperty(layer.id, 'text-field', ['coalesce', ['get', 'name_ja'], ['get', 'name']]);
+          }
+        }
         
         try {
           // 3D地形を有効化
@@ -302,12 +435,16 @@ const MapWithRealData = ({
     
     // PointデータをPolygonに変換
     const createPolygon = (center, size = 0.0005 / 3) => {  // 面積を1/3に
+      // テストデータの場合は5倍のサイズに
+      const isTestData = accommodationData.features.some(f => f.properties.name && f.properties.name.includes('テスト'));
+      const actualSize = isTestData ? size * 5 : size;
+      
       const coords = [[
-        [center[0] - size/2, center[1] - size/2],
-        [center[0] + size/2, center[1] - size/2],
-        [center[0] + size/2, center[1] + size/2],
-        [center[0] - size/2, center[1] + size/2],
-        [center[0] - size/2, center[1] - size/2]
+        [center[0] - actualSize/2, center[1] - actualSize/2],
+        [center[0] + actualSize/2, center[1] - actualSize/2],
+        [center[0] + actualSize/2, center[1] + actualSize/2],
+        [center[0] - actualSize/2, center[1] + actualSize/2],
+        [center[0] - actualSize/2, center[1] - actualSize/2]
       ]];
       return coords;
     };
@@ -882,16 +1019,22 @@ const MapWithRealData = ({
       consumptionData = { type: 'FeatureCollection', features: [] };
     }
     
+    // Check if this is test data
+    const isTestData = consumptionData.features.some(f => f.properties.name && f.properties.name.includes('テスト'));
+    
     // Convert Point features to Polygon features for fill-extrusion
     // Create small circles around each point
     const createCirclePolygon = (center, radiusInDegrees = 0.00006) => {  // 1/5のサイズ
+      // テストデータの場合は5倍のサイズに
+      const actualRadius = isTestData ? radiusInDegrees * 5 : radiusInDegrees;
+      
       const steps = 8; // Number of vertices
       const coordinates = [[]];
       
       for (let i = 0; i <= steps; i++) {
         const angle = (i / steps) * 2 * Math.PI;
-        const dx = radiusInDegrees * Math.cos(angle);
-        const dy = radiusInDegrees * Math.sin(angle);
+        const dx = actualRadius * Math.cos(angle);
+        const dy = actualRadius * Math.sin(angle);
         coordinates[0].push([center[0] + dx, center[1] + dy]);
       }
       
@@ -950,7 +1093,7 @@ const MapWithRealData = ({
           type: 'fill-extrusion',
           source: sourceId,
           paint: {
-            'fill-extrusion-color': [
+            'fill-extrusion-color': isTestData ? '#9C27B0' : [  // テストデータは紫色
               'interpolate',
               ['linear'],
               ['get', 'amount'],
@@ -962,10 +1105,10 @@ const MapWithRealData = ({
             'fill-extrusion-height': [
               '/',
               ['sqrt', ['get', 'amount']],  // ダミーデータ時と同じ計算式
-              50
+              isTestData ? 10 : 50  // テストデータは高さも大きく
             ],
             'fill-extrusion-base': 0,
-            'fill-extrusion-opacity': 0.3  // 透明度30%
+            'fill-extrusion-opacity': isTestData ? 0.8 : 0.3  // テストデータは不透明度高め
           }
         });
 
@@ -1126,6 +1269,14 @@ const MapWithRealData = ({
       updateHeatmapLayer(heatmapData);
     }
   }, [categoryFilter, mapLoaded, selectedPrefecture, prefectureData]);
+  
+  // Report landmarks data count when prefectureData changes
+  useEffect(() => {
+    if (prefectureData?.landmarks) {
+      const landmarksCount = prefectureData.landmarks.features?.length || 0;
+      reportDataCounts('landmarks', landmarksCount);
+    }
+  }, [prefectureData]);
 
   return (
     <div className="map-wrapper" style={{ width: '100%', height: '100%', position: 'relative', background: '#000' }}>
@@ -1203,6 +1354,72 @@ const MapWithRealData = ({
             }
             return null;
           })()}
+          
+          {/* MedicalLayer for medical facilities */}
+          {(() => {
+            console.log('MedicalLayer render check:', {
+              mapLoaded,
+              hasMap: !!map.current,
+              layersMedical: layers.medical
+            });
+            
+            if (mapLoaded && map.current) {
+              return (
+                <MedicalLayer
+                  map={map.current}
+                  visible={layers.medical}
+                  selectedPrefecture={selectedPrefecture}
+                  onDataCountUpdate={(count) => reportDataCounts('medical', count)}
+                />
+              );
+            }
+            return null;
+          })()}
+          
+          {/* EducationLayer for educational facilities */}
+          {(() => {
+            console.log('EducationLayer render check:', {
+              mapLoaded,
+              hasMap: !!map.current,
+              layersEducation: layers.education
+            });
+            
+            if (mapLoaded && map.current) {
+              return (
+                <EducationLayer
+                  map={map.current}
+                  visible={layers.education}
+                  selectedPrefecture={selectedPrefecture}
+                  onDataCountUpdate={(count) => reportDataCounts('education', count)}
+                />
+              );
+            }
+            return null;
+          })()}
+          
+          {/* DisasterLayer for disaster shelters */}
+          {(() => {
+            console.log('DisasterLayer render check:', {
+              mapLoaded,
+              hasMap: !!map.current,
+              layersDisaster: layers.disaster
+            });
+            
+            if (mapLoaded && map.current) {
+              return (
+                <DisasterLayer
+                  map={map.current}
+                  visible={layers.disaster}
+                  selectedPrefecture={selectedPrefecture}
+                  onDataCountUpdate={(count) => reportDataCounts('disaster', count)}
+                />
+              );
+            }
+            return null;
+          })()}
+          
+          {/* Transport Legend */}
+          <TransportLegend visible={layers.transport} />
         </>
       )}
     </div>

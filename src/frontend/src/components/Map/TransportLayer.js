@@ -31,18 +31,20 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
 
     // Transportation type colors (more distinct colors)
     const transportColors = {
-      bus: '#3B82F6',        // Blue for bus
-      rail: '#DC2626',       // Red for JR trains
+      bus: '#4A90E2',        // Brighter blue for bus (more vibrant)
+      rail: '#FF4500',       // Orange red for local trains
+      shinkansen: '#FFD700', // Gold for Shinkansen
       tram: '#F59E0B',       // Orange for tram
       ferry: '#06B6D4',      // Cyan for ferry
       subway: '#10B981',     // Green for subway/Astram Line
-      train: '#DC2626'       // Red for train (same as rail)
+      train: '#FF4500'       // Orange red for train (same as rail)
     };
 
     // Transportation icons
     const transportIcons = {
       bus: '🚌',
       rail: '🚃',
+      shinkansen: '🚄',  // Bullet train emoji for Shinkansen
       tram: '🚊',
       ferry: '⛴️',
       subway: '🚇',
@@ -51,21 +53,42 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
 
     // Convert GTFS data to GeoJSON features
     console.log('Transport data structure:', transportData);
-    const stopFeatures = transportData.stops?.map(stop => ({
-      type: 'Feature',
-      properties: {
-        id: stop.stop_id,
-        name: stop.stop_name,
-        type: stop.location_type === 1 ? 'station' : 'stop',
-        transport_type: stop.route_type || 'bus',
-        icon: transportIcons[stop.route_type] || transportIcons.bus,
-        color: transportColors[stop.route_type] || transportColors.bus
-      },
-      geometry: {
-        type: 'Point',
-        coordinates: [parseFloat(stop.stop_lon), parseFloat(stop.stop_lat)]
-      }
-    })) || [];
+    
+    // Handle both old format (stops array) and new format (features array)
+    let stopFeatures = [];
+    if (transportData.features) {
+      // New format with features
+      stopFeatures = transportData.features.map(feature => ({
+        type: 'Feature',
+        properties: {
+          id: feature.properties.stop_id,
+          name: feature.properties.stop_name,
+          type: feature.properties.type || 'stop',
+          transport_type: feature.properties.transport_type || 'bus',
+          line: feature.properties.line || '',
+          icon: transportIcons[feature.properties.transport_type] || transportIcons.bus,
+          color: feature.properties.color || transportColors[feature.properties.transport_type] || transportColors.bus
+        },
+        geometry: feature.geometry
+      }));
+    } else if (transportData.stops) {
+      // Old format with stops array
+      stopFeatures = transportData.stops.map(stop => ({
+        type: 'Feature',
+        properties: {
+          id: stop.stop_id,
+          name: stop.stop_name,
+          type: stop.location_type === 1 ? 'station' : 'stop',
+          transport_type: stop.route_type || 'bus',
+          icon: transportIcons[stop.route_type] || transportIcons.bus,
+          color: transportColors[stop.route_type] || transportColors.bus
+        },
+        geometry: {
+          type: 'Point',
+          coordinates: [parseFloat(stop.stop_lon), parseFloat(stop.stop_lat)]
+        }
+      }));
+    }
     console.log('Stop features:', stopFeatures.length);
     
     // Log route types to debug
@@ -77,19 +100,39 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
     console.log('Stop types breakdown:', routeTypes);
 
     // Convert routes to LineString features
-    const routeFeatures = transportData.routes?.map(route => ({
-      type: 'Feature',
-      properties: {
-        id: route.route_id,
-        name: route.route_short_name || route.route_long_name,
-        type: route.route_type,
-        color: route.route_color ? `#${route.route_color}` : (transportColors[route.route_type] || transportColors.bus)
-      },
-      geometry: {
-        type: 'LineString',
-        coordinates: route.shapes || [] // Assuming shapes data is preprocessed
-      }
-    })).filter(route => route.geometry.coordinates.length > 0) || [];
+    let routeFeatures = [];
+    if (transportData.routes) {
+      // New format with routes array
+      routeFeatures = transportData.routes.map(route => ({
+        type: 'Feature',
+        properties: {
+          id: route.properties?.route_id || route.route_id,
+          name: route.properties?.route_name || route.route_short_name || route.route_long_name,
+          type: route.properties?.transport_type || route.properties?.route_type || route.route_type || 'bus',
+          transport_type: route.properties?.transport_type || 'bus',
+          color: route.properties?.color || (route.route_color ? `#${route.route_color}` : transportColors[route.properties?.transport_type || 'bus'] || transportColors.bus)
+        },
+        geometry: route.geometry || {
+          type: 'LineString',
+          coordinates: route.shapes || []
+        }
+      })).filter(route => route.geometry.coordinates && route.geometry.coordinates.length > 0);
+    } else if (transportData.routes) {
+      // Old format
+      routeFeatures = transportData.routes.map(route => ({
+        type: 'Feature',
+        properties: {
+          id: route.route_id,
+          name: route.route_short_name || route.route_long_name,
+          type: route.route_type,
+          color: route.route_color ? `#${route.route_color}` : (transportColors[route.route_type] || transportColors.bus)
+        },
+        geometry: {
+          type: 'LineString',
+          coordinates: route.shapes || []
+        }
+      })).filter(route => route.geometry.coordinates.length > 0);
+    }
     console.log('Route features:', routeFeatures.length, 'from', transportData.routes?.length || 0, 'routes');
     
     // Log route types in routes
@@ -108,6 +151,8 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
     // Cleanup function
     const cleanup = () => {
       if (map.getLayer(labelsLayerId)) map.removeLayer(labelsLayerId);
+      if (map.getLayer(stopsLayerId + '-mid')) map.removeLayer(stopsLayerId + '-mid');
+      if (map.getLayer(stopsLayerId + '-glow')) map.removeLayer(stopsLayerId + '-glow');
       if (map.getLayer(stopsLayerId)) map.removeLayer(stopsLayerId);
       if (map.getLayer(routeLayerId + '-glow')) map.removeLayer(routeLayerId + '-glow');
       if (map.getLayer(routeLayerId)) map.removeLayer(routeLayerId);
@@ -164,19 +209,25 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
             ['linear'],
             ['zoom'],
             10, ['case', 
-              ['==', ['get', 'type'], 'bus'], 0.5,  // Bus lines are thinner
-              ['==', ['get', 'type'], '3'], 0.5,    // Bus type 3
-              2  // Train lines normal width
+              ['==', ['get', 'type'], 'shinkansen'], 4,  // Shinkansen lines are thickest
+              ['==', ['get', 'type'], 'bus'], 2,         // Bus lines visible
+              ['==', ['get', 'type'], '3'], 2,           // Bus type 3
+              ['==', ['get', 'type'], 'rail'], 3,        // Local train lines medium
+              3  // Default train lines
             ],
             15, ['case',
-              ['==', ['get', 'type'], 'bus'], 1,
-              ['==', ['get', 'type'], '3'], 1,
-              4
+              ['==', ['get', 'type'], 'shinkansen'], 8,
+              ['==', ['get', 'type'], 'bus'], 3,
+              ['==', ['get', 'type'], '3'], 3,
+              ['==', ['get', 'type'], 'rail'], 5,
+              5
             ],
             20, ['case',
-              ['==', ['get', 'type'], 'bus'], 1.5,
-              ['==', ['get', 'type'], '3'], 1.5,
-              6
+              ['==', ['get', 'type'], 'shinkansen'], 10,
+              ['==', ['get', 'type'], 'bus'], 4,
+              ['==', ['get', 'type'], '3'], 4,
+              ['==', ['get', 'type'], 'rail'], 7,
+              7
             ]
           ],
           'line-opacity': 0  // Start with 0 for animation
@@ -199,18 +250,24 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
             ['linear'],
             ['zoom'],
             10, ['case',
+              ['==', ['get', 'type'], 'shinkansen'], 9,   // Shinkansen glow
               ['==', ['get', 'type'], 'bus'], 1.5,
               ['==', ['get', 'type'], '3'], 1.5,
+              ['==', ['get', 'type'], 'local'], 6,
               6
             ],
             15, ['case',
+              ['==', ['get', 'type'], 'shinkansen'], 18,
               ['==', ['get', 'type'], 'bus'], 3,
               ['==', ['get', 'type'], '3'], 3,
+              ['==', ['get', 'type'], 'local'], 12,
               12
             ],
             20, ['case',
+              ['==', ['get', 'type'], 'shinkansen'], 24,
               ['==', ['get', 'type'], 'bus'], 4.5,
               ['==', ['get', 'type'], '3'], 4.5,
+              ['==', ['get', 'type'], 'local'], 18,
               18
             ]
           ],
@@ -266,7 +323,52 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
       });
     }
 
-    // Add stop circles
+    // Add stop circles - outer glow for orb effect
+    map.addLayer({
+      id: stopsLayerId + '-glow',
+      type: 'circle',
+      source: stopsSourceId,
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          10, 12,  // Increased from 8
+          15, 20,  // Increased from 16
+          20, 30   // Increased from 24
+        ],
+        'circle-color': [
+          'case',
+          ['==', ['get', 'transport_type'], 'bus'],
+          '#6BB6FF',  // Lighter blue for bus glow
+          ['get', 'color']
+        ],
+        'circle-blur': 2.5,    // Further increased for softer orb
+        'circle-opacity': 0.3  // Reduced for more subtle glow
+      }
+    });
+
+    // Add middle glow layer
+    map.addLayer({
+      id: stopsLayerId + '-mid',
+      type: 'circle',
+      source: stopsSourceId,
+      paint: {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          10, 8,   // Increased from 5
+          15, 14,  // Increased from 10
+          20, 20   // Increased from 16
+        ],
+        'circle-color': ['get', 'color'],
+        'circle-blur': 1.5,     // Increased for smoother blend
+        'circle-opacity': 0.4   // Adjusted for better orb effect
+      }
+    });
+
+    // Add main stop circles - inner core (orb style without stroke)
     map.addLayer({
       id: stopsLayerId,
       type: 'circle',
@@ -276,14 +378,13 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
           'interpolate',
           ['linear'],
           ['zoom'],
-          10, 3,
-          15, 6,
-          20, 10
+          10, 4,   // Increased from 3
+          15, 8,   // Increased from 6
+          20, 12   // Increased from 10
         ],
         'circle-color': ['get', 'color'],
-        'circle-stroke-width': 2,
-        'circle-stroke-color': '#ffffff',
-        'circle-opacity': 0.9
+        'circle-stroke-width': 0,  // Remove white stroke
+        'circle-opacity': 0.5  // 50% transparency for orb effect
       }
     });
 
@@ -342,6 +443,19 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
           closeOnClick: false
         });
         
+        const typeLabel = {
+          'station': '駅',
+          'bus_stop': 'バス停',
+          'stop': 'バス停'
+        };
+        
+        const transportTypeLabel = {
+          'bus': 'バス',
+          'rail': 'JR在来線',
+          'shinkansen': '新幹線',
+          'train': 'JR'
+        };
+        
         popup.setLngLat(feature.geometry.coordinates)
           .setHTML(`
             <div style="padding: 10px;">
@@ -349,7 +463,15 @@ const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => 
                 ${feature.properties.icon} ${feature.properties.name}
               </h3>
               <p style="margin: 0; font-size: 14px;">
-                ${feature.properties.type === 'station' ? '駅' : 'バス停'}
+                <strong>種別:</strong> ${typeLabel[feature.properties.type] || '停留所'}
+              </p>
+              ${feature.properties.line ? `
+                <p style="margin: 0; font-size: 12px; color: #666;">
+                  <strong>路線:</strong> ${feature.properties.line}
+                </p>
+              ` : ''}
+              <p style="margin: 0; font-size: 12px; color: ${feature.properties.color};">
+                <strong>交通機関:</strong> ${transportTypeLabel[feature.properties.transport_type] || feature.properties.transport_type}
               </p>
             </div>
           `)

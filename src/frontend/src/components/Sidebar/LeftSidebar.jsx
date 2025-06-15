@@ -35,6 +35,9 @@ import {
   ChevronLeft,
   LocationCity,
   DirectionsBus,
+  LocalHospital,
+  School,
+  Warning,
 } from '@mui/icons-material';
 
 const LeftSidebar = ({
@@ -43,7 +46,8 @@ const LeftSidebar = ({
   viewport,
   weatherData,
   onRefresh,
-  onClose
+  onClose,
+  layerDataCounts = {}
 }) => {
   // 現実世界のデータレイヤー
   const realWorldLayers = [
@@ -53,6 +57,9 @@ const LeftSidebar = ({
     { id: 'accommodation', label: '宿泊施設', icon: <Hotel />, color: '#4CAF50', description: '稼働率・空室状況' },
     { id: 'events', label: 'イベント情報', icon: <ShareIcon />, color: '#FF6B6B', description: '開催中・予定イベント' },
     { id: 'transport', label: '公共交通', icon: <DirectionsBus />, color: '#3B82F6', description: 'バス・鉄道路線・停留所' },
+    { id: 'medical', label: '医療施設・AED', icon: <LocalHospital />, color: '#DC143C', description: 'AED設置場所・医療機関' },
+    { id: 'education', label: '教育施設', icon: <School />, color: '#2196F3', description: '学校・教育機関' },
+    { id: 'disaster', label: '避難所・防災', icon: <Warning />, color: '#FF5722', description: '避難所・防災施設' },
   ];
 
   const handleLayerToggle = (layerId) => {
@@ -181,9 +188,25 @@ const LeftSidebar = ({
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                     <Box sx={{ color: layer.color }}>{layer.icon}</Box>
                     <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {layer.label}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {layer.label}
+                        </Typography>
+                        {layerDataCounts[layer.id] > 0 && (
+                          <Chip
+                            label={`${layerDataCounts[layer.id]}件`}
+                            size="small"
+                            sx={{
+                              height: 18,
+                              fontSize: '0.7rem',
+                              bgcolor: alpha(layer.color, 0.2),
+                              color: layer.color,
+                              fontWeight: 600,
+                              '& .MuiChip-label': { px: 1 }
+                            }}
+                          />
+                        )}
+                      </Box>
                       <Typography variant="caption" sx={{ display: 'block', opacity: 0.7 }}>
                         {layer.description}
                       </Typography>

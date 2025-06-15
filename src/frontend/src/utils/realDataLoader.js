@@ -78,7 +78,13 @@ export async function loadRealAccommodationData(prefecture) {
     const response = await realDataService.getAccommodation(prefecture);
     console.log('Accommodation data loaded:', response);
     
-    if (response && response.data) {
+    // Check if response is already in GeoJSON format
+    if (response && response.type === 'FeatureCollection') {
+      return response;
+    }
+    
+    // Handle older array format
+    if (response && response.data && Array.isArray(response.data)) {
       return {
         type: 'FeatureCollection',
         features: response.data.map(hotel => ({
@@ -302,6 +308,133 @@ function generateMinimalAccommodationData(prefecture) {
         name: hotel.name,
         capacity: hotel.capacity,
         occupancy_rate: 0.65 + Math.random() * 0.25
+      }
+    }))
+  };
+}
+
+// 消費データの読み込み
+export async function loadConsumptionData(prefecture) {
+  try {
+    console.log('Loading consumption data...');
+    
+    // 消費データAPIを呼び出し
+    const response = await apiClient.get(`/api/v1/real/consumption/real/${prefecture}`);
+    console.log('Consumption data loaded:', response);
+    
+    // GeoJSON形式に変換
+    const features = [];
+    
+    // 店舗データをGeoJSONフィーチャーに変換
+    const stores = response.stores || response.top_stores || [];
+    if (Array.isArray(stores)) {
+      stores.forEach(store => {
+        if (store.location && store.location.coordinates) {
+          features.push({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: store.location.coordinates
+            },
+            properties: {
+              id: store.store_id,
+              name: store.store_name,
+              category: store.store_category,
+              amount: store.total_amount || 0,
+              transactions: store.transaction_count || 0,
+              area: store.area || ''
+            }
+          });
+        }
+      });
+    }
+    
+    // エリアサマリーデータもGeoJSONに追加（エリアの中心点に配置）
+    const areaCenters = {
+      '広島市中区': [132.4572, 34.3954],
+      '広島市西区': [132.4340, 34.3940],
+      '広島市南区': [132.4680, 34.3800],
+      '広島市東区': [132.4820, 34.3960],
+      '広島市北区': [132.4730, 34.4480],
+      '山口市': [131.4714, 34.1858],
+      '下関市': [130.9239, 33.9507],
+      '宇部市': [131.2439, 33.9533],
+      '周南市': [131.8050, 34.0517],
+      '岩国市': [132.2192, 34.1656]
+    };
+    
+    if (response.area_summary) {
+      Object.entries(response.area_summary).forEach(([area, data]) => {
+        if (areaCenters[area]) {
+          features.push({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: areaCenters[area]
+            },
+            properties: {
+              id: `area_${area}`,
+              name: `${area}消費データ`,
+              category: 'area_summary',
+              amount: data.total_amount || 0,
+              transactions: data.transaction_count || 0,
+              area: area
+            }
+          });
+        }
+      });
+    }
+    
+    console.log(`Loaded ${features.length} consumption data points`);
+    
+    if (features.length > 0) {
+      return {
+        type: 'FeatureCollection',
+        features: features
+      };
+    }
+    
+    // データがない場合はサンプルデータを返す
+    return generateSampleConsumptionData();
+    
+  } catch (error) {
+    console.error('Failed to load consumption data:', error);
+    return generateSampleConsumptionData();
+  }
+}
+
+// サンプル消費データの生成
+function generateSampleConsumptionData() {
+  console.log('Generating sample consumption data...');
+  
+  const sampleData = [
+    { name: '紙屋町商店街', coordinates: [132.4572, 34.3954], amount: 15000, area: '広島市中区' },
+    { name: '本通り商店街', coordinates: [132.4615, 34.3934], amount: 12000, area: '広島市中区' },
+    { name: '広島駅前商業施設', coordinates: [132.4753, 34.3974], amount: 18000, area: '広島市南区' },
+    { name: '西広島商店街', coordinates: [132.4385, 34.3747], amount: 8000, area: '広島市西区' },
+    { name: '横川商店街', coordinates: [132.4525, 34.4107], amount: 6000, area: '広島市西区' },
+    { name: '山口駅前商店街', coordinates: [131.4714, 34.1858], amount: 9000, area: '山口市' },
+    { name: '湯田温泉商店街', coordinates: [131.4583, 34.1636], amount: 7000, area: '山口市' },
+    { name: '下関駅前商業施設', coordinates: [130.9239, 33.9507], amount: 11000, area: '下関市' },
+    { name: '唐戸市場周辺', coordinates: [130.9417, 33.9567], amount: 10000, area: '下関市' },
+    { name: '宇部新川駅前', coordinates: [131.2439, 33.9533], amount: 6500, area: '宇部市' }
+  ];
+  
+  return {
+    type: 'FeatureCollection',
+    features: sampleData.map((data, idx) => ({
+      type: 'Feature',
+      geometry: {
+        type: 'Point',
+        coordinates: data.coordinates
+      },
+      properties: {
+        id: `consumption-${idx}`,
+        name: data.name,
+        category: 'shopping',
+        amount: data.amount,
+        transactions: Math.floor(data.amount / 60),
+        area: data.area
       }
     }))
   };

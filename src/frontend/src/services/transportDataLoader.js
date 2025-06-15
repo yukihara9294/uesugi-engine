@@ -10,7 +10,7 @@ export const loadTransportData = async (prefecture = '広島県') => {
   try {
     // Choose endpoint based on prefecture
     const endpoint = prefecture === '山口県' 
-      ? `${API_BASE_URL}/api/v1/transport/gtfs/yamaguchi`
+      ? `${API_BASE_URL}/api/v1/real/transport/gtfs/yamaguchi`
       : `${API_BASE_URL}/api/v1/transport/gtfs`;
       
     console.log(`[${new Date().toISOString()}] Loading transport data from:`, endpoint);

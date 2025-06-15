@@ -152,6 +152,9 @@ function App() {
     heatmap: false,
     events: false,
     transport: false,  // Public transportation layer - set to OFF by default
+    medical: false,    // Medical facilities and AED locations
+    education: false,  // Educational institutions
+    disaster: false,   // Disaster shelters and evacuation sites
   });
   const [categoryFilter, setCategoryFilter] = useState(['観光', 'グルメ', 'イベント', 'ショッピング', '交通']);
   const [timeRange, setTimeRange] = useState({
@@ -165,6 +168,18 @@ function App() {
     prefectureData: {},
     lastUpdate: null,
     initialized: false
+  });
+
+  // 各レイヤーのデータ数を管理
+  const [layerDataCounts, setLayerDataCounts] = useState({
+    transport: 0,
+    medical: 0,
+    education: 0,
+    disaster: 0,
+    accommodation: 0,
+    consumption: 0,
+    landmarks: 0,
+    events: 0
   });
 
   // データ生成と初期化
@@ -338,6 +353,7 @@ function App() {
               weatherData={dataCache.current.weather}
               onRefresh={initializeData}
               onClose={() => setLeftSidebarOpen(false)}
+              layerDataCounts={layerDataCounts}
             />
           </Box>
 
@@ -352,6 +368,7 @@ function App() {
                 rightSidebarOpen={rightSidebarOpen}
                 loading={loading}
                 prefectureData={dataCache.current.prefectureData[selectedPrefecture]}
+                onDataCountUpdate={setLayerDataCounts}
               />
             </MapErrorBoundary>
 
