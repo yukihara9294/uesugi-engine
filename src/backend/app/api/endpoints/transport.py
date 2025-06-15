@@ -73,11 +73,20 @@ async def get_gtfs_data():
             else:
                 stop["route_type"] = "bus"  # Default to bus
         
+        # Add sample JR and Astram Line data
+        train_stops, train_routes = generate_train_data()
+        stops.extend(train_stops)
+        routes.extend(train_routes)
+        
+        # Return with train routes prioritized
+        all_stops = stops[:486] + train_stops  # Make room for train stops
+        all_routes = train_routes + routes[:48]  # Prioritize train routes
+        
         return {
-            "stops": stops[:500],  # Limit to 500 stops for performance
-            "routes": routes[:50], # Limit to 50 routes for performance
-            "total_stops": len(stops),
-            "total_routes": len(routes)
+            "stops": all_stops[:500],  # Limit to 500 stops for performance
+            "routes": all_routes[:50], # Limit to 50 routes for performance
+            "total_stops": len(stops) + len(train_stops),
+            "total_routes": len(routes) + len(train_routes)
         }
         
     except Exception as e:
@@ -177,6 +186,71 @@ def get_route_type_name(route_type: str) -> str:
         "7": "funicular"
     }
     return route_types.get(str(route_type), "bus")
+
+
+def generate_train_data():
+    """
+    Generate sample JR and Astram Line data for Hiroshima
+    """
+    # JR Stations
+    jr_stops = [
+        {"stop_id": "jr_hiroshima", "stop_name": "広島駅", "stop_lat": 34.3975, "stop_lon": 132.4753, "location_type": 1, "route_type": "rail"},
+        {"stop_id": "jr_shinhakushima", "stop_name": "新白島駅", "stop_lat": 34.4094, "stop_lon": 132.4736, "location_type": 1, "route_type": "rail"},
+        {"stop_id": "jr_yokogawa", "stop_name": "横川駅", "stop_lat": 34.4107, "stop_lon": 132.4498, "location_type": 1, "route_type": "rail"},
+        {"stop_id": "jr_nishihiroshima", "stop_name": "西広島駅", "stop_lat": 34.3675, "stop_lon": 132.4144, "location_type": 1, "route_type": "rail"},
+        {"stop_id": "jr_itsukaichi", "stop_name": "五日市駅", "stop_lat": 34.3718, "stop_lon": 132.3705, "location_type": 1, "route_type": "rail"},
+        {"stop_id": "jr_hatsukaichi", "stop_name": "廿日市駅", "stop_lat": 34.3481, "stop_lon": 132.3316, "location_type": 1, "route_type": "rail"},
+    ]
+    
+    # Astram Line Stations
+    astram_stops = [
+        {"stop_id": "astram_hondori", "stop_name": "本通駅", "stop_lat": 34.3936, "stop_lon": 132.4593, "location_type": 1, "route_type": "subway"},
+        {"stop_id": "astram_kencho", "stop_name": "県庁前駅", "stop_lat": 34.3986, "stop_lon": 132.4594, "location_type": 1, "route_type": "subway"},
+        {"stop_id": "astram_johoku", "stop_name": "城北駅", "stop_lat": 34.4089, "stop_lon": 132.4639, "location_type": 1, "route_type": "subway"},
+        {"stop_id": "astram_shinhakushima", "stop_name": "新白島駅（アストラム）", "stop_lat": 34.4094, "stop_lon": 132.4736, "location_type": 1, "route_type": "subway"},
+        {"stop_id": "astram_hakushima", "stop_name": "白島駅", "stop_lat": 34.4058, "stop_lon": 132.4675, "location_type": 1, "route_type": "subway"},
+        {"stop_id": "astram_ushita", "stop_name": "牛田駅", "stop_lat": 34.4156, "stop_lon": 132.4869, "location_type": 1, "route_type": "subway"},
+        {"stop_id": "astram_fudoin", "stop_name": "不動院前駅", "stop_lat": 34.4247, "stop_lon": 132.5042, "location_type": 1, "route_type": "subway"},
+        {"stop_id": "astram_omachi", "stop_name": "大町駅", "stop_lat": 34.4436, "stop_lon": 132.5244, "location_type": 1, "route_type": "subway"},
+    ]
+    
+    # Routes
+    routes = [
+        {
+            "route_id": "jr_sanyo_main",
+            "route_short_name": "JR山陽本線",
+            "route_long_name": "山陽本線（広島〜廿日市）",
+            "route_type": "2",  # 2 = rail
+            "route_color": "0052CC",
+            "shapes": [
+                [132.4753, 34.3975],  # 広島駅
+                [132.4736, 34.4094],  # 新白島駅
+                [132.4498, 34.4107],  # 横川駅
+                [132.4144, 34.3675],  # 西広島駅
+                [132.3705, 34.3718],  # 五日市駅
+                [132.3316, 34.3481],  # 廿日市駅
+            ]
+        },
+        {
+            "route_id": "astram_line",
+            "route_short_name": "アストラムライン",
+            "route_long_name": "広島新交通1号線（本通〜大町）",
+            "route_type": "1",  # 1 = subway
+            "route_color": "00AA00",
+            "shapes": [
+                [132.4593, 34.3936],  # 本通駅
+                [132.4594, 34.3986],  # 県庁前駅
+                [132.4639, 34.4089],  # 城北駅
+                [132.4736, 34.4094],  # 新白島駅
+                [132.4675, 34.4058],  # 白島駅
+                [132.4869, 34.4156],  # 牛田駅
+                [132.5042, 34.4247],  # 不動院前駅
+                [132.5244, 34.4436],  # 大町駅
+            ]
+        }
+    ]
+    
+    return jr_stops + astram_stops, routes
 
 
 @router.get("/stops/{stop_id}")

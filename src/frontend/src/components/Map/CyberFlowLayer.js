@@ -284,7 +284,7 @@ const CyberFlowLayer = ({ map, mobilityData, visible }) => {
             
             // 通行量に基づいてパーティクル数を決定 (半分に削減)
             const baseParticles = Math.max(3, Math.min(10, Math.floor(flowPath.normalized * 10)));
-            const numParticles = baseParticles;
+            const numParticles = Math.floor(baseParticles / 2) || 1;  // 半分に削減（最低1個）
             
             for (let i = 0; i < numParticles; i++) {
               const particleData = {

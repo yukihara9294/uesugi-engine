@@ -1,6 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
+import mapboxgl from 'mapbox-gl';
 
 const TransportLayer = ({ map, transportData, visible }) => {
+  const animationRef = useRef(null);
+  const opacityRef = useRef(0);
+  
   useEffect(() => {
     console.log('TransportLayer effect:', { 
       map: !!map, 
@@ -25,13 +29,14 @@ const TransportLayer = ({ map, transportData, visible }) => {
     const labelsLayerId = 'transport-labels';
     const labelsSourceId = 'transport-labels-source';
 
-    // Transportation type colors
+    // Transportation type colors (more distinct colors)
     const transportColors = {
-      bus: '#FF6B6B',        // Red for bus
-      rail: '#4ECDC4',       // Turquoise for rail
-      tram: '#FFE66D',       // Yellow for tram
-      ferry: '#3B82F6',      // Blue for ferry
-      subway: '#A855F7'      // Purple for subway
+      bus: '#3B82F6',        // Blue for bus
+      rail: '#DC2626',       // Red for JR trains
+      tram: '#F59E0B',       // Orange for tram
+      ferry: '#06B6D4',      // Cyan for ferry
+      subway: '#10B981',     // Green for subway/Astram Line
+      train: '#DC2626'       // Red for train (same as rail)
     };
 
     // Transportation icons
@@ -40,7 +45,8 @@ const TransportLayer = ({ map, transportData, visible }) => {
       rail: '🚃',
       tram: '🚊',
       ferry: '⛴️',
-      subway: '🚇'
+      subway: '🚇',
+      train: '🚃'  // Same as rail
     };
 
     // Convert GTFS data to GeoJSON features
@@ -61,6 +67,14 @@ const TransportLayer = ({ map, transportData, visible }) => {
       }
     })) || [];
     console.log('Stop features:', stopFeatures.length);
+    
+    // Log route types to debug
+    const routeTypes = {};
+    stopFeatures.forEach(stop => {
+      const type = stop.properties.transport_type;
+      routeTypes[type] = (routeTypes[type] || 0) + 1;
+    });
+    console.log('Stop types breakdown:', routeTypes);
 
     // Convert routes to LineString features
     const routeFeatures = transportData.routes?.map(route => ({
@@ -78,6 +92,14 @@ const TransportLayer = ({ map, transportData, visible }) => {
     })).filter(route => route.geometry.coordinates.length > 0) || [];
     console.log('Route features:', routeFeatures.length, 'from', transportData.routes?.length || 0, 'routes');
     
+    // Log route types in routes
+    const routeTypesInRoutes = {};
+    transportData.routes?.forEach(route => {
+      const type = route.route_type || 'unknown';
+      routeTypesInRoutes[type] = (routeTypesInRoutes[type] || 0) + 1;
+    });
+    console.log('Route types in routes:', routeTypesInRoutes);
+    
     // If no routes have shapes, skip route rendering
     if (routeFeatures.length === 0) {
       console.log('TransportLayer: No routes with valid shapes data');
@@ -87,6 +109,7 @@ const TransportLayer = ({ map, transportData, visible }) => {
     const cleanup = () => {
       if (map.getLayer(labelsLayerId)) map.removeLayer(labelsLayerId);
       if (map.getLayer(stopsLayerId)) map.removeLayer(stopsLayerId);
+      if (map.getLayer(routeLayerId + '-glow')) map.removeLayer(routeLayerId + '-glow');
       if (map.getLayer(routeLayerId)) map.removeLayer(routeLayerId);
       
       if (map.getSource(labelsSourceId)) map.removeSource(labelsSourceId);
@@ -95,6 +118,12 @@ const TransportLayer = ({ map, transportData, visible }) => {
     };
 
     cleanup();
+    
+    // Stop any existing animation before cleanup
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
 
     if (!visible) {
       console.log('TransportLayer: Not visible, skipping render');
@@ -109,13 +138,16 @@ const TransportLayer = ({ map, transportData, visible }) => {
 
     // Add route lines layer
     if (routeFeatures.length > 0) {
-      map.addSource(routeSourceId, {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: routeFeatures
-        }
-      });
+      // Check if source already exists
+      if (!map.getSource(routeSourceId)) {
+        map.addSource(routeSourceId, {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: routeFeatures
+          }
+        });
+      }
 
       map.addLayer({
         id: routeLayerId,
@@ -131,23 +163,108 @@ const TransportLayer = ({ map, transportData, visible }) => {
             'interpolate',
             ['linear'],
             ['zoom'],
-            10, 2,
-            15, 4,
-            20, 6
+            10, ['case', 
+              ['==', ['get', 'type'], 'bus'], 0.5,  // Bus lines are thinner
+              ['==', ['get', 'type'], '3'], 0.5,    // Bus type 3
+              2  // Train lines normal width
+            ],
+            15, ['case',
+              ['==', ['get', 'type'], 'bus'], 1,
+              ['==', ['get', 'type'], '3'], 1,
+              4
+            ],
+            20, ['case',
+              ['==', ['get', 'type'], 'bus'], 1.5,
+              ['==', ['get', 'type'], '3'], 1.5,
+              6
+            ]
           ],
-          'line-opacity': 0.7
+          'line-opacity': 0  // Start with 0 for animation
+        }
+      });
+      
+      // Add glow layer for routes
+      map.addLayer({
+        id: routeLayerId + '-glow',
+        type: 'line',
+        source: routeSourceId,
+        layout: {
+          'line-join': 'round',
+          'line-cap': 'round'
+        },
+        paint: {
+          'line-color': ['get', 'color'],
+          'line-width': [
+            'interpolate',
+            ['linear'],
+            ['zoom'],
+            10, ['case',
+              ['==', ['get', 'type'], 'bus'], 1.5,
+              ['==', ['get', 'type'], '3'], 1.5,
+              6
+            ],
+            15, ['case',
+              ['==', ['get', 'type'], 'bus'], 3,
+              ['==', ['get', 'type'], '3'], 3,
+              12
+            ],
+            20, ['case',
+              ['==', ['get', 'type'], 'bus'], 4.5,
+              ['==', ['get', 'type'], '3'], 4.5,
+              18
+            ]
+          ],
+          'line-blur': 2,
+          'line-opacity': 0  // Start with 0 for animation
+        }
+      }, routeLayerId);
+    }
+
+    // Start fade animation
+    const startAnimation = () => {
+      let time = 0;
+      
+      const animate = () => {
+        time += 0.02;
+        const opacity = (Math.sin(time) + 1) / 2 * 0.7;  // Fade between 0 and 0.7
+        const glowOpacity = (Math.sin(time) + 1) / 2 * 0.3;  // Fade between 0 and 0.3
+        const busOpacity = (Math.sin(time) + 1) / 2 * 0.4;  // Bus lines are more transparent
+        const busGlowOpacity = (Math.sin(time) + 1) / 2 * 0.15;  // Bus glow is more transparent
+        
+        if (map.getLayer(routeLayerId)) {
+          // Set different opacity for bus and train
+          map.setPaintProperty(routeLayerId, 'line-opacity', [
+            'case',
+            ['==', ['get', 'type'], 'bus'], busOpacity,
+            ['==', ['get', 'type'], '3'], busOpacity,
+            opacity
+          ]);
+        }
+        if (map.getLayer(routeLayerId + '-glow')) {
+          map.setPaintProperty(routeLayerId + '-glow', 'line-opacity', [
+            'case',
+            ['==', ['get', 'type'], 'bus'], busGlowOpacity,
+            ['==', ['get', 'type'], '3'], busGlowOpacity,
+            glowOpacity
+          ]);
+        }
+        
+        animationRef.current = requestAnimationFrame(animate);
+      };
+      
+      animate();
+    };
+
+    // Add stops layer
+    if (!map.getSource(stopsSourceId)) {
+      map.addSource(stopsSourceId, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: stopFeatures
         }
       });
     }
-
-    // Add stops layer
-    map.addSource(stopsSourceId, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: stopFeatures
-      }
-    });
 
     // Add stop circles
     map.addLayer({
@@ -171,13 +288,15 @@ const TransportLayer = ({ map, transportData, visible }) => {
     });
 
     // Add stop labels
-    map.addSource(labelsSourceId, {
-      type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: stopFeatures.filter(f => f.properties.type === 'station') // Only show labels for stations
-      }
-    });
+    if (!map.getSource(labelsSourceId)) {
+      map.addSource(labelsSourceId, {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: stopFeatures.filter(f => f.properties.type === 'station') // Only show labels for stations
+        }
+      });
+    }
 
     map.addLayer({
       id: labelsLayerId,
@@ -218,7 +337,7 @@ const TransportLayer = ({ map, transportData, visible }) => {
         const feature = e.features[0];
         
         // Show popup
-        const popup = new window.mapboxgl.Popup({
+        const popup = new mapboxgl.Popup({
           closeButton: false,
           closeOnClick: false
         });
@@ -251,8 +370,18 @@ const TransportLayer = ({ map, transportData, visible }) => {
       
       hoveredStopId = null;
     });
+    
+    // Start the animation
+    if (routeFeatures.length > 0) {
+      startAnimation();
+    }
 
     return () => {
+      // Stop animation
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
       cleanup();
       map.off('mouseenter', stopsLayerId);
       map.off('mouseleave', stopsLayerId);

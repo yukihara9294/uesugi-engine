@@ -105,10 +105,13 @@ export async function loadRealAccommodationData(prefecture) {
 
 // 実際の人流データ（モバイル空間統計など）
 export async function loadRealMobilityData(prefecture, cityOnly = false) {
+  const startTime = Date.now();
   try {
-    console.log(`Loading real mobility data for ${prefecture}... (cityOnly: ${cityOnly})`);
+    console.log(`[${new Date().toISOString()}] Loading real mobility data for ${prefecture}... (cityOnly: ${cityOnly})`);
     
     const response = await realDataService.getMobility(prefecture, cityOnly);
+    const loadTime = Date.now() - startTime;
+    console.log(`[${new Date().toISOString()}] Mobility data loaded in ${loadTime}ms`);
     console.log('Raw API response:', response);
     console.log('Response type:', typeof response);
     console.log('Has flows:', !!response?.flows);

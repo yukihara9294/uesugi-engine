@@ -55,8 +55,10 @@ const MapWithRealData = ({
 
   // 実データの読み込み（ダミーデータへのフォールバック付き）
   const loadRealData = useCallback(async () => {
+    console.log(`[${new Date().toISOString()}] Starting loadRealData for ${selectedPrefecture}`);
     
     // ローカルデータを先に設定（即時表示）- 但し人流データは除く
+    console.log(`[${new Date().toISOString()}] Setting local data while waiting for API...`);
     if (prefectureData && map.current && mapLoaded) {
       // ローカルデータを即座に適用（人流データ以外）
       updateLandmarksLayer(prefectureData.landmarks || generateLandmarks(selectedPrefecture));
@@ -75,29 +77,48 @@ const MapWithRealData = ({
     
     try {
       // APIデータをタイムアウト付きで取得（バックグラウンド）
-      const loadWithTimeout = (promise, timeout = 60000) => {  // 60秒に延長（API処理に時間がかかるため）
+      const loadWithTimeout = (promise, timeout = 60000, name = '') => {  // 60秒に延長（API処理に時間がかかるため）
+        console.log(`[${new Date().toISOString()}] Starting ${name} with timeout ${timeout}ms`);
+        const startTime = Date.now();
+        
         return Promise.race([
-          promise,
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeout))
+          promise.then(result => {
+            const duration = Date.now() - startTime;
+            console.log(`[${new Date().toISOString()}] ${name} completed successfully in ${duration}ms`);
+            return result;
+          }).catch(error => {
+            const duration = Date.now() - startTime;
+            console.log(`[${new Date().toISOString()}] ${name} failed after ${duration}ms:`, error);
+            throw error;
+          }),
+          new Promise((_, reject) => setTimeout(() => {
+            console.log(`[${new Date().toISOString()}] ${name} timed out after ${timeout}ms`);
+            reject(new Error(`${name} timeout after ${timeout}ms`));
+          }, timeout))
         ]);
       };
       
       // 並列でデータ読み込み（タイムアウト付き）
       const [gtfsData, tourismData, accommodationData, mobilityData, eventData, transportData] = await Promise.all([
-        selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData(), 30000).catch(() => null) : Promise.resolve(null),
-        selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData(), 30000).catch(() => null) : Promise.resolve(null),
-        loadWithTimeout(loadRealAccommodationData(selectedPrefecture), 30000).catch(() => null),
+        selectedPrefecture === '広島県' ? loadWithTimeout(loadHiroshimaGTFSData(), 90000, 'GTFS data').catch(() => null) : Promise.resolve(null),
+        selectedPrefecture === '山口県' ? loadWithTimeout(loadYamaguchiTourismData(), 90000, 'Tourism data').catch(() => null) : Promise.resolve(null),
+        loadWithTimeout(loadRealAccommodationData(selectedPrefecture), 90000, 'Accommodation data').catch(() => null),
         // 最初は市内のみ読み込み（広島県の場合）
         loadWithTimeout(
           loadRealMobilityData(selectedPrefecture, selectedPrefecture === '広島県'), 
-          30000
+          120000,  // 2分のタイムアウト（モビリティデータは時間がかかる）
+          'Mobility data (city)'
         ).then(data => {
           console.log('loadRealMobilityData result (city only):', data);
           // 段階的読み込み：市内データを先に設定
           if (data && selectedPrefecture === '広島県') {
             setRealMobilityData(data);
             // 全県データを背景で読み込み
-            loadRealMobilityData(selectedPrefecture, false).then(fullData => {
+            loadWithTimeout(
+              loadRealMobilityData(selectedPrefecture, false), 
+              180000,  // 3分のタイムアウト（全県データはさらに時間がかかる）
+              'Mobility data (full prefecture)'
+            ).then(fullData => {
               console.log('Full prefecture data loaded:', fullData);
               if (fullData) {
                 setRealMobilityData(fullData);
@@ -109,17 +130,18 @@ const MapWithRealData = ({
           console.error('Failed to load mobility data:', error);
           return null;
         }),
-        loadWithTimeout(loadRealEventData(selectedPrefecture), 30000).catch((err) => {
+        loadWithTimeout(loadRealEventData(selectedPrefecture), 90000, 'Event data').catch((err) => {
           console.error('Failed to load event data:', err);
           return null;
         }),
-        loadWithTimeout(loadTransportData(), 30000).catch((err) => {
+        loadWithTimeout(loadTransportData(), 90000, 'Transport data').catch((err) => {
           console.error('Failed to load transport data:', err);
           return null;
         })
       ]);
       
-      console.log('Loaded mobility data:', mobilityData);
+      console.log(`[${new Date().toISOString()}] Promise.all completed`);
+      console.log(`[${new Date().toISOString()}] Loaded mobility data:`, mobilityData);
       console.log('Is mobility data null?', mobilityData === null);
       console.log('Is mobility data undefined?', mobilityData === undefined);
       console.log('Loaded transport data:', transportData);
@@ -127,12 +149,16 @@ const MapWithRealData = ({
 
       // Set state data immediately (don't wait for map)
       if (mobilityData) {
-        console.log('Setting real mobility data');
+        console.log(`[${new Date().toISOString()}] Setting real mobility data`);
         setRealMobilityData(mobilityData); // 実データを保存
+      } else {
+        console.log(`[${new Date().toISOString()}] No mobility data to set`);
       }
       if (transportData) {
-        console.log('Setting transport data:', transportData);
+        console.log(`[${new Date().toISOString()}] Setting transport data:`, transportData);
         setTransportData(transportData); // Set transport data
+      } else {
+        console.log(`[${new Date().toISOString()}] No transport data to set`);
       }
       
       // データをマップに適用 (only for direct map operations)
@@ -152,7 +178,13 @@ const MapWithRealData = ({
         }
       }
     } catch (error) {
-      console.error('Failed to load real data:', error);
+      console.error(`[${new Date().toISOString()}] Failed to load real data:`, error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+    } finally {
+      console.log(`[${new Date().toISOString()}] loadRealData completed`);
     }
   }, [selectedPrefecture, mapLoaded, prefectureData]);
 

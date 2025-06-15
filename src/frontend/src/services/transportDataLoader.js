@@ -6,10 +6,15 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
  * Load and process GTFS transport data
  */
 export const loadTransportData = async () => {
+  const startTime = Date.now();
   try {
-    console.log('Loading transport data from:', `${API_BASE_URL}/api/v1/transport/gtfs`);
+    console.log(`[${new Date().toISOString()}] Loading transport data from:`, `${API_BASE_URL}/api/v1/transport/gtfs`);
     // First, try to load from backend API
-    const response = await axios.get(`${API_BASE_URL}/api/v1/transport/gtfs`);
+    const response = await axios.get(`${API_BASE_URL}/api/v1/transport/gtfs`, {
+      timeout: 90000 // 90 second timeout
+    });
+    const loadTime = Date.now() - startTime;
+    console.log(`[${new Date().toISOString()}] Transport data loaded in ${loadTime}ms`);
     console.log('Transport data from API:', {
       hasData: !!response.data,
       stopsCount: response.data?.stops?.length || 0,
@@ -19,7 +24,8 @@ export const loadTransportData = async () => {
     });
     return response.data;
   } catch (error) {
-    console.warn('Failed to load transport data from API, using local data:', error);
+    const errorTime = Date.now() - startTime;
+    console.warn(`[${new Date().toISOString()}] Failed to load transport data from API after ${errorTime}ms, using local data:`, error.message);
     
     // Fallback to loading local GTFS files
     const localData = await loadLocalGTFSData();
@@ -61,18 +67,31 @@ const generateSampleStops = () => {
   const centerLon = 132.4559;
   const stops = [];
   
-  // Major bus terminals and stations
+  // Major stations and stops (including train stations)
   const majorStops = [
-    { name: '広島バスセンター', lat: 34.3963, lon: 132.4559, type: 'station' },
-    { name: '広島駅', lat: 34.3975, lon: 132.4753, type: 'station' },
-    { name: '横川駅', lat: 34.4107, lon: 132.4498, type: 'station' },
-    { name: '西広島駅', lat: 34.3675, lon: 132.4144, type: 'station' },
-    { name: '八丁堀', lat: 34.3939, lon: 132.4616, type: 'stop' },
-    { name: '紙屋町', lat: 34.3955, lon: 132.4574, type: 'stop' },
-    { name: '本通り', lat: 34.3936, lon: 132.4593, type: 'stop' },
-    { name: '平和記念公園', lat: 34.3915, lon: 132.4529, type: 'stop' },
-    { name: '原爆ドーム前', lat: 34.3955, lon: 132.4534, type: 'stop' },
-    { name: '市役所前', lat: 34.3944, lon: 132.4550, type: 'stop' }
+    // JR Stations
+    { name: '広島駅', lat: 34.3975, lon: 132.4753, type: 'station', route_type: 'rail' },
+    { name: '横川駅', lat: 34.4107, lon: 132.4498, type: 'station', route_type: 'rail' },
+    { name: '西広島駅', lat: 34.3675, lon: 132.4144, type: 'station', route_type: 'rail' },
+    { name: '新白島駅', lat: 34.4094, lon: 132.4736, type: 'station', route_type: 'rail' },
+    
+    // Astram Line Stations
+    { name: '本通駅', lat: 34.3936, lon: 132.4593, type: 'station', route_type: 'subway' },
+    { name: '県庁前駅', lat: 34.3986, lon: 132.4594, type: 'station', route_type: 'subway' },
+    { name: '城北駅', lat: 34.4089, lon: 132.4639, type: 'station', route_type: 'subway' },
+    { name: '新白島駅（アストラム）', lat: 34.4094, lon: 132.4736, type: 'station', route_type: 'subway' },
+    { name: '白島駅', lat: 34.4058, lon: 132.4675, type: 'station', route_type: 'subway' },
+    { name: '牛田駅', lat: 34.4156, lon: 132.4869, type: 'station', route_type: 'subway' },
+    { name: '不動院前駅', lat: 34.4247, lon: 132.5042, type: 'station', route_type: 'subway' },
+    { name: '大町駅', lat: 34.4436, lon: 132.5244, type: 'station', route_type: 'subway' },
+    
+    // Bus stops
+    { name: '広島バスセンター', lat: 34.3963, lon: 132.4559, type: 'station', route_type: 'bus' },
+    { name: '八丁堀', lat: 34.3939, lon: 132.4616, type: 'stop', route_type: 'bus' },
+    { name: '紙屋町', lat: 34.3955, lon: 132.4574, type: 'stop', route_type: 'bus' },
+    { name: '平和記念公園', lat: 34.3915, lon: 132.4529, type: 'stop', route_type: 'bus' },
+    { name: '原爆ドーム前', lat: 34.3955, lon: 132.4534, type: 'stop', route_type: 'bus' },
+    { name: '市役所前', lat: 34.3944, lon: 132.4550, type: 'stop', route_type: 'bus' }
   ];
   
   majorStops.forEach((stop, index) => {
@@ -82,7 +101,7 @@ const generateSampleStops = () => {
       stop_lat: stop.lat,
       stop_lon: stop.lon,
       location_type: stop.type === 'station' ? 1 : 0,
-      route_type: 'bus'
+      route_type: stop.route_type || 'bus'
     });
   });
   
@@ -110,16 +129,49 @@ const generateSampleStops = () => {
 };
 
 /**
- * Generate sample bus routes
+ * Generate sample routes (bus and train)
  */
 const generateSampleRoutes = () => {
   const routes = [
+    // JR Lines
+    {
+      route_id: 'jr_sanyo',
+      route_short_name: 'JR山陽本線',
+      route_long_name: '山陽本線（広島～西広島）',
+      route_type: 'rail',
+      route_color: '0052CC',
+      shapes: [
+        [132.4753, 34.3975], // 広島駅
+        [132.4736, 34.4094], // 新白島駅
+        [132.4498, 34.4107], // 横川駅
+        [132.4144, 34.3675]  // 西広島駅
+      ]
+    },
+    // Astram Line
+    {
+      route_id: 'astram_line',
+      route_short_name: 'アストラムライン',
+      route_long_name: 'アストラムライン（本通～大町）',
+      route_type: 'subway',
+      route_color: '00AA00',
+      shapes: [
+        [132.4593, 34.3936], // 本通駅
+        [132.4594, 34.3986], // 県庁前駅
+        [132.4639, 34.4089], // 城北駅
+        [132.4736, 34.4094], // 新白島駅
+        [132.4675, 34.4058], // 白島駅
+        [132.4869, 34.4156], // 牛田駅
+        [132.5042, 34.4247], // 不動院前駅
+        [132.5244, 34.4436]  // 大町駅
+      ]
+    },
+    // Bus routes
     {
       route_id: 'route_1',
       route_short_name: '1',
       route_long_name: '広島駅～広島バスセンター',
       route_type: 'bus',
-      route_color: 'FF6B6B',
+      route_color: '3B82F6',
       shapes: [
         [132.4753, 34.3975], // 広島駅
         [132.4616, 34.3939], // 八丁堀
@@ -132,7 +184,7 @@ const generateSampleRoutes = () => {
       route_short_name: '2',
       route_long_name: '横川駅～西広島駅',
       route_type: 'bus',
-      route_color: '4ECDC4',
+      route_color: '3B82F6',
       shapes: [
         [132.4498, 34.4107], // 横川駅
         [132.4534, 34.3955], // 原爆ドーム前
@@ -145,7 +197,7 @@ const generateSampleRoutes = () => {
       route_short_name: '3',
       route_long_name: '市内循環線',
       route_type: 'bus',
-      route_color: 'FFE66D',
+      route_color: '3B82F6',
       shapes: [
         [132.4559, 34.3963], // 広島バスセンター
         [132.4550, 34.3944], // 市役所前
