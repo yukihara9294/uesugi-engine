@@ -140,7 +140,7 @@ function App() {
   const [aiAnalysisOpen, setAiAnalysisOpen] = useState(false);
 
   // データ選択状態
-  const [selectedPrefecture, setSelectedPrefecture] = useState('広島県');
+  const [selectedPrefecture, setSelectedPrefecture] = useState('山口県');
   const [selectedArea, setSelectedArea] = useState('全域');
   const [layers, setLayers] = useState({
     landmarks: false,  // Now includes building data (formerly PLATEAU)
@@ -193,7 +193,7 @@ function App() {
 
       // 2. APIデータの取得（エラーを許容）
       try {
-        const coordinates = { lat: 34.3966, lon: 132.4597 }; // 広島市の座標
+        const coordinates = { lat: 34.1859, lon: 131.4706 }; // 山口市の座標
         const [weatherData, eventsData] = await Promise.allSettled([
           weatherService.getCurrentWeather(coordinates.lat, coordinates.lon),
           eventService.getEvents()

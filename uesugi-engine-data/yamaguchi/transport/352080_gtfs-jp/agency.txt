@@ -1,0 +1,2 @@
+﻿agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_email
+1000020352080,岩国市役所　,https://www.city.iwakuni.lg.jp/soshiki/12/,Asia/Tokyo,ja,0827-29-5106,,koutsu@city.iwakuni.lg.jp 

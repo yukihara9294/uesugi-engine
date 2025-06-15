@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import mapboxgl from 'mapbox-gl';
 
-const TransportLayer = ({ map, transportData, visible }) => {
+const TransportLayer = ({ map, transportData, visible, selectedPrefecture }) => {
   const animationRef = useRef(null);
   const opacityRef = useRef(0);
   

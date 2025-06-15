@@ -1,0 +1,2 @@
+﻿feed_publisher_name,feed_publisher_url,feed_contact_url,feed_contact_email,feed_lang,feed_start_date,feed_end_date,feed_version
+岩国市役所　地域交通課,https://www.city.iwakuni.lg.jp/soshiki/12/,https://www.city.iwakuni.lg.jp/soshiki/12/,sonosujiya@gmail.com,ja,20250401,20260331,20250401_2025年04月01日（改正） その筋屋 2.016

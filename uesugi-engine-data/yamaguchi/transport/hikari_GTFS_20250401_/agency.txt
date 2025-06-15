@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone,agency_fare_url,agency_email
+6000020352101,光市,https://www.city.hikari.lg.jp/soshiki/11/kokyokotsu/1/1/9452.html,Asia/Tokyo,ja,0833-72-1420,,

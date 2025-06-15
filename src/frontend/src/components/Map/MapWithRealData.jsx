@@ -29,7 +29,7 @@ if (MAPBOX_TOKEN) {
 const MapWithRealData = ({ 
   layers = {}, 
   categoryFilter, 
-  selectedPrefecture = '広島県',
+  selectedPrefecture = '山口県',
   leftSidebarOpen,
   rightSidebarOpen,
   loading,
@@ -134,7 +134,7 @@ const MapWithRealData = ({
           console.error('Failed to load event data:', err);
           return null;
         }),
-        loadWithTimeout(loadTransportData(), 90000, 'Transport data').catch((err) => {
+        loadWithTimeout(loadTransportData(selectedPrefecture), 90000, 'Transport data').catch((err) => {
           console.error('Failed to load transport data:', err);
           return null;
         })
@@ -1197,6 +1197,7 @@ const MapWithRealData = ({
                   map={map.current}
                   transportData={transportData}
                   visible={layers.transport}
+                  selectedPrefecture={selectedPrefecture}
                 />
               );
             }

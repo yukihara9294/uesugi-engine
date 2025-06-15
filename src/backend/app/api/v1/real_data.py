@@ -96,6 +96,57 @@ async def get_hiroshima_gtfs_data(db: Session = Depends(get_db)):
         print(f"GTFS data error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/transport/gtfs/yamaguchi")
+async def get_yamaguchi_gtfs_data(db: Session = Depends(get_db)):
+    """山口県GTFSデータを取得（岩国市・光市）"""
+    try:
+        # 山口県のGTFSディレクトリ
+        yamaguchi_gtfs_dirs = [
+            YAMAGUCHI_DIR / "transport" / "352080_gtfs-jp",  # 岩国市
+            YAMAGUCHI_DIR / "transport" / "hikari_GTFS_20250401_"  # 光市
+        ]
+        
+        all_features = []
+        
+        for gtfs_dir in yamaguchi_gtfs_dirs:
+            stops_file = gtfs_dir / "stops.txt"
+            if stops_file.exists():
+                with open(stops_file, 'r', encoding='utf-8-sig') as f:
+                    lines = f.readlines()
+                    headers = lines[0].strip().split(',')
+                    
+                    for line in lines[1:]:
+                        data = line.strip().split(',')
+                        if len(data) >= 6 and data[4] and data[5]:  # stop_lat, stop_lon
+                            try:
+                                lat = float(data[4])
+                                lon = float(data[5])
+                                all_features.append({
+                                    "type": "Feature",
+                                    "geometry": {
+                                        "type": "Point",
+                                        "coordinates": [lon, lat]
+                                    },
+                                    "properties": {
+                                        "stop_id": data[0],
+                                        "stop_name": data[2] if data[2] else "バス停",
+                                        "stop_code": data[1] if data[1] else "",
+                                        "type": "bus_stop",
+                                        "color": "#3B82F6"
+                                    }
+                                })
+                            except ValueError:
+                                continue
+        
+        return {
+            "type": "FeatureCollection",
+            "features": all_features[:300]  # 最大300停留所
+        }
+        
+    except Exception as e:
+        print(f"Yamaguchi GTFS data error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/tourism/facilities/yamaguchi")
 async def get_yamaguchi_tourism_data(db: Session = Depends(get_db)):
     """山口県観光施設データを取得"""
@@ -218,6 +269,68 @@ async def get_real_mobility_data(prefecture: str, city_only: bool = False):
         #    - アニメーション付きの光の流れ
         
         # パーティクルアニメーション用のデータ形式に変換
+        # 山口県の主要地点
+        yamaguchi_points = [
+            # 山口市（県庁所在地、人口: 約19万人）
+            {"name": "山口駅", "lat": 34.1858, "lon": 131.4714, "population": 20000},
+            {"name": "山口市役所", "lat": 34.1859, "lon": 131.4706, "population": 8000},
+            {"name": "湯田温泉", "lat": 34.1636, "lon": 131.4583, "population": 15000},
+            {"name": "新山口駅", "lat": 34.0411, "lon": 131.4089, "population": 25000},
+            {"name": "小郡", "lat": 34.0522, "lon": 131.3919, "population": 12000},
+            {"name": "香山公園", "lat": 34.1889, "lon": 131.4767, "population": 5000},
+            {"name": "山口大学", "lat": 34.1487, "lon": 131.4720, "population": 10000},
+            
+            # 下関市（人口: 約25万人）
+            {"name": "下関駅", "lat": 33.9507, "lon": 130.9239, "population": 30000},
+            {"name": "唐戸市場", "lat": 33.9567, "lon": 130.9417, "population": 12000},
+            {"name": "関門トンネル", "lat": 33.9667, "lon": 130.9544, "population": 8000},
+            {"name": "門司港", "lat": 33.9514, "lon": 130.9608, "population": 10000},
+            {"name": "海響館", "lat": 33.9572, "lon": 130.9408, "population": 10000},
+            {"name": "彦島", "lat": 33.9333, "lon": 130.8667, "population": 7000},
+            {"name": "新下関駅", "lat": 34.0000, "lon": 130.9944, "population": 20000},
+            
+            # 宇部市（人口: 約16万人）
+            {"name": "宇部新川駅", "lat": 33.9533, "lon": 131.2439, "population": 15000},
+            {"name": "宇部市役所", "lat": 33.9517, "lon": 131.2467, "population": 8000},
+            {"name": "山口宇部空港", "lat": 33.9300, "lon": 131.2786, "population": 12000},
+            {"name": "ときわ公園", "lat": 33.9425, "lon": 131.2833, "population": 8000},
+            {"name": "宇部港", "lat": 33.9272, "lon": 131.2531, "population": 5000},
+            
+            # 周南市（人口: 約14万人）
+            {"name": "徳山駅", "lat": 34.0517, "lon": 131.8050, "population": 25000},
+            {"name": "周南市役所", "lat": 34.0542, "lon": 131.8064, "population": 8000},
+            {"name": "新南陽駅", "lat": 34.0361, "lon": 131.7294, "population": 10000},
+            {"name": "櫛ヶ浜駅", "lat": 34.0139, "lon": 131.8206, "population": 8000},
+            
+            # 岩国市（人口: 約13万人）
+            {"name": "岩国駅", "lat": 34.1656, "lon": 132.2192, "population": 20000},
+            {"name": "錦帯橋", "lat": 34.1686, "lon": 132.1778, "population": 15000},
+            {"name": "岩国空港", "lat": 34.1439, "lon": 132.2356, "population": 10000},
+            {"name": "岩国市役所", "lat": 34.1706, "lon": 132.2203, "population": 6000},
+            
+            # 防府市（人口: 約11万人）
+            {"name": "防府駅", "lat": 34.0517, "lon": 131.5631, "population": 18000},
+            {"name": "防府天満宮", "lat": 34.0558, "lon": 131.5703, "population": 10000},
+            {"name": "防府市役所", "lat": 34.0519, "lon": 131.5636, "population": 6000},
+            
+            # 萩市（人口: 約4.4万人）
+            {"name": "東萩駅", "lat": 34.4086, "lon": 131.3986, "population": 8000},
+            {"name": "萩城下町", "lat": 34.4167, "lon": 131.3833, "population": 12000},
+            {"name": "萩市役所", "lat": 34.4081, "lon": 131.3989, "population": 4000},
+            
+            # 光市（人口: 約5万人）
+            {"name": "光駅", "lat": 33.9622, "lon": 131.9422, "population": 10000},
+            {"name": "光市役所", "lat": 33.9625, "lon": 131.9417, "population": 4000},
+            
+            # 長門市（人口: 約3.2万人）
+            {"name": "長門市駅", "lat": 34.3711, "lon": 131.1828, "population": 6000},
+            {"name": "仙崎", "lat": 34.3867, "lon": 131.1950, "population": 4000},
+            
+            # 柳井市（人口: 約3万人）
+            {"name": "柳井駅", "lat": 33.9639, "lon": 132.1014, "population": 8000},
+            {"name": "柳井港", "lat": 33.9589, "lon": 132.1092, "population": 3000}
+        ]
+        
         # 広島県の主要地点（県全域をカバー）
         hiroshima_points = [
             # 広島市中心部（人口: 約120万人）
